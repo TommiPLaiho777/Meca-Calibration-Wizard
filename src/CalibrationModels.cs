@@ -15,15 +15,20 @@ internal sealed record PedalMapping(int Axis, uint Rest, uint Full, double Confi
 internal sealed class NoiseRun
 {
     public const double DurationSeconds = 3.0;
+    public const double ExtendedDurationSeconds = 10.0;
+    public double RequestedDurationSeconds { get; }
     public DateTime StartedUtc { get; }
     private DateTime _lastUtc;
     private readonly List<uint>[] _samples =
         Enumerable.Range(0, 6).Select(_ => new List<uint>()).ToArray();
     public bool HasSamples => _samples[0].Count > 0;
-    public bool Complete => (_lastUtc - StartedUtc).TotalSeconds >= DurationSeconds;
+    public bool Complete => (_lastUtc - StartedUtc).TotalSeconds >= RequestedDurationSeconds;
 
-    public NoiseRun(DateTime? startedUtc = null)
+    public NoiseRun(DateTime? startedUtc = null, double durationSeconds = DurationSeconds)
     {
+        if (!double.IsFinite(durationSeconds) || durationSeconds < 0.5 || durationSeconds > 60)
+            throw new ArgumentOutOfRangeException(nameof(durationSeconds));
+        RequestedDurationSeconds = durationSeconds;
         StartedUtc = startedUtc ?? DateTime.UtcNow;
         _lastUtc = StartedUtc;
     }

@@ -177,6 +177,28 @@ static class Checks
             noiseRun.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i*40));
         Require(noiseRun.Complete && noiseRun.Analyze(0, 0, 65535).SpanWinmm == 0,
                 "fixed-time signal capture");
+        // Optional longer stationary recording remains a pure WinMM observation.
+        var extended = new NoiseRun(fixedClock, NoiseRun.ExtendedDurationSeconds);
+        for (int i = 0; i < 250; i++)
+            extended.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i * 40));
+        Require(!extended.Complete && extended.RequestedDurationSeconds == 10,
+            "long signal capture must not end before 10 seconds");
+        extended.Observe(Axes(0, 42), fixedClock.AddSeconds(10));
+        var extendedStats = extended.Analyze(0, 0, 65535);
+        Require(extended.Complete && extendedStats.WindowSeconds == 10 &&
+                extendedStats.SampleCount == 251 && extendedStats.SamplingRateHz == 25 &&
+                extendedStats.Status == "No variation resolved",
+            "10-second WinMM capture uses actual timestamps and unchanged diagnostics");
+        foreach (var invalidDuration in new[] { 0.0, -1.0, double.NaN, double.PositiveInfinity, 61.0 })
+        {
+            try
+            {
+                _ = new NoiseRun(fixedClock, invalidDuration);
+                throw new Exception("FAILED: invalid signal-check duration accepted");
+            }
+            catch (ArgumentOutOfRangeException) { }
+        }
+        Console.WriteLine("PASS: optional 10s stationary WinMM capture and duration validation");
         // Observed 2026-10-15 WinMM brake idle-check span reached 25769;
         // this cannot be interpreted as idle electrical noise.
         var observedMotion = Enumerable.Repeat(0u, 64).ToArray();

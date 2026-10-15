@@ -143,6 +143,7 @@ public partial class MainWindow : Window
         BrakeSweepButton.IsEnabled = true;
         ThrottleSweepButton.IsEnabled = true;
         CheckSignalButton.IsEnabled = true;
+        LongSignalButton.IsEnabled = true;
         _step = step;
         WelcomeView.Visibility = step == 0 ? Visibility.Visible : Visibility.Collapsed;
         CaptureView.Visibility = step is >= 1 and <= 3 ? Visibility.Visible : Visibility.Collapsed;
@@ -278,7 +279,11 @@ public partial class MainWindow : Window
             {
                 StatusText.Text = "Controller unavailable · check USB connection";
                 _capture = null;
+                if (_noise is not null)
+                    SignalText.Text = "Signal check cancelled: controller disconnected.";
                 _noise = null;
+                CheckSignalButton.IsEnabled = true;
+                LongSignalButton.IsEnabled = true;
                 _sweep = null;
                 _sweepKind = null;
                 BrakeSweepButton.IsEnabled = true;
@@ -325,7 +330,8 @@ public partial class MainWindow : Window
 
         if (_noise is not null)
         {
-            _noise.Observe(sample);
+            var now = DateTime.UtcNow;
+            _noise.Observe(sample, now);
             if (_noise.Complete)
             {
                 _lastNoise = _mappings.ToDictionary(
@@ -335,7 +341,14 @@ public partial class MainWindow : Window
                     p => _noise.Analyze(p.Value.Axis, _device.Min[p.Value.Axis], _device.Max[p.Value.Axis]));
                 _noise = null;
                 CheckSignalButton.IsEnabled = true;
+                LongSignalButton.IsEnabled = true;
                 SignalText.Text = FormatNoise();
+            }
+            else
+            {
+                var remaining = Math.Max(0, _noise.RequestedDurationSeconds -
+                    (now - _noise.StartedUtc).TotalSeconds);
+                SignalText.Text = $"Keep pedals released · {remaining:0.0}s remaining";
             }
         }
 
@@ -484,14 +497,21 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CheckSignal_Click(object sender, RoutedEventArgs e)
+    private void CheckSignal_Click(object sender, RoutedEventArgs e) =>
+        BeginSignalCheck(NoiseRun.DurationSeconds);
+
+    private void CheckLongSignal_Click(object sender, RoutedEventArgs e) =>
+        BeginSignalCheck(NoiseRun.ExtendedDurationSeconds);
+
+    private void BeginSignalCheck(double seconds)
     {
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
-        _noise = new NoiseRun();
+        _noise = new NoiseRun(durationSeconds: seconds);
         _lastNoise = null;
         _lastSignalHealth = null;
         CheckSignalButton.IsEnabled = false;
-        SignalText.Text = "Measuring WinMM signal for 3s… keep all pedals released.";
+        LongSignalButton.IsEnabled = false;
+        SignalText.Text = $"Measuring WinMM signal for {seconds:0}s… keep all pedals released.";
     }
 
     private string FormatNoise()

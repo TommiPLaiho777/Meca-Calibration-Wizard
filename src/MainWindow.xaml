@@ -183,7 +183,9 @@
                                 <TextBlock Text="SIGNAL HEALTH" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
                                 <TextBlock Text="Keep all pedals released. Zero variation may be masked by Windows deadzones." FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,5,0,9"/>
                                 <DockPanel LastChildFill="True">
-                                    <Button x:Name="CheckSignalButton" DockPanel.Dock="Left" Content="Check Signal" Click="CheckSignal_Click"/>
+                                    <Button x:Name="CheckSignalButton" DockPanel.Dock="Left" Content="Check Signal · 3s" Click="CheckSignal_Click"/>
+                                    <Button x:Name="LongSignalButton" DockPanel.Dock="Left" Content="Long check · 10s"
+                                            Click="CheckLongSignal_Click" Margin="8,0,0,0"/>
                                     <TextBlock x:Name="SignalText" Text="Not measured" TextWrapping="Wrap"
                                                VerticalAlignment="Center" Margin="13,0,0,0" FontSize="12"/>
                                 </DockPanel>
