@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.3 (development candidate, 2026-10-15)
+
+- Read-only WinMM idle signal-health stats with sample rate, median, standard deviation and abrupt-change counts.
+- Conservative interpretation of movement, zero span and possible Windows deadzones.
+- New `SignalHealth` export field, retaining `NoiseCheckRawSpan`.
+- Automated regression cases for stable, moving, slight variation and timed captures.
+
+
 ## v0.2.2 (source staging, 2026-10-15)
 
 - Add in-app graph for WinMM brake and throttle sweep captures.

@@ -144,6 +144,30 @@ static class Checks
             "missing release fails the quality check");
         Console.WriteLine("PASS: invalid sweep cases correctly rejected");
 
+
+        var flat = SignalHealthDiagnostics.Evaluate(Enumerable.Repeat(0u, 76).ToArray(), 0, 65535, 3);
+        Require(flat.SampleCount == 76 && flat.SpanWinmm == 0 &&
+                flat.StandardDeviationWinmm == 0 && flat.SamplingRateHz == 25 &&
+                flat.Status == "No variation resolved", "stable does not mean proven EMI-free");
+        var readings = Enumerable.Repeat(1000u, 76).ToArray();
+        readings[25] = 4000;
+        var motion = SignalHealthDiagnostics.Evaluate(readings, 0, 65535, 3);
+        Require(motion.SpanWinmm == 3000 && motion.LargeStepCount == 2 &&
+                motion.Status == "Pedal motion likely", "large signal not labelled EMI");
+        var small = SignalHealthDiagnostics.Evaluate(
+            new uint[] { 1000, 1010, 1020, 990, 1005, 1015, 995, 1005 }, 0, 65535, 1);
+        Require(small.StandardDeviationWinmm > 0 && small.Status == "Small variation resolved",
+                "smaller variation is retained");
+        Require(SignalHealthDiagnostics.Evaluate(Array.Empty<uint>(), 0, 65535, 3).Status == "No samples",
+                "empty recording is not a stable result");
+        var fixedClock = new DateTime(2026, 10, 15, 12, 0, 0, DateTimeKind.Utc);
+        var noiseRun = new NoiseRun(fixedClock);
+        for (int i = 0; i <= 75; i++)
+            noiseRun.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i*40));
+        Require(noiseRun.Complete && noiseRun.Analyze(0, 0, 65535).SpanWinmm == 0,
+                "fixed-time signal capture");
+        Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }

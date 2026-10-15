@@ -1,4 +1,4 @@
-# Meca Calibration Wizard — v0.2.2
+# Meca Calibration Wizard — v0.2.3
 
 Visual, minimal-English **MECA CUP1 pedal setup assistant for Windows**. It is an independent project: **not related to a trail-braking coach, SuperContinuity or any other Rhino repository**.
 
@@ -62,3 +62,8 @@ GitHub Actions validates algorithms using simulated and previously recorded samp
 4. Finish the UI with a slotted/animated brake rotor, analog throttle gauge, optional clutch plates, reduced-motion support and optional sound effects.
 
 No immediate pedal tests or owner interaction are needed for automated CI validation. Real USB/calibration tests must still be performed manually.
+
+
+## v0.2.3 signal health
+
+Read-only WinMM diagnostics now calculate sample count, rate, median, standard deviation, largest sample step and range for each calibrated pedal. The JSON retains `NoiseCheckRawSpan` and adds `SignalHealth` for backward compatibility. At-rest motion can be reported as such, but no diagnosis of grounding, true sensor noise or elastomer wear is possible using WinMM alone. A zero spread can reflect Windows deadzones, not necessarily a quiet load cell.

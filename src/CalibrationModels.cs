@@ -14,21 +14,27 @@ internal sealed record PedalMapping(int Axis, uint Rest, uint Full, double Confi
 
 internal sealed class NoiseRun
 {
-    public DateTime StartedUtc { get; } = DateTime.UtcNow;
-    private readonly uint[] _min = Enumerable.Repeat(uint.MaxValue, 6).ToArray();
-    private readonly uint[] _max = new uint[6];
-    public bool HasSamples { get; private set; }
-    public bool Complete => (DateTime.UtcNow - StartedUtc).TotalSeconds >= 3.0;
+    public const double DurationSeconds = 3.0;
+    public DateTime StartedUtc { get; }
+    private DateTime _lastUtc;
+    private readonly List<uint>[] _samples =
+        Enumerable.Range(0, 6).Select(_ => new List<uint>()).ToArray();
+    public bool HasSamples => _samples[0].Count > 0;
+    public bool Complete => (_lastUtc - StartedUtc).TotalSeconds >= DurationSeconds;
 
-    public void Observe(uint[] value)
+    public NoiseRun(DateTime? startedUtc = null)
     {
-        HasSamples = true;
-        for (int i = 0; i < 6; i++)
-        {
-            _min[i] = Math.Min(_min[i], value[i]);
-            _max[i] = Math.Max(_max[i], value[i]);
-        }
+        StartedUtc = startedUtc ?? DateTime.UtcNow;
+        _lastUtc = StartedUtc;
     }
-
-    public uint Spread(int axis) => HasSamples ? _max[axis] - _min[axis] : 0;
+    public void Observe(uint[] values, DateTime? atUtc = null)
+    {
+        if (values.Length != 6) return;
+        for (int i = 0; i < 6; i++) _samples[i].Add(values[i]);
+        _lastUtc = atUtc ?? DateTime.UtcNow;
+    }
+    public uint Spread(int axis) => HasSamples ? _samples[axis].Max()-_samples[axis].Min() : 0;
+    public SignalHealthStats Analyze(int axis, uint min, uint max) =>
+        SignalHealthDiagnostics.Evaluate(_samples[axis], min, max,
+            Math.Max(0, (_lastUtc - StartedUtc).TotalSeconds));
 }

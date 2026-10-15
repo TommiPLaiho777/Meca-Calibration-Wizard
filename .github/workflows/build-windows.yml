@@ -57,11 +57,11 @@ jobs:
           Copy-Item tools/START_PEDAL_TEST.cmd release/
       - name: Zip artifact
         shell: pwsh
-        run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.2.2-win-x64.zip
+        run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.2.3-win-x64.zip
       - name: Upload verified Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: MecaCalibrationWizard-v0.2.2-win-x64
-          path: MecaCalibrationWizard-v0.2.2-win-x64.zip
+          name: MecaCalibrationWizard-v0.2.3-win-x64
+          path: MecaCalibrationWizard-v0.2.3-win-x64.zip
           retention-days: 14
           if-no-files-found: error
