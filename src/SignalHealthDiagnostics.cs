@@ -15,14 +15,20 @@ internal sealed record SignalHealthStats(
             "Not a valid idle-noise check. Release all pedals and repeat; movement is not proof of EMI.",
         "No variation resolved" =>
             "No WinMM variation resolved. Windows deadzones may hide sensor noise.",
-        "No samples" or "Insufficient samples" =>
-            "Too little data. Release all pedals and repeat the check.",
+        "No samples" =>
+            "No WinMM samples received. Check the controller connection and repeat.",
+        "Insufficient samples" =>
+            "Too few or too widely spaced WinMM samples to assess rest stability. Keep pedals released and repeat.",
         _ => "WinMM variation alone cannot identify electrical interference."
     };
 }
 
 internal static class SignalHealthDiagnostics
 {
+    // Conservative minimum *average* polling rate for a useful at-rest assessment.
+    // Not a claim about the USB HID report rate or native load-cell sampling.
+    private const double MinimumUsefulAverageSamplingRateHz = 5.0;
+
     public static SignalHealthStats Evaluate(
         IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds)
     {
@@ -48,13 +54,18 @@ internal static class SignalHealthDiagnostics
             largest = Math.Max(largest, step);
             if (step > .005 * scale) jumps++;
         }
-        string status = readings.Count < 8 || windowSeconds < .5 ? "Insufficient samples"
+        double averageRate = windowSeconds > 0 ? (readings.Count - 1) / windowSeconds : 0;
+        // A flat trace sampled too sparsely must not be presented as a valid
+        // zero-variation result. Preserve the numerical metrics for review.
+        string status = readings.Count < 8 || windowSeconds < .5 ||
+                        averageRate < MinimumUsefulAverageSamplingRateHz
+            ? "Insufficient samples"
             : span > .02 * scale ? "Pedal motion likely"
             : span > .003 * scale ? "Variation observed"
             : span == 0 ? "No variation resolved"
             : "Small variation resolved";
         return new(readings.Count, Math.Round(windowSeconds, 3),
-            Math.Round(windowSeconds > 0 ? (readings.Count-1)/windowSeconds : 0, 2),
+            Math.Round(averageRate, 2),
             minimum, maximum, span, Math.Round(median, 2), Math.Round(sd, 2),
             largest, jumps, status);
     }

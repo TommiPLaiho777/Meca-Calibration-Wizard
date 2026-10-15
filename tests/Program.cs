@@ -210,6 +210,28 @@ static class Checks
             "large WinMM movement must prompt repeat, not a false EMI diagnosis");
         Require(flat.Guidance.Contains("deadzones"),
             "zero variation must not imply a proven noise-free sensor");
+        // Eight identical values over 3 seconds cannot justify a quiet-signal
+        // conclusion; 8 values over 1 second still exercise the existing
+        // small-variation fixture above.
+        var sparseIdle = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(0u, 8).ToArray(), 0, 65535, 3.0);
+        Require(sparseIdle.SampleCount == 8 &&
+                sparseIdle.SpanWinmm == 0 &&
+                sparseIdle.SamplingRateHz == 2.33 &&
+                sparseIdle.Status == "Insufficient samples" &&
+                sparseIdle.Guidance.Contains("widely spaced"),
+            "sparse idle WinMM samples must not be reported as resolved stability");
+        var adequateIdle = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(0u, 16).ToArray(), 0, 65535, 3.0);
+        Require(adequateIdle.SamplingRateHz == 5.0 &&
+                adequateIdle.Status == "No variation resolved",
+            "five-Hz minimum threshold is inclusive");
+        var sparseMoving = SignalHealthDiagnostics.Evaluate(
+            new uint[] { 0, 0, 0, 25000, 0, 0, 0, 0 }, 0, 65535, 3.0);
+        Require(sparseMoving.Status == "Insufficient samples" &&
+                sparseMoving.SpanWinmm == 25000 &&
+                sparseMoving.LargeStepCount == 2,
+            "sparse recordings must retain numerical motion evidence");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
         var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],
