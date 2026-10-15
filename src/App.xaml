@@ -1,0 +1,54 @@
+<Application x:Class="MecaCalibrationWizard.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="BaseBrush" Color="#111923"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#1A2633"/>
+        <SolidColorBrush x:Key="RaisedBrush" Color="#233243"/>
+        <SolidColorBrush x:Key="LabelBrush" Color="#EDF4FB"/>
+        <SolidColorBrush x:Key="DimBrush" Color="#A9BAC9"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#2FC6A4"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#405165"/>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="18,11"/>
+            <Setter Property="Background" Value="{StaticResource RaisedBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Outer" Background="{TemplateBinding Background}" CornerRadius="9"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Outer" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Outer" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="MinHeight" Value="36"/>
+        </Style>
+        <Style TargetType="ProgressBar">
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Background" Value="{StaticResource RaisedBrush}"/>
+            <Setter Property="Maximum" Value="100"/>
+        </Style>
+    </Application.Resources>
+</Application>

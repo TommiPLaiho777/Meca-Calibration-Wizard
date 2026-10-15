@@ -38,7 +38,7 @@ dotnet run --project tests/GuidedCalibrationChecks.csproj -c Release
 dotnet publish src/MecaCalibrationWizard.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release
 ```
 
-**Current validation:** source XML and repository configuration checks have been done, but the v0.2.2 WPF app has not been compiled or hardware-tested in the developer environment. The CI build is configured and will run after all source files and workflow are pushed to GitHub.
+**Current validation:** source XML and repository configuration checks have been done, but the v0.2.2 WPF app has not been compiled or hardware-tested in the developer environment. The CI build is configured and will run when source is committed to GitHub.
 
 ## Manual smoke test (when pedals are available)
 
@@ -51,7 +51,8 @@ dotnet publish src/MecaCalibrationWizard.csproj -c Release -r win-x64 --self-con
 
 ## Automation / GitHub setup
 
-The repository is private and licensed under MIT. GitHub Actions will validate source checks, run logic tests and build a Windows artifact after the complete source is pushed. The weekly schedule checks the existing code and does not drive physical pedals or generate new features.
+Repository: `TommiPLaiho777/Meca-Calibration-Wizard` (private, MIT licensed).
+GitHub Actions validates algorithms using simulated and previously recorded samples on Linux and Windows, and publishes a portable Windows executable for download. The weekly scheduled run checks the current version; it does not independently develop new functionality or control a physical pedal.
 
 ## Roadmap / not yet implemented
 

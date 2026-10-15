@@ -1,0 +1,1384 @@
+{
+  "CaptureVersion": "v0.2.1",
+  "InputSource": "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
+  "Brake": [
+    {
+      "TimeMs": 4,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 53,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 98,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 144,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 194,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 238,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 284,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 333,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 378,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 428,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 473,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 518,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 568,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 613,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 659,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 708,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 753,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 799,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 848,
+      "WinmmValue": 47
+    },
+    {
+      "TimeMs": 893,
+      "WinmmValue": 2329
+    },
+    {
+      "TimeMs": 944,
+      "WinmmValue": 5553
+    },
+    {
+      "TimeMs": 988,
+      "WinmmValue": 10842
+    },
+    {
+      "TimeMs": 1034,
+      "WinmmValue": 16056
+    },
+    {
+      "TimeMs": 1083,
+      "WinmmValue": 21439
+    },
+    {
+      "TimeMs": 1128,
+      "WinmmValue": 26383
+    },
+    {
+      "TimeMs": 1174,
+      "WinmmValue": 30204
+    },
+    {
+      "TimeMs": 1223,
+      "WinmmValue": 39475
+    },
+    {
+      "TimeMs": 1269,
+      "WinmmValue": 44291
+    },
+    {
+      "TimeMs": 1319,
+      "WinmmValue": 51372
+    },
+    {
+      "TimeMs": 1363,
+      "WinmmValue": 55288
+    },
+    {
+      "TimeMs": 1409,
+      "WinmmValue": 59250
+    },
+    {
+      "TimeMs": 1458,
+      "WinmmValue": 62843
+    },
+    {
+      "TimeMs": 1504,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1549,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1598,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1643,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1693,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1738,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1784,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1833,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1878,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1926,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1973,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2018,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2067,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2113,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2159,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2207,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2253,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2299,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2346,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2393,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2440,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2488,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2533,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2584,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2628,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2674,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2723,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2768,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2819,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2864,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2909,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2959,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3004,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3053,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3098,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3144,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3194,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3238,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3284,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3334,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3378,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3428,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3473,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3518,
+      "WinmmValue": 64002
+    },
+    {
+      "TimeMs": 3568,
+      "WinmmValue": 60537
+    },
+    {
+      "TimeMs": 3613,
+      "WinmmValue": 57605
+    },
+    {
+      "TimeMs": 3659,
+      "WinmmValue": 53093
+    },
+    {
+      "TimeMs": 3708,
+      "WinmmValue": 48464
+    },
+    {
+      "TimeMs": 3753,
+      "WinmmValue": 44906
+    },
+    {
+      "TimeMs": 3799,
+      "WinmmValue": 40259
+    },
+    {
+      "TimeMs": 3848,
+      "WinmmValue": 36145
+    },
+    {
+      "TimeMs": 3893,
+      "WinmmValue": 33312
+    },
+    {
+      "TimeMs": 3944,
+      "WinmmValue": 26711
+    },
+    {
+      "TimeMs": 3988,
+      "WinmmValue": 17618
+    },
+    {
+      "TimeMs": 4033,
+      "WinmmValue": 17776
+    },
+    {
+      "TimeMs": 4083,
+      "WinmmValue": 15137
+    },
+    {
+      "TimeMs": 4128,
+      "WinmmValue": 6758
+    },
+    {
+      "TimeMs": 4174,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4224,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4268,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4319,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4364,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4408,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4459,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4503,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4553,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4598,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4643,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4693,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4738,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4784,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4834,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4878,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4924,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4973,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5018,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5068,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5113,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5159,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5208,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5253,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5299,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5348,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5393,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5442,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5488,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5534,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5582,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5629,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5674,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5722,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5768,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5819,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5862,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5909,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5958,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6004,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6053,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6098,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6144,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6193,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6238,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6284,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6334,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6378,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6428,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6473,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6519,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6569,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6614,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6659,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6709,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6753,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6804,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6848,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6893,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6944,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6988,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7034,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7084,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7128,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7174,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7223,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7268,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7319,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7364,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7409,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7459,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7504,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7553,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7599,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7644,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7694,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7738,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7784,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7833,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7878,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7924,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7974,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 8018,
+      "WinmmValue": 0
+    }
+  ],
+  "Throttle": [
+    {
+      "TimeMs": 21,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 66,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 111,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 161,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 206,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 256,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 301,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 346,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 396,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 441,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 486,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 536,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 581,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 631,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 676,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 721,
+      "WinmmValue": 581
+    },
+    {
+      "TimeMs": 771,
+      "WinmmValue": 4040
+    },
+    {
+      "TimeMs": 816,
+      "WinmmValue": 8258
+    },
+    {
+      "TimeMs": 861,
+      "WinmmValue": 12555
+    },
+    {
+      "TimeMs": 911,
+      "WinmmValue": 19015
+    },
+    {
+      "TimeMs": 956,
+      "WinmmValue": 25913
+    },
+    {
+      "TimeMs": 1006,
+      "WinmmValue": 33542
+    },
+    {
+      "TimeMs": 1051,
+      "WinmmValue": 41126
+    },
+    {
+      "TimeMs": 1096,
+      "WinmmValue": 49435
+    },
+    {
+      "TimeMs": 1146,
+      "WinmmValue": 57616
+    },
+    {
+      "TimeMs": 1191,
+      "WinmmValue": 63633
+    },
+    {
+      "TimeMs": 1236,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1286,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1331,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1381,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1426,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1471,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1521,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1566,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1611,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1661,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1706,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1756,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1801,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1846,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1894,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1942,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 1986,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2034,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2081,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2127,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2174,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2220,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2271,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2316,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2361,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2411,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2456,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2506,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2551,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2596,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2646,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2692,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2736,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2786,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2831,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2876,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2926,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 2971,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3021,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3066,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3111,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3161,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3206,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3256,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3301,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3346,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3396,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3441,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3486,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3536,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3581,
+      "WinmmValue": 65535
+    },
+    {
+      "TimeMs": 3631,
+      "WinmmValue": 62021
+    },
+    {
+      "TimeMs": 3676,
+      "WinmmValue": 49351
+    },
+    {
+      "TimeMs": 3721,
+      "WinmmValue": 40623
+    },
+    {
+      "TimeMs": 3771,
+      "WinmmValue": 30111
+    },
+    {
+      "TimeMs": 3816,
+      "WinmmValue": 21198
+    },
+    {
+      "TimeMs": 3861,
+      "WinmmValue": 13466
+    },
+    {
+      "TimeMs": 3911,
+      "WinmmValue": 6563
+    },
+    {
+      "TimeMs": 3956,
+      "WinmmValue": 2838
+    },
+    {
+      "TimeMs": 4006,
+      "WinmmValue": 848
+    },
+    {
+      "TimeMs": 4051,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4096,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4146,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4191,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4236,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4286,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4331,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4376,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4426,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4471,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4521,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4566,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4611,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4661,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4706,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4755,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4801,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4846,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4895,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4941,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 4986,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5034,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5081,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5128,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5175,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5221,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5269,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5316,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5361,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5410,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5456,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5503,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5549,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5596,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5643,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5690,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5736,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5783,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5830,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5881,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5926,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 5971,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6021,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6066,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6111,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6161,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6206,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6256,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6301,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6346,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6396,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6441,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6486,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6536,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6581,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6631,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6676,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6721,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6771,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6816,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6861,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6911,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 6956,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7006,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7051,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7096,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7146,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7191,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7236,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7286,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7331,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7381,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7426,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7471,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7520,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7566,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7611,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7661,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7706,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7756,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7800,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7846,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7893,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7941,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 7986,
+      "WinmmValue": 0
+    },
+    {
+      "TimeMs": 8036,
+      "WinmmValue": 0
+    }
+  ]
+}

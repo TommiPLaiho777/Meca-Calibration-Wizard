@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+release/
+*.user
+*.suo
+.vs/
+*.exe
+*.pdb
+*.zip
