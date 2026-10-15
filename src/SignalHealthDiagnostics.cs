@@ -5,7 +5,21 @@ internal sealed record SignalHealthStats(
     int SampleCount, double WindowSeconds, double SamplingRateHz,
     uint MinimumWinmm, uint MaximumWinmm, uint SpanWinmm,
     double MedianWinmm, double StandardDeviationWinmm,
-    uint LargestStepWinmm, int LargeStepCount, string Status);
+    uint LargestStepWinmm, int LargeStepCount, string Status)
+{
+    // A reported WinMM change is not proof of an electrical fault.
+    // This guidance is exported alongside Status and does not change device state.
+    public string Guidance => Status switch
+    {
+        "Pedal motion likely" =>
+            "Not a valid idle-noise check. Release all pedals and repeat; movement is not proof of EMI.",
+        "No variation resolved" =>
+            "No WinMM variation resolved. Windows deadzones may hide sensor noise.",
+        "No samples" or "Insufficient samples" =>
+            "Too little data. Release all pedals and repeat the check.",
+        _ => "WinMM variation alone cannot identify electrical interference."
+    };
+}
 
 internal static class SignalHealthDiagnostics
 {

@@ -177,6 +177,17 @@ static class Checks
             noiseRun.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i*40));
         Require(noiseRun.Complete && noiseRun.Analyze(0, 0, 65535).SpanWinmm == 0,
                 "fixed-time signal capture");
+        // Observed 2026-10-15 WinMM brake idle-check span reached 25769;
+        // this cannot be interpreted as idle electrical noise.
+        var observedMotion = Enumerable.Repeat(0u, 64).ToArray();
+        observedMotion[18] = 25769u;
+        var observedHealth = SignalHealthDiagnostics.Evaluate(observedMotion, 0, 65535, 3.045);
+        Require(observedHealth.Status == "Pedal motion likely" &&
+                observedHealth.Guidance.Contains("repeat", StringComparison.OrdinalIgnoreCase) &&
+                observedHealth.Guidance.Contains("not proof of EMI"),
+            "large WinMM movement must prompt repeat, not a false EMI diagnosis");
+        Require(flat.Guidance.Contains("deadzones"),
+            "zero variation must not imply a proven noise-free sensor");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
         Console.WriteLine("ALL CHECKS PASSED");

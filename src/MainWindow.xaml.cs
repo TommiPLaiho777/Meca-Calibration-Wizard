@@ -452,7 +452,7 @@ public partial class MainWindow : Window
         _lastNoise = null;
         _lastSignalHealth = null;
         CheckSignalButton.IsEnabled = false;
-        SignalText.Text = "Measuring raw signal spread for 3s…";
+        SignalText.Text = "Measuring WinMM signal for 3s… keep all pedals released.";
     }
 
     private string FormatNoise()
@@ -460,7 +460,7 @@ public partial class MainWindow : Window
         if (_lastSignalHealth is null) return "Not measured";
         return string.Join("\n", _lastSignalHealth.Select(x =>
             $"{x.Key}: Δ{x.Value.SpanWinmm} · σ{x.Value.StandardDeviationWinmm:0.0} · " +
-            $"{x.Value.SamplingRateHz:0.0} Hz · {x.Value.Status}"));
+            $"{x.Value.SamplingRateHz:0.0} Hz · {x.Value.Status} — {x.Value.Guidance}"));
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)

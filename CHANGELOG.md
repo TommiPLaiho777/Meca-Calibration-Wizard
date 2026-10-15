@@ -2,6 +2,7 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Real-hardware 2026-10-15 feedback: signal-health messages now tell users to repeat a contaminated at-rest check and distinguish movement from electrical noise. The report gains an additive `SignalHealth.*.Guidance` string; legacy fields stay unchanged.
 - Read-only WinMM idle signal-health stats with sample rate, median, standard deviation and abrupt-change counts.
 - Conservative interpretation of movement, zero span and possible Windows deadzones.
 - New `SignalHealth` export field, retaining `NoiseCheckRawSpan`.
