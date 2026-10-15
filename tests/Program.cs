@@ -115,6 +115,25 @@ static class Checks
                 stationary.Result.IntermediateSamples == 0, "idle signal is not full sweep");
         Console.WriteLine("PASS: no movement is not a valid full sweep");
 
+        var clock = new DateTime(2026, 10, 15, 10, 0, 0, DateTimeKind.Utc);
+        var signal = new NoiseRun(clock);
+        Require(signal.Statistics(0) is null, "empty signal has no statistics");
+        for (int i = 0; i < 4; i++)
+            signal.Observe(Axes(0, (uint)(i * 10)), clock.AddMilliseconds(i * 40));
+        var statistics = signal.Statistics(0)!;
+        Require(statistics.SampleCount == 4 && statistics.MinimumWinmm == 0 &&
+                statistics.MaximumWinmm == 30 && statistics.MedianWinmm == 15,
+            "WinMM count, range and median");
+        Require(Math.Abs(statistics.StandardDeviationWinmm - 11.18) < .01 &&
+                statistics.LargestAdjacentStepWinmm == 10 &&
+                statistics.ObservedSamplesPerSecond == 25,
+            "WinMM variation and observed sample rate");
+        var mutable = Axes(0, 100);
+        signal.Observe(mutable, clock.AddMilliseconds(160));
+        mutable[0] = 60000;
+        Require(signal.Statistics(0)!.MaximumWinmm == 100, "sample values are copied");
+        Console.WriteLine("PASS: WinMM signal statistics");
+
         var fixturePath = Path.Combine(AppContext.BaseDirectory, "fixtures", "real-winmm-sweeps-20261014.json");
         using (var fixture = JsonDocument.Parse(File.ReadAllText(fixturePath)))
         {

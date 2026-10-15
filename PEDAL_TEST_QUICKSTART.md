@@ -1,10 +1,10 @@
-# MECA CUP1 — Pedal field test (v0.2.2)
+# MECA CUP1 — Pedal field test (v0.2.3)
 
 **Expected time: 8–12 minutes.** Language: English. This test is READ-ONLY: it does not alter the USB controller, its firmware, Windows/DIView calibration, or Assetto Corsa Competizione settings.
 
 ## Get started
 
-1. Open the latest **successful** `Validate and build Windows app` run in GitHub Actions on the **main** branch. In **Artifacts**, download `MecaCalibrationWizard-v0.2.2-win-x64`.
+1. Open the latest **successful** `Validate and build Windows app` run in GitHub Actions on the **main** branch. In **Artifacts**, download `MecaCalibrationWizard-v0.2.3-win-x64`.
 2. Extract the GitHub artifact ZIP. If it contains a second ZIP, extract that too to a **new folder**; do not overwrite earlier working versions.
 3. Run `START_PEDAL_TEST.cmd` or `MecaCalibrationWizard.exe`. No .NET SDK or administrator access is required for the self-contained release.
 4. Keep all normal USB connections, grounding and protective-earth connections **unchanged**. Do not change power wiring. Leave pedals mechanically adjusted as usual. Close ACC during this diagnostic session.

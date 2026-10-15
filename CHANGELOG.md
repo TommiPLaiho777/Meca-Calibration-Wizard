@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.3 (2026-10-15, development)
+
+- Add read-only WinMM idle-signal statistics (median, standard deviation, maximum adjacent step, sample count and observed rate).
+- Export SignalHealthWinmm alongside backward-compatible NoiseCheckRawSpan.
+- Add deterministic regression tests. Hardware verification is still required.
+
+
 ## v0.2.2 (source staging, 2026-10-15)
 
 - Add in-app graph for WinMM brake and throttle sweep captures.

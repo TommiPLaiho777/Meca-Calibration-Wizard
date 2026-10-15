@@ -1,4 +1,4 @@
-# MECA CUP1 — Field-test notes (v0.2.2)
+# MECA CUP1 — Field-test notes (v0.2.3)
 
 Fill only the interesting fields. Send the exported JSON as the primary result; this file is optional.
 

@@ -1,6 +1,10 @@
-# Meca Calibration Wizard — v0.2.2
+# Meca Calibration Wizard — v0.2.3
 
 Visual, minimal-English **MECA CUP1 pedal setup assistant for Windows**. It is an independent project: **not related to a trail-braking coach, SuperContinuity or any other Rhino repository**.
+
+## New in v0.2.3
+
+Read-only WinMM signal statistics now include sample count, median, standard deviation, largest adjacent jump and observed sample rate. The new SignalHealthWinmm JSON field supplements the legacy NoiseCheckRawSpan. Flat Windows values do not prove the absence of EMI. This version requires CI and hardware testing.
 
 ## What is working / what is new
 

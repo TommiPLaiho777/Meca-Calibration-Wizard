@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<PedalKind, PedalCalibrationResult> _calibrationResults = new();
     private NoiseRun? _noise;
     private Dictionary<string, uint>? _lastNoise;
+    private Dictionary<string, NoiseAxisStatistics>? _lastNoiseStats;
     private InputSweepRun? _sweep;
     private PedalKind? _sweepKind;
     private DateTime _sweepStartUtc;
@@ -77,6 +78,7 @@ public partial class MainWindow : Window
             _sweep = null;
             _sweepResults.Clear();
             _lastNoise = null;
+        _lastNoiseStats = null;
             _mappings.Clear();
             _calibrationResults.Clear();
             UpdateMappingLabels();
@@ -212,6 +214,7 @@ public partial class MainWindow : Window
             _mappings.Clear();
             _calibrationResults.Clear();
             _lastNoise = null;
+        _lastNoiseStats = null;
             _sweepResults.Clear();
             UpdateMappingLabels();
             ChangeStep(0);
@@ -306,11 +309,13 @@ public partial class MainWindow : Window
 
         if (_noise is not null)
         {
-            _noise.Observe(sample);
+            _noise.Observe(sample, DateTime.UtcNow);
             if (_noise.Complete)
             {
                 _lastNoise = _mappings.ToDictionary(
                     p => p.Key.ToString(), p => _noise.Spread(p.Value.Axis));
+                _lastNoiseStats = _mappings.ToDictionary(
+                    p => p.Key.ToString(), p => _noise.Statistics(p.Value.Axis)!);
                 _noise = null;
                 CheckSignalButton.IsEnabled = true;
                 SignalText.Text = FormatNoise();
@@ -443,23 +448,17 @@ public partial class MainWindow : Window
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
         _noise = new NoiseRun();
         _lastNoise = null;
+        _lastNoiseStats = null;
         CheckSignalButton.IsEnabled = false;
-        SignalText.Text = "Measuring raw signal spread for 3s…";
+        SignalText.Text = "Measuring Windows joystick signal for 3s…";
     }
 
     private string FormatNoise()
     {
-        if (_lastNoise is null) return "Not measured";
-        return string.Join(" · ", _lastNoise.Select(x =>
-        {
-            if (!Enum.TryParse<PedalKind>(x.Key, out var kind) ||
-                !_mappings.TryGetValue(kind, out var map))
-                return $"{x.Key}: Δ{x.Value} input units";
-            var span = Math.Abs((double)map.Full - map.Rest);
-            double pct = span > 0 ? x.Value / span * 100 : 0;
-            string status = pct <= 0.3 ? "stable" : pct <= 1.0 ? "check" : "noisy";
-            return $"{x.Key}: Δ{x.Value} ({pct:0.00}% · {status})";
-        }));
+        if (_lastNoiseStats is null || _lastNoiseStats.Count == 0) return "Not measured";
+        return string.Join(" · ", _lastNoiseStats.Select(x =>
+            $"{x.Key}: Δ{x.Value.MaximumWinmm - x.Value.MinimumWinmm} WinMM · " +
+            $"σ{x.Value.StandardDeviationWinmm:0.0} · {x.Value.SampleCount} samples"));
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)
@@ -476,7 +475,7 @@ public partial class MainWindow : Window
         {
             var report = new
             {
-                App = "MECA Calibration Wizard v0.2.2",
+                App = "MECA Calibration Wizard v0.2.3",
                 ExportedAtUtc = DateTime.UtcNow,
                 Status = "READ_ONLY_PREVIEW_NOT_APPLIED_TO_WINDOWS",
                 Device = new { _device.Id, _device.Name },
@@ -497,7 +496,8 @@ public partial class MainWindow : Window
                         AtAxisLimit = c.AtAxisLimit
                     } : null
                 }),
-                NoiseCheckRawSpan = _lastNoise,
+                NoiseCheckRawSpan = _lastNoise, // legacy name: WinMM values, not sensor ADC
+                SignalHealthWinmm = _lastNoiseStats,
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
@@ -515,7 +515,7 @@ public partial class MainWindow : Window
                     Assessment = SweepDiagnostics.Evaluate(p.Value.Trace, _device.Min[_mappings[p.Key].Axis], _device.Max[_mappings[p.Key].Axis]),
                     p.Value.Trace
                 }),
-                Note = "WinMM values may already be calibrated by Windows; they are not guaranteed sensor ADC readings. Endpoint plateaus cannot reveal the physical force where clipping starts. Axis names differ from DIView. Read-only: no calibration is applied."
+                Note = "WinMM values may already be calibrated by Windows; they are not guaranteed sensor ADC readings. NoiseCheckRawSpan is a legacy field name for WinMM values. Zero variation cannot rule out EMI. Endpoint plateaus cannot reveal the physical force where clipping starts. Axis names differ from DIView. Read-only: no calibration is applied."
             };
             File.WriteAllText(save.FileName, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
             MessageBox.Show(this, "Preview report saved. Device calibration was not changed.", "Export complete",

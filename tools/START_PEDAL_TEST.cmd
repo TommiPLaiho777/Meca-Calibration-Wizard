@@ -7,7 +7,7 @@ if not exist "MecaCalibrationWizard.exe" (
   pause
   exit /b 1
 )
-echo MECA Calibration Wizard v0.2.2 - READ ONLY diagnostic preview
+echo MECA Calibration Wizard v0.2.3 - READ ONLY diagnostic preview
 echo No pedal or Windows calibration changes will be made.
 start "" "%~dp0MecaCalibrationWizard.exe"
 if errorlevel 1 (
