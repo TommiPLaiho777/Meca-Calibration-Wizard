@@ -45,6 +45,11 @@ jobs:
                       continue
                   if not member.isfile():
                       raise SystemExit(f"Unsupported archive entry: {name}")
+                  # Workflow writes need separate GitHub App permissions.
+                  # Import regular sources here; workflow will be created through the connector.
+                  if name == '.github/workflows/build-windows.yml':
+                      files += 1
+                      continue
                   dest = root.joinpath(*rel.parts)
                   dest.parent.mkdir(parents=True, exist_ok=True)
                   with tar.extractfile(member) as src:
