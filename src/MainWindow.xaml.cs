@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     private readonly Dictionary<PedalKind, PedalCalibrationResult> _calibrationResults = new();
     private NoiseRun? _noise;
     private Dictionary<string, uint>? _lastNoise;
+    private Dictionary<string, SignalHealthStats>? _lastSignalHealth;
+    private HidInventorySnapshot? _hidInventory;
     private InputSweepRun? _sweep;
     private PedalKind? _sweepKind;
     private DateTime _sweepStartUtc;
@@ -41,6 +43,9 @@ public partial class MainWindow : Window
 
     private void RefreshDevices()
     {
+        _hidInventory = null; // A new device refresh invalidates the previous manual inventory.
+        if (HidInventoryText is not null)
+            HidInventoryText.Text = "Not scanned. No HID device paths or serials are exported.";
         var previousId = _device?.Id;
         var devices = WinmmJoystick.FindDevices().ToList();
         DeviceCombo.ItemsSource = devices;
@@ -58,9 +63,17 @@ public partial class MainWindow : Window
             _sweepResults.Clear();
             _mappings.Clear();
             _calibrationResults.Clear();
+            _lastSignalHealth = null;
         }
         UpdateMappingLabels();
         UpdateDeviceInfo();
+        UpdateWinmmIds();
+    }
+
+    private void UpdateWinmmIds()
+    {
+        if (WinmmIdsText is not null)
+            WinmmIdsText.Text = _device?.WinmmIdsSummary ?? "No WinMM controller selected";
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshDevices();
@@ -77,10 +90,12 @@ public partial class MainWindow : Window
             _sweep = null;
             _sweepResults.Clear();
             _lastNoise = null;
+            _lastSignalHealth = null;
             _mappings.Clear();
             _calibrationResults.Clear();
             UpdateMappingLabels();
             UpdateDeviceInfo();
+            UpdateWinmmIds();
         }
     }
 
@@ -159,7 +174,7 @@ public partial class MainWindow : Window
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
                 ? "3 / 3 presses" : "0 / 3 presses";
             CaptureQualityText.Text = current is null ? "" :
-                $"{current.RepeatabilityLabel} · Peak spread {current.RepeatabilitySpreadPercent:0.0}%";
+                current.PeakSpreadSummary;
             CaptureFooter.Text = _mappings.ContainsKey(kind) ? "Preview captured. Press Start to measure again."
                 : "Release the pedal, then click Start. Wait for the PRESS prompt.";
             NextButton.Content = kind == PedalKind.Clutch && !_mappings.ContainsKey(kind) ? "Skip  →" : "Continue  →";
@@ -178,7 +193,7 @@ public partial class MainWindow : Window
             SweepProgress.Value = 0;
             UpdateSweepDetails();
             SummaryText.Text = string.Join("   |   ", _calibrationResults.Select(p =>
-                $"{p.Key}: {p.Value.RepeatabilitySpreadPercent:0.0}% peak spread ({p.Value.RepeatabilityLabel})"));
+                $"{p.Key}: {p.Value.PeakSpreadSummary}"));
         }
         else
         {
@@ -212,6 +227,7 @@ public partial class MainWindow : Window
             _mappings.Clear();
             _calibrationResults.Clear();
             _lastNoise = null;
+            _lastSignalHealth = null;
             _sweepResults.Clear();
             UpdateMappingLabels();
             ChangeStep(0);
@@ -290,7 +306,7 @@ public partial class MainWindow : Window
                     _calibrationResults[guide.Kind] = result;
                     _sweepResults.Remove(guide.Kind); // mapping changed; old sweep no longer applies
                     UpdateMappingLabels();
-                    CaptureQualityText.Text = $"{result.RepeatabilityLabel} · Peak spread {result.RepeatabilitySpreadPercent:0.0}%";
+                    CaptureQualityText.Text = result.PeakSpreadSummary;
                     CaptureFooter.Text = $"WinMM {WinmmJoystick.AxisNames[result.Mapping.Axis]} · Preview measured. No changes saved.";
                     NextButton.IsEnabled = true;
                     NextButton.Content = "Continue  →";
@@ -311,6 +327,9 @@ public partial class MainWindow : Window
             {
                 _lastNoise = _mappings.ToDictionary(
                     p => p.Key.ToString(), p => _noise.Spread(p.Value.Axis));
+                _lastSignalHealth = _mappings.ToDictionary(
+                    p => p.Key.ToString(),
+                    p => _noise.Analyze(p.Value.Axis, _device.Min[p.Value.Axis], _device.Max[p.Value.Axis]));
                 _noise = null;
                 CheckSignalButton.IsEnabled = true;
                 SignalText.Text = FormatNoise();
@@ -438,28 +457,36 @@ public partial class MainWindow : Window
         line.Points = points;
     }
 
+    private void ScanHid_Click(object sender, RoutedEventArgs e)
+    {
+        HidScanButton.IsEnabled = false;
+        try
+        {
+            _hidInventory = HidInterfaceInventory.Scan();
+            HidInventoryText.Text = _hidInventory.Summary;
+        }
+        finally
+        {
+            HidScanButton.IsEnabled = true;
+        }
+    }
+
     private void CheckSignal_Click(object sender, RoutedEventArgs e)
     {
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
         _noise = new NoiseRun();
         _lastNoise = null;
+        _lastSignalHealth = null;
         CheckSignalButton.IsEnabled = false;
-        SignalText.Text = "Measuring raw signal spread for 3s…";
+        SignalText.Text = "Measuring WinMM signal for 3s… keep all pedals released.";
     }
 
     private string FormatNoise()
     {
-        if (_lastNoise is null) return "Not measured";
-        return string.Join(" · ", _lastNoise.Select(x =>
-        {
-            if (!Enum.TryParse<PedalKind>(x.Key, out var kind) ||
-                !_mappings.TryGetValue(kind, out var map))
-                return $"{x.Key}: Δ{x.Value} input units";
-            var span = Math.Abs((double)map.Full - map.Rest);
-            double pct = span > 0 ? x.Value / span * 100 : 0;
-            string status = pct <= 0.3 ? "stable" : pct <= 1.0 ? "check" : "noisy";
-            return $"{x.Key}: Δ{x.Value} ({pct:0.00}% · {status})";
-        }));
+        if (_lastSignalHealth is null) return "Not measured";
+        return string.Join("\n", _lastSignalHealth.Select(x =>
+            $"{x.Key}: Δ{x.Value.SpanWinmm} · σ{x.Value.StandardDeviationWinmm:0.0} · " +
+            $"{x.Value.SamplingRateHz:0.0} Hz · {x.Value.Status} — {x.Value.Guidance}"));
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)
@@ -476,10 +503,16 @@ public partial class MainWindow : Window
         {
             var report = new
             {
-                App = "MECA Calibration Wizard v0.2.2",
+                App = "MECA Calibration Wizard v0.2.3",
                 ExportedAtUtc = DateTime.UtcNow,
                 Status = "READ_ONLY_PREVIEW_NOT_APPLIED_TO_WINDOWS",
-                Device = new { _device.Id, _device.Name },
+                Device = new
+                {
+                    _device.Id, _device.Name,
+                    WinmmManufacturerId = _device.ManufacturerId,
+                    WinmmProductId = _device.ProductId,
+                    WinmmIdsSource = "WINMM_JOYGETDEVCAPSW_NOT_VERIFIED_USB_VID_PID"
+                },
                 Pedals = _mappings.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[p.Value.Axis],
@@ -494,11 +527,15 @@ public partial class MainWindow : Window
                         RestSampleCount = c.RestSamples,
                         RepeatabilityPeakSpreadPercent = c.RepeatabilitySpreadPercent,
                         Repeatability = c.RepeatabilityLabel,
-                        AtAxisLimit = c.AtAxisLimit
+                        AtAxisLimit = c.AtAxisLimit,
+                        PeakSpreadInterpretation = c.PeakSpreadSummary,
+                        PeakSpreadAffectedByWinmmLimit = c.AtAxisLimit
                     } : null
                 }),
-                NoiseCheckRawSpan = _lastNoise,
+                NoiseCheckRawSpan = _lastNoise, // retained for report compatibility
+                SignalHealth = _lastSignalHealth,
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
+                HidInventory = _hidInventory, // optional explicit scan; aggregates only, no device paths
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],
@@ -515,7 +552,7 @@ public partial class MainWindow : Window
                     Assessment = SweepDiagnostics.Evaluate(p.Value.Trace, _device.Min[_mappings[p.Key].Axis], _device.Max[_mappings[p.Key].Axis]),
                     p.Value.Trace
                 }),
-                Note = "WinMM values may already be calibrated by Windows; they are not guaranteed sensor ADC readings. Endpoint plateaus cannot reveal the physical force where clipping starts. Axis names differ from DIView. Read-only: no calibration is applied."
+                Note = "WinMM values may already be calibrated by Windows: not raw sensor ADC or physical force. Zero reported idle variation cannot prove correct earthing or absence of EMI. Axis names differ from DIView. No calibration is applied."
             };
             File.WriteAllText(save.FileName, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
             MessageBox.Show(this, "Preview report saved. Device calibration was not changed.", "Export complete",

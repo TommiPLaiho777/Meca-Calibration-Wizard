@@ -39,9 +39,14 @@ internal static class WinmmJoystick
     [DllImport("winmm.dll", CharSet = CharSet.Unicode, EntryPoint = "joyGetDevCapsW")]
     private static extern uint joyGetDevCaps(uint joyId, ref JoyCaps caps, uint cbjc);
 
-    internal sealed record Device(uint Id, string Name, uint[] Min, uint[] Max)
+    internal sealed record Device(uint Id, string Name, uint[] Min, uint[] Max,
+        ushort? ManufacturerId = null, ushort? ProductId = null)
     {
         public override string ToString() => $"{Name}  (Joystick {Id})";
+        // WinMM capability IDs are NOT proof of USB VID/PID or a specific HID interface.
+        public string WinmmIdsSummary => ManufacturerId is { } mid && ProductId is { } pid
+            ? $"WinMM manufacturer 0x{mid:X4}, product 0x{pid:X4} (not verified USB VID/PID)"
+            : "WinMM manufacturer/product IDs unavailable";
     }
 
     internal static IReadOnlyList<Device> FindDevices()
@@ -63,7 +68,8 @@ internal static class WinmmJoystick
             {
                 if (max[axis] <= min[axis]) { min[axis] = 0; max[axis] = 65535; }
             }
-            found.Add(new Device(id, name, min, max));
+            found.Add(new Device(id, name, min, max,
+                ok ? caps.Mid : null, ok ? caps.Pid : null));
         }
         return found;
     }

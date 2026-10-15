@@ -1,0 +1,194 @@
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+
+namespace MecaCalibrationWizard;
+
+// Inventory only: never opens a HID device handle or reads/writes HID reports.
+// Device interface paths are transient; no serial numbers or paths leave this class.
+internal sealed record HidInterfaceGroup(ushort VendorId, ushort ProductId, int InterfaceCount);
+
+internal sealed record HidInventorySnapshot(
+    bool Available, string Status, int InterfaceCount, int WithoutVidPidCount,
+    IReadOnlyList<HidInterfaceGroup> Groups)
+{
+    public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_METADATA_NOT_SENSOR_ADC";
+
+    public string Summary
+    {
+        get
+        {
+            if (!Available) return Status;
+            var lines = new List<string>
+            {
+                $"Present HID interfaces: {InterfaceCount} (all devices, NOT matched to WinMM)",
+                $"VID/PID unavailable: {WithoutVidPidCount} interface(s)"
+            };
+            lines.AddRange(Groups.Take(12).Select(g =>
+                $"VID {g.VendorId:X4} / PID {g.ProductId:X4}: {g.InterfaceCount} interface(s)"));
+            if (Groups.Count > 12)
+                lines.Add($"+ {Groups.Count - 12} more groups (in JSON)");
+            lines.Add("Read-only identifiers; no sensor data or pedal association verified.");
+            return string.Join("\n", lines);
+        }
+    }
+}
+
+internal static class HidInterfaceInventory
+{
+    private const uint DigcfPresent = 0x2;
+    private const uint DigcfDeviceInterface = 0x10;
+    private const int ErrorNoMoreItems = 259;
+    private const int ErrorInsufficientBuffer = 122;
+    private const int MaxInterfaces = 512;
+    private static readonly Regex VidPidPattern = new(
+        @"(?:^|[#&])VID_([0-9A-F]{4})&PID_([0-9A-F]{4})(?=$|[&#])",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SpDeviceInterfaceData
+    {
+        public uint Size;
+        public Guid InterfaceClassGuid;
+        public uint Flags;
+        public IntPtr Reserved;
+    }
+
+    [DllImport("hid.dll", ExactSpelling = true)]
+    private static extern void HidD_GetHidGuid(out Guid hidGuid);
+
+    [DllImport("setupapi.dll", EntryPoint = "SetupDiGetClassDevsW",
+        CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr SetupDiGetClassDevs(
+        ref Guid classGuid, IntPtr enumerator, IntPtr hwndParent, uint flags);
+
+    [DllImport("setupapi.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetupDiEnumDeviceInterfaces(
+        IntPtr deviceInfoSet, IntPtr deviceInfoData, ref Guid classGuid,
+        uint memberIndex, ref SpDeviceInterfaceData interfaceData);
+
+    [DllImport("setupapi.dll", EntryPoint = "SetupDiGetDeviceInterfaceDetailW",
+        CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetupDiGetDeviceInterfaceDetail(
+        IntPtr deviceInfoSet, ref SpDeviceInterfaceData interfaceData,
+        IntPtr detailData, uint detailDataSize, out uint requiredSize,
+        IntPtr deviceInfoData);
+
+    [DllImport("setupapi.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetupDiDestroyDeviceInfoList(IntPtr deviceInfoSet);
+
+    internal static bool TryParseVidPid(string? devicePath, out ushort vid, out ushort pid)
+    {
+        vid = pid = 0;
+        if (string.IsNullOrEmpty(devicePath)) return false;
+        var match = VidPidPattern.Match(devicePath);
+        return match.Success &&
+               ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber,
+                   CultureInfo.InvariantCulture, out vid) &&
+               ushort.TryParse(match.Groups[2].Value, NumberStyles.HexNumber,
+                   CultureInfo.InvariantCulture, out pid);
+    }
+
+    // Pure aggregation for hardware-free tests. Never retain or export input paths.
+    internal static HidInventorySnapshot FromPaths(IEnumerable<string> paths)
+    {
+        var counts = new Dictionary<(ushort Vid, ushort Pid), int>();
+        int total = 0, unidentified = 0;
+        foreach (string path in paths)
+        {
+            total++;
+            if (!TryParseVidPid(path, out var vid, out var pid))
+            {
+                unidentified++;
+                continue;
+            }
+            var key = (vid, pid);
+            counts[key] = counts.GetValueOrDefault(key) + 1;
+        }
+        var groups = counts.OrderBy(p => p.Key.Vid).ThenBy(p => p.Key.Pid)
+            .Select(p => new HidInterfaceGroup(p.Key.Vid, p.Key.Pid, p.Value))
+            .ToArray();
+        return new(true, "HID interface metadata enumerated; WinMM association unverified.",
+            total, unidentified, groups);
+    }
+
+    private static HidInventorySnapshot Unavailable(string reason) =>
+        new(false, reason, 0, 0, Array.Empty<HidInterfaceGroup>());
+
+    // Explicit user action only. SetupAPI reads present interface metadata, not reports.
+    internal static HidInventorySnapshot Scan()
+    {
+        if (!OperatingSystem.IsWindows())
+            return Unavailable("HID interface scan is available only on Windows.");
+        try
+        {
+            HidD_GetHidGuid(out var hidGuid);
+            IntPtr deviceSet = SetupDiGetClassDevs(
+                ref hidGuid, IntPtr.Zero, IntPtr.Zero, DigcfPresent | DigcfDeviceInterface);
+            if (deviceSet == new IntPtr(-1))
+                return Unavailable($"HID enumeration unavailable (Windows error {Marshal.GetLastPInvokeError()}).");
+            try
+            {
+                var paths = new List<string>();
+                for (uint index = 0; index < MaxInterfaces; index++)
+                {
+                    var data = new SpDeviceInterfaceData
+                    {
+                        Size = (uint)Marshal.SizeOf<SpDeviceInterfaceData>()
+                    };
+                    if (!SetupDiEnumDeviceInterfaces(
+                        deviceSet, IntPtr.Zero, ref hidGuid, index, ref data))
+                    {
+                        int error = Marshal.GetLastPInvokeError();
+                        return error == ErrorNoMoreItems
+                            ? FromPaths(paths)
+                            : Unavailable($"HID enumeration incomplete (Windows error {error}).");
+                    }
+
+                    _ = SetupDiGetDeviceInterfaceDetail(
+                        deviceSet, ref data, IntPtr.Zero, 0, out uint requiredSize, IntPtr.Zero);
+                    int sizeError = Marshal.GetLastPInvokeError();
+                    uint minimumSize = IntPtr.Size == 8 ? 8u : 6u;
+                    if (sizeError != ErrorInsufficientBuffer ||
+                        requiredSize < minimumSize || requiredSize > 65536)
+                        return Unavailable("HID interface detail size unavailable or invalid.");
+
+                    IntPtr detail = Marshal.AllocHGlobal((int)requiredSize);
+                    try
+                    {
+                        Marshal.WriteInt32(detail, IntPtr.Size == 8 ? 8 : 6);
+                        if (!SetupDiGetDeviceInterfaceDetail(
+                            deviceSet, ref data, detail, requiredSize, out _, IntPtr.Zero))
+                            return Unavailable($"HID interface detail unavailable (Windows error {Marshal.GetLastPInvokeError()}).");
+                        // The WCHAR DevicePath field begins at byte offset 4 in the native buffer.
+                        paths.Add(Marshal.PtrToStringUni(IntPtr.Add(detail, 4)) ?? string.Empty);
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(detail);
+                    }
+                }
+                return Unavailable("More than 512 HID interfaces; inventory not reported.");
+            }
+            finally
+            {
+                _ = SetupDiDestroyDeviceInfoList(deviceSet);
+            }
+        }
+        catch (DllNotFoundException)
+        {
+            return Unavailable("Windows HID enumeration API unavailable.");
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return Unavailable("Windows HID enumeration entry point unavailable.");
+        }
+        catch (BadImageFormatException)
+        {
+            return Unavailable("Windows HID enumeration architecture mismatch.");
+        }
+    }
+}

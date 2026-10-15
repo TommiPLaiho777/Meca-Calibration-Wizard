@@ -53,6 +53,9 @@ static class Checks
         Require(brake.Result.RepeatabilitySpreadPercent > 2 &&
                 brake.Result.RepeatabilitySpreadPercent < 3, "repeatability percentage");
         Require(brake.Result.Mapping.Percent(20250) is > 49 and < 51, "preview scaling");
+        Require(brake.Result.PeakSpreadSummary.Contains("WinMM peak spread") &&
+                brake.Result.PeakSpreadSummary.Contains("not a physical-force test"),
+            "non-saturated WinMM peaks are not physical-force measurements");
         Console.WriteLine("PASS: three-press brake calibration");
 
         var throttle = Session(PedalKind.Throttle, 3, false,
@@ -61,7 +64,15 @@ static class Checks
             "R axis recognition with X reserved");
         Require(throttle.Result.Mapping.Full == 65500, "throttle median");
         Require(throttle.Result.AtAxisLimit, "clipped throttle limit is flagged");
-        Console.WriteLine("PASS: throttle axis and reserved axes");
+        Require(throttle.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
+                !throttle.Result.PeakSpreadSummary.Contains("%"),
+            "saturated WinMM peaks must not display a misleading percentage");
+        var observedBrake = Session(PedalKind.Brake, 0, false, new uint[] { 45842, 65535, 65535 });
+        Require(observedBrake.Result is { AtAxisLimit: true } &&
+                observedBrake.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
+                !observedBrake.Result.PeakSpreadSummary.Contains("%"),
+            "2026-10-15 hardware peak pattern must not imply force repeatability");
+        Console.WriteLine("PASS: axis limits correctly qualify peak-spread interpretation");
 
         var inverted = Session(PedalKind.Clutch, 2, true, new uint[] { 42000, 42500, 42000 });
         Require(inverted.Phase == GuidePhase.Complete && inverted.Result is not null,
@@ -143,6 +154,76 @@ static class Checks
         Require(SweepDiagnostics.Evaluate(missingRelease, 0, 65535).Status == "Incomplete sweep",
             "missing release fails the quality check");
         Console.WriteLine("PASS: invalid sweep cases correctly rejected");
+
+
+        var flat = SignalHealthDiagnostics.Evaluate(Enumerable.Repeat(0u, 76).ToArray(), 0, 65535, 3);
+        Require(flat.SampleCount == 76 && flat.SpanWinmm == 0 &&
+                flat.StandardDeviationWinmm == 0 && flat.SamplingRateHz == 25 &&
+                flat.Status == "No variation resolved", "stable does not mean proven EMI-free");
+        var readings = Enumerable.Repeat(1000u, 76).ToArray();
+        readings[25] = 4000;
+        var motion = SignalHealthDiagnostics.Evaluate(readings, 0, 65535, 3);
+        Require(motion.SpanWinmm == 3000 && motion.LargeStepCount == 2 &&
+                motion.Status == "Pedal motion likely", "large signal not labelled EMI");
+        var small = SignalHealthDiagnostics.Evaluate(
+            new uint[] { 1000, 1010, 1020, 990, 1005, 1015, 995, 1005 }, 0, 65535, 1);
+        Require(small.StandardDeviationWinmm > 0 && small.Status == "Small variation resolved",
+                "smaller variation is retained");
+        Require(SignalHealthDiagnostics.Evaluate(Array.Empty<uint>(), 0, 65535, 3).Status == "No samples",
+                "empty recording is not a stable result");
+        var fixedClock = new DateTime(2026, 10, 15, 12, 0, 0, DateTimeKind.Utc);
+        var noiseRun = new NoiseRun(fixedClock);
+        for (int i = 0; i <= 75; i++)
+            noiseRun.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i*40));
+        Require(noiseRun.Complete && noiseRun.Analyze(0, 0, 65535).SpanWinmm == 0,
+                "fixed-time signal capture");
+        // Observed 2026-10-15 WinMM brake idle-check span reached 25769;
+        // this cannot be interpreted as idle electrical noise.
+        var observedMotion = Enumerable.Repeat(0u, 64).ToArray();
+        observedMotion[18] = 25769u;
+        var observedHealth = SignalHealthDiagnostics.Evaluate(observedMotion, 0, 65535, 3.045);
+        Require(observedHealth.Status == "Pedal motion likely" &&
+                observedHealth.Guidance.Contains("repeat", StringComparison.OrdinalIgnoreCase) &&
+                observedHealth.Guidance.Contains("not proof of EMI"),
+            "large WinMM movement must prompt repeat, not a false EMI diagnosis");
+        Require(flat.Guidance.Contains("deadzones"),
+            "zero variation must not imply a proven noise-free sensor");
+        Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
+
+        var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],
+            0x045E, 0x1234);
+        Require(caps.ManufacturerId == 0x045E && caps.ProductId == 0x1234 &&
+                caps.WinmmIdsSummary.Contains("not verified USB VID/PID"),
+            "WinMM capability IDs must not be mistaken for verified USB IDs");
+        Require(Device.ManufacturerId is null && Device.ProductId is null &&
+                Device.WinmmIdsSummary.Contains("unavailable"),
+            "missing WinMM capabilities must not invent hardware identifiers");
+        Console.WriteLine("PASS: WinMM capability ID provenance");
+
+        // Real Windows HID paths can include private instance/serial information.
+        // The inventory must export only grouped VID/PID counts, never paths.
+        var hid = HidInterfaceInventory.FromPaths(new[]
+        {
+            @"\\?\hid#vid_1234&pid_abcd&mi_00#PRIVATE_SERIAL_A#{GUID}",
+            @"\\?\HID#VID_1234&PID_ABCD&COL01#PRIVATE_SERIAL_B#{GUID}",
+            @"\\?\hid#VID_1A2B&PID_3C4D#PRIVATE_SERIAL_C#{GUID}",
+            @"\\?\hid#col01#PRIVATE_SERIAL_D#{GUID}",
+            @"\\?\hid#VID_123&PID_9999#PRIVATE_SERIAL_E#{GUID}"
+        });
+        Require(hid.Available && hid.InterfaceCount == 5 &&
+                hid.WithoutVidPidCount == 2 && hid.Groups.Count == 2 &&
+                hid.Groups.Single(g => g.VendorId == 0x1234).InterfaceCount == 2,
+            "HID interface inventory aggregates identifiers without inventing a WinMM match");
+        var hidJson = JsonSerializer.Serialize(hid);
+        Require(hidJson.Contains("WINDOWS_SETUPAPI_HID_INTERFACE_METADATA_NOT_SENSOR_ADC") &&
+                !hidJson.Contains("PRIVATE_SERIAL") && !hidJson.Contains("DevicePath"),
+            "HID report must never contain private device instance paths");
+        Require(!HidInterfaceInventory.TryParseVidPid(
+                @"\\?\hid#notvid_1234&pid_abcd#PRIVATE_SERIAL", out _, out _) &&
+                !HidInterfaceInventory.TryParseVidPid(
+                @"\\?\hid#pid_abcd&vid_1234#PRIVATE_SERIAL", out _, out _),
+            "invalid HID identifier patterns must not be accepted");
+        Console.WriteLine("PASS: read-only HID interface ID aggregation and path privacy");
 
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
