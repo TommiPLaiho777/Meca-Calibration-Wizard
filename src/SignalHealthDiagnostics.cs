@@ -5,7 +5,8 @@ internal sealed record SignalHealthStats(
     int SampleCount, double WindowSeconds, double SamplingRateHz,
     uint MinimumWinmm, uint MaximumWinmm, uint SpanWinmm,
     double MedianWinmm, double StandardDeviationWinmm,
-    uint LargestStepWinmm, int LargeStepCount, string Status)
+    uint LargestStepWinmm, int LargeStepCount, string Status,
+    double? LargestSamplingGapSeconds = null)
 {
     // A reported WinMM change is not proof of an electrical fault.
     // This guidance is exported alongside Status and does not change device state.
@@ -28,15 +29,22 @@ internal static class SignalHealthDiagnostics
     // Conservative minimum *average* polling rate for a useful at-rest assessment.
     // Not a claim about the USB HID report rate or native load-cell sampling.
     private const double MinimumUsefulAverageSamplingRateHz = 5.0;
+    // A one-second blind spot makes a 3s or 10s at-rest check inconclusive,
+    // even if the remaining samples yield a high average polling rate.
+    private const double MaximumUsefulSamplingGapSeconds = 1.0;
 
     public static SignalHealthStats Evaluate(
-        IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds)
+        IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds,
+        double? largestSamplingGapSeconds = null)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid WinMM axis range");
+        if (largestSamplingGapSeconds is double gap && (!double.IsFinite(gap) || gap < 0))
+            throw new ArgumentOutOfRangeException(nameof(largestSamplingGapSeconds));
         if (!double.IsFinite(windowSeconds) || windowSeconds < 0)
             throw new ArgumentOutOfRangeException(nameof(windowSeconds));
         if (readings.Count == 0)
-            return new(0, windowSeconds, 0, 0, 0, 0, 0, 0, 0, 0, "No samples");
+            return new(0, windowSeconds, 0, 0, 0, 0, 0, 0, 0, 0, "No samples",
+                largestSamplingGapSeconds);
         var sorted = readings.OrderBy(x => x).ToArray();
         double median = sorted.Length % 2 == 0
             ? ((double)sorted[sorted.Length/2-1] + sorted[sorted.Length/2])/2
@@ -58,7 +66,8 @@ internal static class SignalHealthDiagnostics
         // A flat trace sampled too sparsely must not be presented as a valid
         // zero-variation result. Preserve the numerical metrics for review.
         string status = readings.Count < 8 || windowSeconds < .5 ||
-                        averageRate < MinimumUsefulAverageSamplingRateHz
+                        averageRate < MinimumUsefulAverageSamplingRateHz ||
+                        largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
             ? "Insufficient samples"
             : span > .02 * scale ? "Pedal motion likely"
             : span > .003 * scale ? "Variation observed"
@@ -67,6 +76,8 @@ internal static class SignalHealthDiagnostics
         return new(readings.Count, Math.Round(windowSeconds, 3),
             Math.Round(averageRate, 2),
             minimum, maximum, span, Math.Round(median, 2), Math.Round(sd, 2),
-            largest, jumps, status);
+            largest, jumps, status,
+            largestSamplingGapSeconds.HasValue
+                ? Math.Round(largestSamplingGapSeconds.Value, 3) : null);
     }
 }

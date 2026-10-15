@@ -2,6 +2,7 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Flag >1.0s gaps between WinMM idle-check samples (including capture-start delay) as `Insufficient samples`, even if average rate is adequate; export additive `LargestSamplingGapSeconds`, show it in Live Test and cover normal, delayed and bursty polling in deterministic tests. Read-only timing quality only; physical GUI confirmation pending.
 - Guard against false stationary-signal reassurance when WinMM polling is too sparse: below 5 Hz average, the read-only health result is `Insufficient samples` even if its span is zero. Keep all numeric metrics; add regression tests for sparse and threshold captures. This heuristic is not a HID or ADC sampling-rate measurement; GUI/hardware confirmation pending.
 - Add a user-triggered 10-second WinMM at-rest signal check alongside the existing 3-second check. Show remaining time, cancel cleanly on controller loss, preserve existing JSON signal-health fields and read-only behavior. Deterministic duration and sampling-rate regression tests; GUI/hardware check pending.
 - Compare two explicitly requested HID interface inventories by VID/PID count changes only. Show a conservative English diff in Advanced and optionally export `HidInventoryComparison`; no serials, raw paths, reports or WinMM association. Add synthetic add/remove, unchanged-count and failed-scan tests; hardware GUI verification pending.

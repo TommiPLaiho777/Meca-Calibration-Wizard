@@ -232,6 +232,39 @@ static class Checks
                 sparseMoving.SpanWinmm == 25000 &&
                 sparseMoving.LargeStepCount == 2,
             "sparse recordings must retain numerical motion evidence");
+        // A burst of valid samples before and after a 1.4s polling outage
+        // must not be labelled stable merely because the average rate is high.
+        var gapClock = new DateTime(2026, 10, 16, 0, 0, 0, DateTimeKind.Utc);
+        var gappedRun = new NoiseRun(gapClock);
+        for (int i = 0; i <= 20; i++)
+            gappedRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(i * 40));
+        for (int i = 0; i <= 20; i++)
+            gappedRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(2200 + i * 40));
+        var gappedHealth = gappedRun.Analyze(0, 0, 65535);
+        Require(gappedRun.Complete && gappedHealth.SampleCount == 42 &&
+                gappedHealth.SamplingRateHz > 5 &&
+                gappedHealth.LargestSamplingGapSeconds == 1.4 &&
+                gappedHealth.Status == "Insufficient samples" &&
+                gappedHealth.SpanWinmm == 0,
+            "long WinMM polling gap must override misleading average sample rate");
+        var steadyRun = new NoiseRun(gapClock);
+        for (int i = 0; i <= 75; i++)
+            steadyRun.Observe(Axes(), gapClock.AddMilliseconds(i * 40));
+        var steadyHealth = steadyRun.Analyze(0, 0, 65535);
+        Require(steadyHealth.LargestSamplingGapSeconds == 0.04 &&
+                steadyHealth.Status == "No variation resolved",
+            "normal 40ms WinMM polling must remain acceptable");
+        var firstSampleDelayed = new NoiseRun(gapClock);
+        for (int i = 0; i <= 40; i++)
+            firstSampleDelayed.Observe(Axes(), gapClock.AddMilliseconds(1400 + i * 40));
+        Require(firstSampleDelayed.Analyze(0, 0, 65535).LargestSamplingGapSeconds == 1.4 &&
+                firstSampleDelayed.Analyze(0, 0, 65535).Status == "Insufficient samples",
+            "initial blind spot must also invalidate idle-signal quality");
+        Require(SignalHealthDiagnostics.Evaluate(
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.0).Status == "No variation resolved" &&
+                SignalHealthDiagnostics.Evaluate(
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.001).Status == "Insufficient samples",
+            "one-second gap threshold must be inclusive");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
         var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],

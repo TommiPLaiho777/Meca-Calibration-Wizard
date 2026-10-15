@@ -519,7 +519,9 @@ public partial class MainWindow : Window
         if (_lastSignalHealth is null) return "Not measured";
         return string.Join("\n", _lastSignalHealth.Select(x =>
             $"{x.Key}: Δ{x.Value.SpanWinmm} · σ{x.Value.StandardDeviationWinmm:0.0} · " +
-            $"{x.Value.SamplingRateHz:0.0} Hz · {x.Value.Status} — {x.Value.Guidance}"));
+            $"{x.Value.SamplingRateHz:0.0} Hz" +
+            (x.Value.LargestSamplingGapSeconds is double gap ? $" · max gap {gap:0.00}s" : "") +
+            $" · {x.Value.Status} — {x.Value.Guidance}"));
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)

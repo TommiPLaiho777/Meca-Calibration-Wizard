@@ -19,6 +19,7 @@ internal sealed class NoiseRun
     public double RequestedDurationSeconds { get; }
     public DateTime StartedUtc { get; }
     private DateTime _lastUtc;
+    private double _largestSamplingGapSeconds;
     private readonly List<uint>[] _samples =
         Enumerable.Range(0, 6).Select(_ => new List<uint>()).ToArray();
     public bool HasSamples => _samples[0].Count > 0;
@@ -35,11 +36,17 @@ internal sealed class NoiseRun
     public void Observe(uint[] values, DateTime? atUtc = null)
     {
         if (values.Length != 6) return;
+        var now = atUtc ?? DateTime.UtcNow;
+        // Include the delay before the first sample; a high average rate
+        // can otherwise hide a long interval without any WinMM readings.
+        _largestSamplingGapSeconds = Math.Max(_largestSamplingGapSeconds,
+            Math.Abs((now - _lastUtc).TotalSeconds));
         for (int i = 0; i < 6; i++) _samples[i].Add(values[i]);
-        _lastUtc = atUtc ?? DateTime.UtcNow;
+        _lastUtc = now;
     }
     public uint Spread(int axis) => HasSamples ? _samples[axis].Max()-_samples[axis].Min() : 0;
     public SignalHealthStats Analyze(int axis, uint min, uint max) =>
         SignalHealthDiagnostics.Evaluate(_samples[axis], min, max,
-            Math.Max(0, (_lastUtc - StartedUtc).TotalSeconds));
+            Math.Max(0, (_lastUtc - StartedUtc).TotalSeconds),
+            _largestSamplingGapSeconds);
 }
