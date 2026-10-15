@@ -34,6 +34,41 @@ internal sealed record HidInventorySnapshot(
     }
 }
 
+ // Count-only comparison. Never stores device paths or asserts a WinMM/HID match.
+internal sealed record HidInventoryCountChange(
+    ushort VendorId, ushort ProductId, int PreviousCount, int CurrentCount)
+{
+    public int Delta => CurrentCount - PreviousCount;
+}
+
+internal sealed record HidInventoryComparison(
+    int PreviousInterfaceCount, int CurrentInterfaceCount,
+    int PreviousUnidentifiedCount, int CurrentUnidentifiedCount,
+    IReadOnlyList<HidInventoryCountChange> Changes)
+{
+    public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_COUNT_DIFFERENCE_NOT_DEVICE_MATCH";
+
+    public string Summary
+    {
+        get
+        {
+            var lines = new List<string>
+            {
+                $"All HID interfaces: {PreviousInterfaceCount} -> {CurrentInterfaceCount}",
+                $"Without VID/PID: {PreviousUnidentifiedCount} -> {CurrentUnidentifiedCount}"
+            };
+            lines.AddRange(Changes.Take(12).Select(c =>
+                $"VID {c.VendorId:X4} / PID {c.ProductId:X4}: {c.PreviousCount} -> {c.CurrentCount}"));
+            if (Changes.Count > 12)
+                lines.Add($"+ {Changes.Count - 12} more changes (in JSON)");
+            if (Changes.Count == 0 && PreviousUnidentifiedCount == CurrentUnidentifiedCount)
+                lines.Add("No grouped count changes; individual interfaces may still have changed.");
+            lines.Add("Changes cover all HID devices; not a verified MECA or WinMM match.");
+            return string.Join("\n", lines);
+        }
+    }
+}
+
 internal static class HidInterfaceInventory
 {
     private const uint DigcfPresent = 0x2;
@@ -113,6 +148,23 @@ internal static class HidInterfaceInventory
             .ToArray();
         return new(true, "HID interface metadata enumerated; WinMM association unverified.",
             total, unidentified, groups);
+    }
+
+    // Compare successive complete scans. Equal VID/PID counts cannot prove identity.
+    internal static HidInventoryComparison Compare(HidInventorySnapshot previous, HidInventorySnapshot current)
+    {
+        if (!previous.Available || !current.Available)
+            throw new ArgumentException("Only complete HID inventories can be compared.");
+        var before = previous.Groups.ToDictionary(g => (g.VendorId, g.ProductId), g => g.InterfaceCount);
+        var after = current.Groups.ToDictionary(g => (g.VendorId, g.ProductId), g => g.InterfaceCount);
+        var changes = before.Keys.Concat(after.Keys).Distinct()
+            .OrderBy(k => k.VendorId).ThenBy(k => k.ProductId)
+            .Select(k => new HidInventoryCountChange(
+                k.VendorId, k.ProductId, before.GetValueOrDefault(k), after.GetValueOrDefault(k)))
+            .Where(c => c.Delta != 0).ToArray();
+        return new HidInventoryComparison(
+            previous.InterfaceCount, current.InterfaceCount,
+            previous.WithoutVidPidCount, current.WithoutVidPidCount, changes);
     }
 
     private static HidInventorySnapshot Unavailable(string reason) =>

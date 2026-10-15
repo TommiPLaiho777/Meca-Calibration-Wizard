@@ -231,7 +231,7 @@
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,15,0,0" Padding="14" CornerRadius="10">
                             <StackPanel>
                                 <TextBlock Text="HID INTERFACE INVENTORY · READ-ONLY" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
-                                <TextBlock Text="Optional scan of all present Windows HID interfaces. It does not identify the pedal controller or read sensor values."
+                                <TextBlock Text="Scan once, then rescan to compare HID counts after a user-controlled connection change. No pedal identity or sensor values are inferred."
                                            Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,8"/>
                                 <Button x:Name="HidScanButton" Content="Scan HID identifiers" Click="ScanHid_Click"
                                         HorizontalAlignment="Left"/>

@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private Dictionary<string, uint>? _lastNoise;
     private Dictionary<string, SignalHealthStats>? _lastSignalHealth;
     private HidInventorySnapshot? _hidInventory;
+    private HidInventoryComparison? _hidInventoryComparison;
     private InputSweepRun? _sweep;
     private PedalKind? _sweepKind;
     private DateTime _sweepStartUtc;
@@ -43,7 +44,9 @@ public partial class MainWindow : Window
 
     private void RefreshDevices()
     {
-        _hidInventory = null; // A new device refresh invalidates the previous manual inventory.
+        _hidInventory = null; // Refresh starts a new explicit comparison sequence.
+        _hidInventoryComparison = null;
+        if (HidScanButton is not null) HidScanButton.Content = "Scan HID identifiers";
         if (HidInventoryText is not null)
             HidInventoryText.Text = "Not scanned. No HID device paths or serials are exported.";
         var previousId = _device?.Id;
@@ -462,8 +465,18 @@ public partial class MainWindow : Window
         HidScanButton.IsEnabled = false;
         try
         {
-            _hidInventory = HidInterfaceInventory.Scan();
-            HidInventoryText.Text = _hidInventory.Summary;
+            var previous = _hidInventory;
+            var current = HidInterfaceInventory.Scan();
+            _hidInventoryComparison = previous is { Available: true } && current.Available
+                ? HidInterfaceInventory.Compare(previous, current) : null;
+            _hidInventory = current;
+            HidInventoryText.Text = current.Summary +
+                (current.Available
+                    ? _hidInventoryComparison is null
+                        ? "\nScan again to compare grouped counts."
+                        : "\n\nCHANGES SINCE PREVIOUS SCAN\n" + _hidInventoryComparison.Summary
+                    : "\nComparison unavailable; scan again when enumeration works.");
+            HidScanButton.Content = current.Available ? "Rescan & compare" : "Scan HID identifiers";
         }
         finally
         {
@@ -536,6 +549,7 @@ public partial class MainWindow : Window
                 SignalHealth = _lastSignalHealth,
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
                 HidInventory = _hidInventory, // optional explicit scan; aggregates only, no device paths
+                HidInventoryComparison = _hidInventoryComparison, // count-only difference between scans
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],
