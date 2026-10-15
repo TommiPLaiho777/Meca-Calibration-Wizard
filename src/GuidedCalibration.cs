@@ -12,6 +12,11 @@ internal sealed record PedalCalibrationResult(
     int RestSamples,
     bool AtAxisLimit)
 {
+    // WinMM axis endpoints do not establish physical pedal-force repeatability.
+    public string PeakSpreadSummary => AtAxisLimit
+        ? "Windows axis limit reached - physical-force repeatability unknown"
+        : $"WinMM peak spread {RepeatabilitySpreadPercent:0.0}% - not a physical-force test";
+
     public string RepeatabilityLabel => AtAxisLimit ? "Axis limit reached" :
         RepeatabilitySpreadPercent switch
         {

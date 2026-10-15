@@ -6,6 +6,8 @@
 - Conservative interpretation of movement, zero span and possible Windows deadzones.
 - New `SignalHealth` export field, retaining `NoiseCheckRawSpan`.
 - Automated regression cases for stable, moving, slight variation and timed captures.
+- When guided peaks reach the Windows axis limit, show physical-force repeatability as unknown rather than a misleading peak-spread percentage.
+- Preserve numeric WinMM peak-spread export for compatibility; add explicit interpretation and saturation flag in JSON.
 
 
 ## v0.2.2 (source staging, 2026-10-15)
