@@ -1,0 +1,66 @@
+name: One-time import of v0.2.2 source
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify and extract staged source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, io, pathlib, tarfile
+          root = pathlib.Path.cwd()
+          parts = [root / f"bootstrap/source-0{i}.b64" for i in range(1, 5)]
+          if any(not p.is_file() for p in parts):
+              raise SystemExit("Expected four archive parts, refusing partial import")
+          encoded = ''.join(p.read_text(encoding='ascii').strip() for p in parts)
+          archive = base64.b64decode(encoded, validate=True)
+          digest = hashlib.sha256(archive).hexdigest()
+          expected = '63bc9afef5a265565b4f09724b3409ae4bb24a6ca5bdb279e13a547ba3164b93'
+          if digest != expected:
+              raise SystemExit(f"Source SHA-256 mismatch: {digest}")
+          files = 0
+          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:xz') as tar:
+              for member in tar:
+                  name = member.name.removeprefix('./')
+                  rel = pathlib.PurePosixPath(name)
+                  if not name or name == '.':
+                      continue
+                  if rel.is_absolute() or '..' in rel.parts:
+                      raise SystemExit(f"Unsafe archive entry: {name}")
+                  if member.isdir():
+                      continue
+                  if not member.isfile():
+                      raise SystemExit(f"Unsupported archive entry: {name}")
+                  dest = root.joinpath(*rel.parts)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  with tar.extractfile(member) as src:
+                      dest.write_bytes(src.read())
+                  files += 1
+          if files != 23:
+              raise SystemExit(f"Expected 23 project files, got {files}")
+          print(f"Imported {files} files, verified SHA-256: {digest}")
+          PY
+      - name: Commit source with original MIT license preserved
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -r bootstrap
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: import MECA Calibration Wizard v0.2.2 source and CI"
+          git push
