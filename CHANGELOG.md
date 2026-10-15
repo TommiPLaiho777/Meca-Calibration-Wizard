@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (after v0.2.2)
+
+- Clarify that Windows-axis saturation makes physical-force repeatability unknown. Display an explicit warning instead of misleading peak-spread percentages when the axis limit is reached.
+- Add additive JSON interpretation fields while preserving existing v0.2.2 report fields for compatibility. Read-only behavior unchanged.
+
 ## v0.2.2 (source staging, 2026-10-15)
 
 - Add in-app graph for WinMM brake and throttle sweep captures.

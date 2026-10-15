@@ -159,7 +159,7 @@ public partial class MainWindow : Window
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
                 ? "3 / 3 presses" : "0 / 3 presses";
             CaptureQualityText.Text = current is null ? "" :
-                $"{current.RepeatabilityLabel} · Peak spread {current.RepeatabilitySpreadPercent:0.0}%";
+                current.PeakSpreadSummary;
             CaptureFooter.Text = _mappings.ContainsKey(kind) ? "Preview captured. Press Start to measure again."
                 : "Release the pedal, then click Start. Wait for the PRESS prompt.";
             NextButton.Content = kind == PedalKind.Clutch && !_mappings.ContainsKey(kind) ? "Skip  →" : "Continue  →";
@@ -178,7 +178,7 @@ public partial class MainWindow : Window
             SweepProgress.Value = 0;
             UpdateSweepDetails();
             SummaryText.Text = string.Join("   |   ", _calibrationResults.Select(p =>
-                $"{p.Key}: {p.Value.RepeatabilitySpreadPercent:0.0}% peak spread ({p.Value.RepeatabilityLabel})"));
+                $"{p.Key}: {p.Value.PeakSpreadSummary}"));
         }
         else
         {
@@ -290,7 +290,7 @@ public partial class MainWindow : Window
                     _calibrationResults[guide.Kind] = result;
                     _sweepResults.Remove(guide.Kind); // mapping changed; old sweep no longer applies
                     UpdateMappingLabels();
-                    CaptureQualityText.Text = $"{result.RepeatabilityLabel} · Peak spread {result.RepeatabilitySpreadPercent:0.0}%";
+                    CaptureQualityText.Text = result.PeakSpreadSummary;
                     CaptureFooter.Text = $"WinMM {WinmmJoystick.AxisNames[result.Mapping.Axis]} · Preview measured. No changes saved.";
                     NextButton.IsEnabled = true;
                     NextButton.Content = "Continue  →";
@@ -494,7 +494,9 @@ public partial class MainWindow : Window
                         RestSampleCount = c.RestSamples,
                         RepeatabilityPeakSpreadPercent = c.RepeatabilitySpreadPercent,
                         Repeatability = c.RepeatabilityLabel,
-                        AtAxisLimit = c.AtAxisLimit
+                        AtAxisLimit = c.AtAxisLimit,
+                        PeakSpreadInterpretation = c.PeakSpreadSummary,
+                        PeakSpreadAffectedByWinmmLimit = c.AtAxisLimit
                     } : null
                 }),
                 NoiseCheckRawSpan = _lastNoise,

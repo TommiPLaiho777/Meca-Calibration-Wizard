@@ -53,6 +53,9 @@ static class Checks
         Require(brake.Result.RepeatabilitySpreadPercent > 2 &&
                 brake.Result.RepeatabilitySpreadPercent < 3, "repeatability percentage");
         Require(brake.Result.Mapping.Percent(20250) is > 49 and < 51, "preview scaling");
+        Require(brake.Result.PeakSpreadSummary.Contains("WinMM peak spread") &&
+                brake.Result.PeakSpreadSummary.Contains("not a physical-force test"),
+            "unclipped peaks identified as WinMM only");
         Console.WriteLine("PASS: three-press brake calibration");
 
         var throttle = Session(PedalKind.Throttle, 3, false,
@@ -61,6 +64,9 @@ static class Checks
             "R axis recognition with X reserved");
         Require(throttle.Result.Mapping.Full == 65500, "throttle median");
         Require(throttle.Result.AtAxisLimit, "clipped throttle limit is flagged");
+        Require(throttle.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
+                !throttle.Result.PeakSpreadSummary.Contains("%"),
+            "saturated WinMM peaks must not show misleading percentage");
         Console.WriteLine("PASS: throttle axis and reserved axes");
 
         var inverted = Session(PedalKind.Clutch, 2, true, new uint[] { 42000, 42500, 42000 });
