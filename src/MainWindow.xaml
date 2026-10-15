@@ -228,6 +228,17 @@
                         </Border>
                         <TextBlock x:Name="WinmmIdsText" Text="WinMM capability IDs unavailable"
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,15,0,0"/>
+                        <Border Background="{StaticResource RaisedBrush}" Margin="0,15,0,0" Padding="14" CornerRadius="10">
+                            <StackPanel>
+                                <TextBlock Text="HID INTERFACE INVENTORY · READ-ONLY" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
+                                <TextBlock Text="Optional scan of all present Windows HID interfaces. It does not identify the pedal controller or read sensor values."
+                                           Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,8"/>
+                                <Button x:Name="HidScanButton" Content="Scan HID identifiers" Click="ScanHid_Click"
+                                        HorizontalAlignment="Left"/>
+                                <TextBlock x:Name="HidInventoryText" Text="Not scanned. No HID device paths or serials are exported."
+                                           FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                            </StackPanel>
+                        </Border>
                         <TextBlock Text="These are WinMM-reported values, which may already include Windows calibration. No settings are written."
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,19,0,0"/>
                         <Button Content="Return to setup" Click="ReturnToSetup_Click" HorizontalAlignment="Left" Margin="0,18,0,0"/>

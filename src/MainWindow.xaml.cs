@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private NoiseRun? _noise;
     private Dictionary<string, uint>? _lastNoise;
     private Dictionary<string, SignalHealthStats>? _lastSignalHealth;
+    private HidInventorySnapshot? _hidInventory;
     private InputSweepRun? _sweep;
     private PedalKind? _sweepKind;
     private DateTime _sweepStartUtc;
@@ -42,6 +43,9 @@ public partial class MainWindow : Window
 
     private void RefreshDevices()
     {
+        _hidInventory = null; // A new device refresh invalidates the previous manual inventory.
+        if (HidInventoryText is not null)
+            HidInventoryText.Text = "Not scanned. No HID device paths or serials are exported.";
         var previousId = _device?.Id;
         var devices = WinmmJoystick.FindDevices().ToList();
         DeviceCombo.ItemsSource = devices;
@@ -453,6 +457,20 @@ public partial class MainWindow : Window
         line.Points = points;
     }
 
+    private void ScanHid_Click(object sender, RoutedEventArgs e)
+    {
+        HidScanButton.IsEnabled = false;
+        try
+        {
+            _hidInventory = HidInterfaceInventory.Scan();
+            HidInventoryText.Text = _hidInventory.Summary;
+        }
+        finally
+        {
+            HidScanButton.IsEnabled = true;
+        }
+    }
+
     private void CheckSignal_Click(object sender, RoutedEventArgs e)
     {
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
@@ -517,6 +535,7 @@ public partial class MainWindow : Window
                 NoiseCheckRawSpan = _lastNoise, // retained for report compatibility
                 SignalHealth = _lastSignalHealth,
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
+                HidInventory = _hidInventory, // optional explicit scan; aggregates only, no device paths
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],

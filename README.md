@@ -71,3 +71,7 @@ The Advanced WinMM monitor and exported `Device` metadata include manufacturer a
 ## v0.2.3 signal health
 
 Read-only WinMM diagnostics now calculate sample count, rate, median, standard deviation, largest sample step and range for each calibrated pedal. The JSON retains `NoiseCheckRawSpan` and adds `SignalHealth` for backward compatibility. At-rest motion can be reported as such, but no diagnosis of grounding, true sensor noise or elastomer wear is possible using WinMM alone. A zero spread can reflect Windows deadzones, not necessarily a quiet load cell.
+
+## Optional HID interface inventory (development branch)
+
+In **Advanced**, click **Scan HID identifiers** to enumerate *all present* Windows HID interfaces using read-only SetupAPI calls. The view shows grouped VID/PID identifiers and interface counts; it is not limited to MECA hardware and **does not associate any HID interface with the selected WinMM joystick**. No HID device is opened and no input report, calibration, registry or driver setting is read or written. Raw interface paths and serial/instance strings are discarded and never included in the JSON report. The additive `HidInventory` field is `null` until the user explicitly scans. This is preparatory metadata only, not raw ADC data. The synthetic-path tests cannot establish whether a particular MECA controller exposes an uncalibrated HID input path.

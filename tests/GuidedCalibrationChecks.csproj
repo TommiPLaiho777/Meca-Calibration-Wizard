@@ -9,6 +9,7 @@
     <Compile Include="../src/CalibrationModels.cs" Link="CalibrationModels.cs" />
     <Compile Include="../src/GuidedCalibration.cs" Link="GuidedCalibration.cs" />
     <Compile Include="../src/WinmmJoystick.cs" Link="WinmmJoystick.cs" />
+    <Compile Include="../src/HidInterfaceInventory.cs" Link="HidInterfaceInventory.cs" />
     <Compile Include="../src/InputSweep.cs" Link="InputSweep.cs" />
     <Compile Include="../src/SweepDiagnostics.cs" Link="SweepDiagnostics.cs" />
     <Compile Include="../src/SignalHealthDiagnostics.cs" Link="SignalHealthDiagnostics.cs" />

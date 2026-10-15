@@ -200,6 +200,31 @@ static class Checks
             "missing WinMM capabilities must not invent hardware identifiers");
         Console.WriteLine("PASS: WinMM capability ID provenance");
 
+        // Real Windows HID paths can include private instance/serial information.
+        // The inventory must export only grouped VID/PID counts, never paths.
+        var hid = HidInterfaceInventory.FromPaths(new[]
+        {
+            @"\\?\hid#vid_1234&pid_abcd&mi_00#PRIVATE_SERIAL_A#{GUID}",
+            @"\\?\HID#VID_1234&PID_ABCD&COL01#PRIVATE_SERIAL_B#{GUID}",
+            @"\\?\hid#VID_1A2B&PID_3C4D#PRIVATE_SERIAL_C#{GUID}",
+            @"\\?\hid#col01#PRIVATE_SERIAL_D#{GUID}",
+            @"\\?\hid#VID_123&PID_9999#PRIVATE_SERIAL_E#{GUID}"
+        });
+        Require(hid.Available && hid.InterfaceCount == 5 &&
+                hid.WithoutVidPidCount == 2 && hid.Groups.Count == 2 &&
+                hid.Groups.Single(g => g.VendorId == 0x1234).InterfaceCount == 2,
+            "HID interface inventory aggregates identifiers without inventing a WinMM match");
+        var hidJson = JsonSerializer.Serialize(hid);
+        Require(hidJson.Contains("WINDOWS_SETUPAPI_HID_INTERFACE_METADATA_NOT_SENSOR_ADC") &&
+                !hidJson.Contains("PRIVATE_SERIAL") && !hidJson.Contains("DevicePath"),
+            "HID report must never contain private device instance paths");
+        Require(!HidInterfaceInventory.TryParseVidPid(
+                @"\\?\hid#notvid_1234&pid_abcd#PRIVATE_SERIAL", out _, out _) &&
+                !HidInterfaceInventory.TryParseVidPid(
+                @"\\?\hid#pid_abcd&vid_1234#PRIVATE_SERIAL", out _, out _),
+            "invalid HID identifier patterns must not be accepted");
+        Console.WriteLine("PASS: read-only HID interface ID aggregation and path privacy");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
