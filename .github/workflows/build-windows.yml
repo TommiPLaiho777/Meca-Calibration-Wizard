@@ -49,6 +49,12 @@ jobs:
         run: dotnet run --project tests/GuidedCalibrationChecks.csproj --configuration Release
       - name: Build portable self-contained Windows executable
         run: dotnet publish src/MecaCalibrationWizard.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release
+      - name: Include printable field-test guide in Windows package
+        shell: pwsh
+        run: |
+          Copy-Item PEDAL_TEST_QUICKSTART.md release/
+          Copy-Item PEDAL_TEST_REPORT_TEMPLATE.md release/
+          Copy-Item tools/START_PEDAL_TEST.cmd release/
       - name: Zip artifact
         shell: pwsh
         run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.2.2-win-x64.zip
