@@ -226,6 +226,8 @@
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,25,0,0" Padding="23" CornerRadius="12">
                             <TextBlock x:Name="AdvancedAxesText" FontFamily="Consolas" FontSize="17" LineHeight="38" Text="No input"/>
                         </Border>
+                        <TextBlock x:Name="WinmmIdsText" Text="WinMM capability IDs unavailable"
+                                   Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,15,0,0"/>
                         <TextBlock Text="These are WinMM-reported values, which may already include Windows calibration. No settings are written."
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,19,0,0"/>
                         <Button Content="Return to setup" Click="ReturnToSetup_Click" HorizontalAlignment="Left" Margin="0,18,0,0"/>

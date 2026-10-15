@@ -64,6 +64,10 @@ GitHub Actions validates algorithms using simulated and previously recorded samp
 No immediate pedal tests or owner interaction are needed for automated CI validation. Real USB/calibration tests must still be performed manually.
 
 
+## WinMM capability identifiers (development branch)
+
+The Advanced WinMM monitor and exported `Device` metadata include manufacturer and product IDs returned by Windows `joyGetDevCapsW`, when available. These identify the **WinMM driver-reported capabilities**, not necessarily the physical pedal USB VID/PID. They are **not** HID interface enumeration, device matching, raw ADC readings or calibration. Missing values remain null. This is a read-only preparation for issue #2's later HID/WinMM comparison.
+
 ## v0.2.3 signal health
 
 Read-only WinMM diagnostics now calculate sample count, rate, median, standard deviation, largest sample step and range for each calibrated pedal. The JSON retains `NoiseCheckRawSpan` and adds `SignalHealth` for backward compatibility. At-rest motion can be reported as such, but no diagnosis of grounding, true sensor noise or elastomer wear is possible using WinMM alone. A zero spread can reflect Windows deadzones, not necessarily a quiet load cell.

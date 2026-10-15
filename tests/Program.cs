@@ -190,6 +190,16 @@ static class Checks
             "zero variation must not imply a proven noise-free sensor");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
+        var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],
+            0x045E, 0x1234);
+        Require(caps.ManufacturerId == 0x045E && caps.ProductId == 0x1234 &&
+                caps.WinmmIdsSummary.Contains("not verified USB VID/PID"),
+            "WinMM capability IDs must not be mistaken for verified USB IDs");
+        Require(Device.ManufacturerId is null && Device.ProductId is null &&
+                Device.WinmmIdsSummary.Contains("unavailable"),
+            "missing WinMM capabilities must not invent hardware identifiers");
+        Console.WriteLine("PASS: WinMM capability ID provenance");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }

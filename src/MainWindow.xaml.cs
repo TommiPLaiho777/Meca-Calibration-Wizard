@@ -63,6 +63,13 @@ public partial class MainWindow : Window
         }
         UpdateMappingLabels();
         UpdateDeviceInfo();
+        UpdateWinmmIds();
+    }
+
+    private void UpdateWinmmIds()
+    {
+        if (WinmmIdsText is not null)
+            WinmmIdsText.Text = _device?.WinmmIdsSummary ?? "No WinMM controller selected";
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshDevices();
@@ -84,6 +91,7 @@ public partial class MainWindow : Window
             _calibrationResults.Clear();
             UpdateMappingLabels();
             UpdateDeviceInfo();
+            UpdateWinmmIds();
         }
     }
 
@@ -480,7 +488,13 @@ public partial class MainWindow : Window
                 App = "MECA Calibration Wizard v0.2.3",
                 ExportedAtUtc = DateTime.UtcNow,
                 Status = "READ_ONLY_PREVIEW_NOT_APPLIED_TO_WINDOWS",
-                Device = new { _device.Id, _device.Name },
+                Device = new
+                {
+                    _device.Id, _device.Name,
+                    WinmmManufacturerId = _device.ManufacturerId,
+                    WinmmProductId = _device.ProductId,
+                    WinmmIdsSource = "WINMM_JOYGETDEVCAPSW_NOT_VERIFIED_USB_VID_PID"
+                },
                 Pedals = _mappings.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[p.Value.Axis],
