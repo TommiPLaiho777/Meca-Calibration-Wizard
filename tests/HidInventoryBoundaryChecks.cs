@@ -27,6 +27,23 @@ internal static class HidInventoryBoundaryChecks
             inventory.Groups.Count != 1 || inventory.Groups[0].InterfaceCount != 1)
             throw new Exception("FAILED: terminated HID inventory aggregation");
 
-        Console.WriteLine("PASS: terminated HID paths and aggregate counts");
+        // The instance segment must not be mistaken for a hardware ID.
+        foreach (string path in new[]
+        {
+            @"\\?\hid#col01#VID_9999&PID_8888#PRIVATE_SERIAL",
+            @"\\?\hid#MI_00&VID_9999&PID_8888#PRIVATE_SERIAL",
+            @"\\?\other#VID_9999&PID_8888#PRIVATE_SERIAL",
+            @"\\?\hid#COL01&VID_9999&PID_8888#PRIVATE_SERIAL",
+            @"\\?\hid#VID_1234&PID_ABCDmore#PRIVATE_SERIAL"
+        })
+        {
+            if (HidInterfaceInventory.TryParseVidPid(path, out _, out _))
+                throw new Exception("FAILED: non-hardware HID path segment was accepted");
+        }
+        if (!HidInterfaceInventory.TryParseVidPid(
+                @"\\?\HiD#vId_1234&pId_abcd&mi_00#PRIVATE_SERIAL", out var mixedVid, out var mixedPid) ||
+            mixedVid != 0x1234 || mixedPid != 0xABCD)
+            throw new Exception("FAILED: valid mixed-case HID hardware ID was rejected");
+        Console.WriteLine("PASS: terminated HID paths, hardware-ID boundaries and aggregate counts");
     }
 }

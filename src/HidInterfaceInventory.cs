@@ -82,7 +82,7 @@ internal static class HidInterfaceInventory
     private const int ErrorInsufficientBuffer = 122;
     private const int MaxInterfaces = 512;
     private static readonly Regex VidPidPattern = new(
-        @"(?:^|[#&])VID_([0-9A-F]{4})&PID_([0-9A-F]{4})(?=$|[&#])",
+        @"^VID_([0-9A-F]{4})&PID_([0-9A-F]{4})(?=$|&)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -127,7 +127,18 @@ internal static class HidInterfaceInventory
         // Ignore trailing native-buffer contents after a path terminator.
         int end = devicePath.IndexOf((char)0);
         if (end >= 0) devicePath = devicePath[..end];
-        var match = VidPidPattern.Match(devicePath);
+        // A Windows HID interface path has a hardware-ID segment between
+        // its first and second '#'. Never parse instance/serial segments.
+        int firstSeparator = devicePath.IndexOf('#');
+        if (firstSeparator < 0) return false;
+        string prefix = devicePath[..firstSeparator];
+        if (!prefix.Equals("hid", StringComparison.OrdinalIgnoreCase) &&
+            !prefix.Equals(@"\\?\hid", StringComparison.OrdinalIgnoreCase))
+            return false;
+        int nextSeparator = devicePath.IndexOf('#', firstSeparator + 1);
+        string hardwareId = devicePath[(firstSeparator + 1)..
+            (nextSeparator < 0 ? devicePath.Length : nextSeparator)];
+        var match = VidPidPattern.Match(hardwareId);
         return match.Success &&
                ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber,
                    CultureInfo.InvariantCulture, out vid) &&
