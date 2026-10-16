@@ -2,6 +2,7 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Clarify when only HID interfaces without VID/PID change in count: no device or WinMM association can be inferred. Add hardware-free guidance/privacy regression. CI and Windows GUI validation pending.
 - Limit native SetupAPI HID path reads to the allocated buffer and aggregate VID/PID counts during enumeration rather than retaining interface paths. Ignore trailing data after native NUL terminators; add hardware-free regression checks. Read-only metadata only; Windows GUI/hardware verification pending.
 - Stop read-only WinMM idle checks on backwards wall-clock timestamps and classify them as `Insufficient samples`, rather than recording a false long gap or a reassuring zero-variation result. Export additive `TimestampRegressionDetected`; add deterministic rollback tests. Hardware GUI confirmation pending.
 - Flag >1.0s gaps between WinMM idle-check samples (including capture-start delay) as `Insufficient samples`, even if average rate is adequate; export additive `LargestSamplingGapSeconds`, show it in Live Test and cover normal, delayed and bursty polling in deterministic tests. Read-only timing quality only; physical GUI confirmation pending.

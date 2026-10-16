@@ -61,8 +61,13 @@ internal sealed record HidInventoryComparison(
                 $"VID {c.VendorId:X4} / PID {c.ProductId:X4}: {c.PreviousCount} -> {c.CurrentCount}"));
             if (Changes.Count > 12)
                 lines.Add($"+ {Changes.Count - 12} more changes (in JSON)");
-            if (Changes.Count == 0 && PreviousUnidentifiedCount == CurrentUnidentifiedCount)
-                lines.Add("No grouped count changes; individual interfaces may still have changed.");
+            if (Changes.Count == 0)
+            {
+                if (PreviousUnidentifiedCount != CurrentUnidentifiedCount)
+                    lines.Add("Only unidentified HID interface counts changed; the device cannot be identified or matched to WinMM.");
+                else
+                    lines.Add("No grouped count changes; individual interfaces may still have changed.");
+            }
             lines.Add("Changes cover all HID devices; not a verified MECA or WinMM match.");
             return string.Join("\n", lines);
         }
