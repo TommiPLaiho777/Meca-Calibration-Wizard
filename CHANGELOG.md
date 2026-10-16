@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Prioritize largest HID interface groups in the 12-row Advanced inventory preview; preserve all groups in count-only JSON, stable VID/PID tie-breaking and synthetic privacy regression. No WinMM association inferred; GUI/hardware validation pending.
+
 - Prioritize the largest VID/PID interface-count differences in the Advanced 12-row preview, with deterministic VID/PID tie-breaking. The full count-only JSON remains unchanged; add synthetic >12-group and privacy regression tests. No device association inferred; Windows GUI/hardware check pending.
 
 - Clarify mixed HID count changes: a VID/PID group count change cannot identify simultaneous changes among interfaces lacking VID/PID. Add synthetic regression; Windows GUI/hardware confirmation pending.

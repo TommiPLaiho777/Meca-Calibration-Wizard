@@ -26,8 +26,13 @@ internal sealed record HidInventorySnapshot(
                 $"Present HID interfaces: {InterfaceCount} (all devices, NOT matched to WinMM)",
                 $"VID/PID unavailable: {WithoutVidPidCount} interface(s)"
             };
-            lines.AddRange(Groups.Take(12).Select(g =>
-                $"VID {g.VendorId:X4} / PID {g.ProductId:X4}: {g.InterfaceCount} interface(s)"));
+            // Prioritize common interface groups in the 12-row display.
+            // This does not identify a device or alter the complete JSON.
+            lines.AddRange(Groups
+                .OrderByDescending(g => g.InterfaceCount)
+                .ThenBy(g => g.VendorId).ThenBy(g => g.ProductId)
+                .Take(12).Select(g =>
+                    $"VID {g.VendorId:X4} / PID {g.ProductId:X4}: {g.InterfaceCount} interface(s)"));
             if (Groups.Count > 12)
                 lines.Add($"+ {Groups.Count - 12} more groups (in JSON)");
             lines.Add("Read-only identifiers; no sensor data or pedal association verified.");
