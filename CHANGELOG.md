@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Prioritize the largest VID/PID interface-count differences in the Advanced 12-row preview, with deterministic VID/PID tie-breaking. The full count-only JSON remains unchanged; add synthetic >12-group and privacy regression tests. No device association inferred; Windows GUI/hardware check pending.
+
 - Clarify mixed HID count changes: a VID/PID group count change cannot identify simultaneous changes among interfaces lacking VID/PID. Add synthetic regression; Windows GUI/hardware confirmation pending.
 
 - Explicitly label HID inventory count comparisons as non-ADC metadata (`UncalibratedSensorInputVerified: false`); extend the synthetic JSON provenance regression. Windows GUI/hardware confirmation pending.

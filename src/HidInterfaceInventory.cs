@@ -61,8 +61,13 @@ internal sealed record HidInventoryComparison(
                 $"All HID interfaces: {PreviousInterfaceCount} -> {CurrentInterfaceCount}",
                 $"Without VID/PID: {PreviousUnidentifiedCount} -> {CurrentUnidentifiedCount}"
             };
-            lines.AddRange(Changes.Take(12).Select(c =>
-                $"VID {c.VendorId:X4} / PID {c.ProductId:X4}: {c.PreviousCount} -> {c.CurrentCount}"));
+            // Surface the largest count changes first when the UI shows only 12.
+            // This is a display priority, not evidence of a particular device.
+            lines.AddRange(Changes
+                .OrderByDescending(c => Math.Abs((long)c.Delta))
+                .ThenBy(c => c.VendorId).ThenBy(c => c.ProductId)
+                .Take(12).Select(c =>
+                    $"VID {c.VendorId:X4} / PID {c.ProductId:X4}: {c.PreviousCount} -> {c.CurrentCount}"));
             if (Changes.Count > 12)
                 lines.Add($"+ {Changes.Count - 12} more changes (in JSON)");
             if (Changes.Count == 0)
