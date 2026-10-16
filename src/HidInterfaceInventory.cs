@@ -119,6 +119,9 @@ internal static class HidInterfaceInventory
     {
         vid = pid = 0;
         if (string.IsNullOrEmpty(devicePath)) return false;
+        // Ignore trailing native-buffer contents after a path terminator.
+        int end = devicePath.IndexOf((char)0);
+        if (end >= 0) devicePath = devicePath[..end];
         var match = VidPidPattern.Match(devicePath);
         return match.Success &&
                ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber,
@@ -127,27 +130,41 @@ internal static class HidInterfaceInventory
                    CultureInfo.InvariantCulture, out pid);
     }
 
+    // Count identifiers as they arrive; never retain transient interface paths.
+    private sealed class InventoryCounter
+    {
+        private readonly Dictionary<(ushort Vid, ushort Pid), int> _counts = new();
+        private int _total;
+        private int _unidentified;
+
+        public void AddPath(string? path)
+        {
+            _total++;
+            if (!TryParseVidPid(path, out var vid, out var pid))
+            {
+                _unidentified++;
+                return;
+            }
+            var key = (vid, pid);
+            _counts[key] = _counts.GetValueOrDefault(key) + 1;
+        }
+
+        public HidInventorySnapshot Snapshot()
+        {
+            var groups = _counts.OrderBy(p => p.Key.Vid).ThenBy(p => p.Key.Pid)
+                .Select(p => new HidInterfaceGroup(p.Key.Vid, p.Key.Pid, p.Value))
+                .ToArray();
+            return new(true, "HID interface metadata enumerated; WinMM association unverified.",
+                _total, _unidentified, groups);
+        }
+    }
+
     // Pure aggregation for hardware-free tests. Never retain or export input paths.
     internal static HidInventorySnapshot FromPaths(IEnumerable<string> paths)
     {
-        var counts = new Dictionary<(ushort Vid, ushort Pid), int>();
-        int total = 0, unidentified = 0;
-        foreach (string path in paths)
-        {
-            total++;
-            if (!TryParseVidPid(path, out var vid, out var pid))
-            {
-                unidentified++;
-                continue;
-            }
-            var key = (vid, pid);
-            counts[key] = counts.GetValueOrDefault(key) + 1;
-        }
-        var groups = counts.OrderBy(p => p.Key.Vid).ThenBy(p => p.Key.Pid)
-            .Select(p => new HidInterfaceGroup(p.Key.Vid, p.Key.Pid, p.Value))
-            .ToArray();
-        return new(true, "HID interface metadata enumerated; WinMM association unverified.",
-            total, unidentified, groups);
+        var counter = new InventoryCounter();
+        foreach (string path in paths) counter.AddPath(path);
+        return counter.Snapshot();
     }
 
     // Compare successive complete scans. Equal VID/PID counts cannot prove identity.
@@ -184,7 +201,7 @@ internal static class HidInterfaceInventory
                 return Unavailable($"HID enumeration unavailable (Windows error {Marshal.GetLastPInvokeError()}).");
             try
             {
-                var paths = new List<string>();
+                var counter = new InventoryCounter();
                 for (uint index = 0; index < MaxInterfaces; index++)
                 {
                     var data = new SpDeviceInterfaceData
@@ -196,7 +213,7 @@ internal static class HidInterfaceInventory
                     {
                         int error = Marshal.GetLastPInvokeError();
                         return error == ErrorNoMoreItems
-                            ? FromPaths(paths)
+                            ? counter.Snapshot()
                             : Unavailable($"HID enumeration incomplete (Windows error {error}).");
                     }
 
@@ -215,8 +232,10 @@ internal static class HidInterfaceInventory
                         if (!SetupDiGetDeviceInterfaceDetail(
                             deviceSet, ref data, detail, requiredSize, out _, IntPtr.Zero))
                             return Unavailable($"HID interface detail unavailable (Windows error {Marshal.GetLastPInvokeError()}).");
-                        // The WCHAR DevicePath field begins at byte offset 4 in the native buffer.
-                        paths.Add(Marshal.PtrToStringUni(IntPtr.Add(detail, 4)) ?? string.Empty);
+                        // WCHAR DevicePath begins at byte offset 4; bound the read
+                        // to the allocated native buffer and discard the path.
+                        int pathChars = checked((int)((requiredSize - 4u) / 2u));
+                        counter.AddPath(Marshal.PtrToStringUni(IntPtr.Add(detail, 4), pathChars));
                     }
                     finally
                     {
