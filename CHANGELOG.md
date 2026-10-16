@@ -2,6 +2,7 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Stop read-only WinMM idle checks on backwards wall-clock timestamps and classify them as `Insufficient samples`, rather than recording a false long gap or a reassuring zero-variation result. Export additive `TimestampRegressionDetected`; add deterministic rollback tests. Hardware GUI confirmation pending.
 - Flag >1.0s gaps between WinMM idle-check samples (including capture-start delay) as `Insufficient samples`, even if average rate is adequate; export additive `LargestSamplingGapSeconds`, show it in Live Test and cover normal, delayed and bursty polling in deterministic tests. Read-only timing quality only; physical GUI confirmation pending.
 - Guard against false stationary-signal reassurance when WinMM polling is too sparse: below 5 Hz average, the read-only health result is `Insufficient samples` even if its span is zero. Keep all numeric metrics; add regression tests for sparse and threshold captures. This heuristic is not a HID or ADC sampling-rate measurement; GUI/hardware confirmation pending.
 - Add a user-triggered 10-second WinMM at-rest signal check alongside the existing 3-second check. Show remaining time, cancel cleanly on controller loss, preserve existing JSON signal-health fields and read-only behavior. Deterministic duration and sampling-rate regression tests; GUI/hardware check pending.

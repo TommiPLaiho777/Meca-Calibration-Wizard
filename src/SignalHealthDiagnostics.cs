@@ -6,11 +6,14 @@ internal sealed record SignalHealthStats(
     uint MinimumWinmm, uint MaximumWinmm, uint SpanWinmm,
     double MedianWinmm, double StandardDeviationWinmm,
     uint LargestStepWinmm, int LargeStepCount, string Status,
-    double? LargestSamplingGapSeconds = null)
+    double? LargestSamplingGapSeconds = null,
+    bool TimestampRegressionDetected = false)
 {
     // A reported WinMM change is not proof of an electrical fault.
     // This guidance is exported alongside Status and does not change device state.
-    public string Guidance => Status switch
+    public string Guidance => TimestampRegressionDetected
+        ? "WinMM sample timestamps moved backwards. This check stopped early; repeat without changing device settings."
+        : Status switch
     {
         "Pedal motion likely" =>
             "Not a valid idle-noise check. Release all pedals and repeat; movement is not proof of EMI.",
@@ -35,7 +38,8 @@ internal static class SignalHealthDiagnostics
 
     public static SignalHealthStats Evaluate(
         IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds,
-        double? largestSamplingGapSeconds = null)
+        double? largestSamplingGapSeconds = null,
+        bool timestampRegressionDetected = false)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid WinMM axis range");
         if (largestSamplingGapSeconds is double gap && (!double.IsFinite(gap) || gap < 0))
@@ -43,8 +47,9 @@ internal static class SignalHealthDiagnostics
         if (!double.IsFinite(windowSeconds) || windowSeconds < 0)
             throw new ArgumentOutOfRangeException(nameof(windowSeconds));
         if (readings.Count == 0)
-            return new(0, windowSeconds, 0, 0, 0, 0, 0, 0, 0, 0, "No samples",
-                largestSamplingGapSeconds);
+            return new(0, windowSeconds, 0, 0, 0, 0, 0, 0, 0, 0,
+                timestampRegressionDetected ? "Insufficient samples" : "No samples",
+                largestSamplingGapSeconds, timestampRegressionDetected);
         var sorted = readings.OrderBy(x => x).ToArray();
         double median = sorted.Length % 2 == 0
             ? ((double)sorted[sorted.Length/2-1] + sorted[sorted.Length/2])/2
@@ -65,7 +70,8 @@ internal static class SignalHealthDiagnostics
         double averageRate = windowSeconds > 0 ? (readings.Count - 1) / windowSeconds : 0;
         // A flat trace sampled too sparsely must not be presented as a valid
         // zero-variation result. Preserve the numerical metrics for review.
-        string status = readings.Count < 8 || windowSeconds < .5 ||
+        string status = timestampRegressionDetected ||
+                        readings.Count < 8 || windowSeconds < .5 ||
                         averageRate < MinimumUsefulAverageSamplingRateHz ||
                         largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
             ? "Insufficient samples"
@@ -78,6 +84,7 @@ internal static class SignalHealthDiagnostics
             minimum, maximum, span, Math.Round(median, 2), Math.Round(sd, 2),
             largest, jumps, status,
             largestSamplingGapSeconds.HasValue
-                ? Math.Round(largestSamplingGapSeconds.Value, 3) : null);
+                ? Math.Round(largestSamplingGapSeconds.Value, 3) : null,
+            timestampRegressionDetected);
     }
 }

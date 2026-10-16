@@ -265,6 +265,29 @@ static class Checks
                 SignalHealthDiagnostics.Evaluate(
                 Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.001).Status == "Insufficient samples",
             "one-second gap threshold must be inclusive");
+        // A wall-clock rollback during capture must never be treated as a
+        // normal flat trace or as a positive polling gap.
+        var rollbackRun = new NoiseRun(gapClock);
+        for (int i = 0; i < 15; i++)
+            rollbackRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(i * 40));
+        rollbackRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(400));
+        var rollbackHealth = rollbackRun.Analyze(0, 0, 65535);
+        Require(rollbackRun.Complete && rollbackHealth.TimestampRegressionDetected &&
+                rollbackHealth.Status == "Insufficient samples" &&
+                rollbackHealth.SampleCount == 15 &&
+                rollbackHealth.LargestSamplingGapSeconds == 0.04 &&
+                rollbackHealth.Guidance.Contains("timestamps moved backwards"),
+            "WinMM clock rollback must terminate capture and invalidate stability");
+        rollbackRun.Observe(Axes(0, 5000), gapClock.AddSeconds(10));
+        Require(rollbackRun.Analyze(0, 0, 65535).SampleCount == 15,
+            "invalid WinMM capture must not accept further samples");
+        var firstTimestampBeforeStart = new NoiseRun(gapClock);
+        firstTimestampBeforeStart.Observe(Axes(), gapClock.AddMilliseconds(-10));
+        Require(firstTimestampBeforeStart.Complete &&
+                firstTimestampBeforeStart.Analyze(0, 0, 65535).Status == "Insufficient samples" &&
+                firstTimestampBeforeStart.Analyze(0, 0, 65535).TimestampRegressionDetected,
+            "clock rollback before first sample must not hang or look stable");
+        Console.WriteLine("PASS: backward WinMM timestamps invalidate capture safely");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
         var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],
