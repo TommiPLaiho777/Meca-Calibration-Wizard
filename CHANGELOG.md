@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Add explicit false provenance flags to optional HID inventory/comparison JSON to prevent machine readers from interpreting count metadata as a verified WinMM match or uncalibrated sensor input. Add synthetic serialization/privacy regression; physical GUI verification pending.
+
 - Restrict read-only VID/PID parsing to the hardware-ID segment of a HID interface path; do not infer device IDs from instance/serial substrings. Add synthetic boundary regressions. CI and GUI verification pending.
 
 - Clarify when only HID interfaces without VID/PID change in count: no device or WinMM association can be inferred. Add hardware-free guidance/privacy regression. CI and Windows GUI validation pending.

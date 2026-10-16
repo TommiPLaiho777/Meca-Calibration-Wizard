@@ -13,6 +13,8 @@ internal sealed record HidInventorySnapshot(
     IReadOnlyList<HidInterfaceGroup> Groups)
 {
     public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_METADATA_NOT_SENSOR_ADC";
+    public bool WinmmAssociationVerified => false;
+    public bool UncalibratedSensorInputVerified => false;
 
     public string Summary
     {
@@ -47,6 +49,7 @@ internal sealed record HidInventoryComparison(
     IReadOnlyList<HidInventoryCountChange> Changes)
 {
     public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_COUNT_DIFFERENCE_NOT_DEVICE_MATCH";
+    public bool WinmmAssociationVerified => false;
 
     public string Summary
     {
