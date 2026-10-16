@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Clarify mixed HID count changes: a VID/PID group count change cannot identify simultaneous changes among interfaces lacking VID/PID. Add synthetic regression; Windows GUI/hardware confirmation pending.
+
 - Explicitly label HID inventory count comparisons as non-ADC metadata (`UncalibratedSensorInputVerified: false`); extend the synthetic JSON provenance regression. Windows GUI/hardware confirmation pending.
 
 - Add explicit false provenance flags to optional HID inventory/comparison JSON to prevent machine readers from interpreting count metadata as a verified WinMM match or uncalibrated sensor input. Add synthetic serialization/privacy regression; physical GUI verification pending.

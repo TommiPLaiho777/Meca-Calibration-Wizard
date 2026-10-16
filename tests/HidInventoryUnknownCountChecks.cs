@@ -29,6 +29,23 @@ internal static class HidInventoryUnknownCountChecks
         var unchanged = HidInterfaceInventory.Compare(before, before);
         if (!unchanged.Summary.Contains("individual interfaces may still have changed"))
             throw new Exception("FAILED: equal counts do not establish device identity");
-        Console.WriteLine("PASS: unidentified-only HID guidance and path privacy");
+        // Identified VID/PID count changes cannot explain simultaneous changes
+        // among HID interfaces without usable VID/PID metadata.
+        var mixedAfter = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_1234&PID_ABCD#B", "hid#VID_4321&PID_DCBA#PRIVATE_INSTANCE",
+            "hid#no_vid#B", "hid#no_vid#C"
+        });
+        var mixed = HidInterfaceInventory.Compare(before, mixedAfter);
+        if (mixed.Changes.Count != 1 || mixed.PreviousUnidentifiedCount != 1 ||
+            mixed.CurrentUnidentifiedCount != 2 ||
+            !mixed.Summary.Contains("Unidentified HID interface counts also changed") ||
+            !mixed.Summary.Contains("cannot be attributed to a specific device or WinMM controller"))
+            throw new Exception("FAILED: mixed HID changes overstate device attribution");
+        var mixedJson = JsonSerializer.Serialize(mixed);
+        if (mixedJson.Contains("PRIVATE_INSTANCE") || mixedJson.Contains("DevicePath") ||
+            mixedJson.Contains("hid#"))
+            throw new Exception("FAILED: mixed HID comparison leaked private interface data");
+        Console.WriteLine("PASS: unidentified-only and mixed HID count guidance and path privacy");
     }
 }

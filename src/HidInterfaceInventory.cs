@@ -72,6 +72,10 @@ internal sealed record HidInventoryComparison(
                 else
                     lines.Add("No grouped count changes; individual interfaces may still have changed.");
             }
+            else if (PreviousUnidentifiedCount != CurrentUnidentifiedCount)
+            {
+                lines.Add("Unidentified HID interface counts also changed; these cannot be attributed to a specific device or WinMM controller.");
+            }
             lines.Add("Changes cover all HID devices; not a verified MECA or WinMM match.");
             return string.Join("\n", lines);
         }
