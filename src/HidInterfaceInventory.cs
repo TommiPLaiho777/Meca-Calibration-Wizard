@@ -48,8 +48,9 @@ internal sealed record HidInventoryComparison(
     int PreviousUnidentifiedCount, int CurrentUnidentifiedCount,
     IReadOnlyList<HidInventoryCountChange> Changes)
 {
-    public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_COUNT_DIFFERENCE_NOT_DEVICE_MATCH";
+    public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_COUNT_DIFFERENCE_NOT_DEVICE_MATCH_NOT_SENSOR_ADC";
     public bool WinmmAssociationVerified => false;
+    public bool UncalibratedSensorInputVerified => false;
 
     public string Summary
     {

@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Explicitly label HID inventory count comparisons as non-ADC metadata (`UncalibratedSensorInputVerified: false`); extend the synthetic JSON provenance regression. Windows GUI/hardware confirmation pending.
+
 - Add explicit false provenance flags to optional HID inventory/comparison JSON to prevent machine readers from interpreting count metadata as a verified WinMM match or uncalibrated sensor input. Add synthetic serialization/privacy regression; physical GUI verification pending.
 
 - Restrict read-only VID/PID parsing to the hardware-ID segment of a HID interface path; do not infer device IDs from instance/serial substrings. Add synthetic boundary regressions. CI and GUI verification pending.
