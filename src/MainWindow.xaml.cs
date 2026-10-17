@@ -531,7 +531,7 @@ public partial class MainWindow : Window
         {
             Filter = "JSON report (*.json)|*.json",
             FileName = $"meca-preview-{DateTime.Now:yyyyMMdd-HHmmss}.json",
-            Title = "Export calibration preview (read-only)"
+            Title = "Export read-only diagnostics report"
         };
         if (save.ShowDialog(this) != true) return;
         try
