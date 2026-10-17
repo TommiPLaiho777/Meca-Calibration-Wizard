@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using MecaCalibrationWizard;
 
 static class Checks
@@ -368,6 +369,20 @@ static class Checks
         }
         catch (ArgumentException) { }
         Console.WriteLine("PASS: HID count-difference diagnostics and privacy boundaries");
+
+        // Check Advanced UI structure without requiring Windows or a physical controller.
+        // Windows CI still compiles the actual WPF application.
+        var xaml = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        var advanced = xaml.Descendants().Single(e => e.Name.LocalName == "StackPanel" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "AdvancedView"));
+        var exportButton = advanced.Descendants().Single(e => e.Name.LocalName == "Button" &&
+            (string?)e.Attribute("Content") == "Export read-only report (JSON)");
+        Require((string?)exportButton.Attribute("Click") == "Export_Click" &&
+                ((string?)exportButton.Attribute("ToolTip"))?.Contains("No controller settings are changed.") == true &&
+                advanced.Descendants().Any(e => e.Name.LocalName == "Button" &&
+                    (string?)e.Attribute("Click") == "ScanHid_Click"),
+            "Advanced must offer read-only JSON export alongside the explicit HID scan");
+        Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
 
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
