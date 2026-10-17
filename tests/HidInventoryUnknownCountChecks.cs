@@ -29,6 +29,27 @@ internal static class HidInventoryUnknownCountChecks
         var unchanged = HidInterfaceInventory.Compare(before, before);
         if (!unchanged.Summary.Contains("individual interfaces may still have changed"))
             throw new Exception("FAILED: equal counts do not establish device identity");
+        // Equal overall totals can conceal replacement or reconfiguration.
+        // This is not evidence of a particular controller being swapped.
+        var swappedBefore = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_1111&PID_0001#PRIVATE_BEFORE"
+        });
+        var swappedAfter = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_2222&PID_0002#PRIVATE_AFTER"
+        });
+        var swapped = HidInterfaceInventory.Compare(swappedBefore, swappedAfter);
+        if (swapped.PreviousInterfaceCount != swapped.CurrentInterfaceCount ||
+            swapped.Changes.Count != 2 ||
+            !swapped.Summary.Contains("Total HID interface count is unchanged") ||
+            !swapped.Summary.Contains("does not identify which physical devices changed") ||
+            unchanged.Summary.Contains("VID/PID group counts changed"))
+            throw new Exception("FAILED: unchanged HID total obscured grouped changes");
+        var swappedJson = JsonSerializer.Serialize(swapped);
+        if (swappedJson.Contains("PRIVATE_") || swappedJson.Contains("DevicePath") ||
+            swappedJson.Contains("hid#"))
+            throw new Exception("FAILED: equal-total comparison leaked interface identity");
         // Identified VID/PID count changes cannot explain simultaneous changes
         // among HID interfaces without usable VID/PID metadata.
         var mixedAfter = HidInterfaceInventory.FromPaths(new[]
