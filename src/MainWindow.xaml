@@ -94,7 +94,7 @@
                                            Foreground="{StaticResource DimBrush}" Margin="0,7,0,0" FontSize="12" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
-                        <Button Content="Raw axis monitor  ›" Click="Advanced_Click" HorizontalAlignment="Left" Margin="0,24,0,0"/>
+                        <Button Content="Advanced diagnostics  ›" Click="Advanced_Click" HorizontalAlignment="Left" Margin="0,24,0,0"/>
                     </StackPanel>
 
                     <!-- Animated symbolic pedal capture -->
@@ -222,7 +222,7 @@
                     <!-- Raw monitor -->
                     <StackPanel x:Name="AdvancedView" Visibility="Collapsed">
                         <TextBlock Text="ADVANCED  /  READ-ONLY" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="Bold"/>
-                        <TextBlock Text="Raw input monitor" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
+                        <TextBlock Text="Input diagnostics" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
                         <TextBlock Text="Windows joystick axis names may differ from DIView labels."
                                    Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,25,0,0" Padding="23" CornerRadius="12">
@@ -233,7 +233,7 @@
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,15,0,0" Padding="14" CornerRadius="10">
                             <StackPanel>
                                 <TextBlock Text="HID INTERFACE INVENTORY · READ-ONLY" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
-                                <TextBlock Text="Scan once, then rescan to compare HID counts after a user-controlled connection change. No pedal identity or sensor values are inferred."
+                                <TextBlock Text="Scan twice to compare HID interface counts. No cable changes are required. Counts do not verify a pedal, WinMM association or sensor values."
                                            Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,8"/>
                                 <Button x:Name="HidScanButton" Content="Scan HID identifiers" Click="ScanHid_Click"
                                         HorizontalAlignment="Left"/>
