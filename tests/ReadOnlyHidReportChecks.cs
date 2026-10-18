@@ -30,6 +30,43 @@ internal static class ReadOnlyHidReportChecks
         }
         catch (ArgumentException) { }
 
+        // A previous comparison must not silently be paired with a newer
+        // or different HID inventory in an exported JSON report.
+        void RejectStale(HidInventoryComparison stale)
+        {
+            try
+            {
+                _ = ReadOnlyHidReport.Create(inventory, stale, DateTime.UnixEpoch);
+            }
+            catch (ArgumentException)
+            {
+                return;
+            }
+            throw new Exception("FAILED: stale HID comparison was exported");
+        }
+
+        var added = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_1DD2&PID_22D2#A",
+            "hid#VID_1DD2&PID_22D2#B",
+            "hid#VID_1DD2&PID_22D2#C"
+        });
+        RejectStale(HidInterfaceInventory.Compare(inventory, added));
+
+        var unidentified = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_1DD2&PID_22D2#A",
+            "hid#no-vid-pid#B"
+        });
+        RejectStale(HidInterfaceInventory.Compare(inventory, unidentified));
+
+        var swapped = HidInterfaceInventory.FromPaths(new[]
+        {
+            "hid#VID_1DD2&PID_22D2#A",
+            "hid#VID_AAAA&PID_BBBB#B"
+        });
+        RejectStale(HidInterfaceInventory.Compare(inventory, swapped));
+
         var diff = HidInterfaceInventory.Compare(inventory, inventory);
         var report = ReadOnlyHidReport.Create(inventory, diff, DateTime.UnixEpoch);
         string json = JsonSerializer.Serialize(report, report.GetType());
@@ -51,6 +88,6 @@ internal static class ReadOnlyHidReportChecks
             json.Contains("DevicePath", StringComparison.Ordinal))
             throw new Exception("FAILED: HID-only JSON must not claim WinMM identity or leak paths");
 
-        Console.WriteLine("PASS: HID-only export eligibility, JSON provenance and privacy");
+        Console.WriteLine("PASS: HID-only export eligibility, stale comparison rejection, JSON provenance and privacy");
     }
 }

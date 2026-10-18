@@ -15,6 +15,22 @@ internal static class ReadOnlyHidReport
         if (!inventory.Available)
             throw new ArgumentException("Only a complete HID inventory may be exported.", nameof(inventory));
 
+        // Do not attach a comparison captured for another scan to this export.
+        // Count-only metadata cannot prove physical identity, but it must at
+        // least describe the current grouped inventory consistently.
+        if (comparison is not null)
+        {
+            var currentCounts = inventory.Groups.ToDictionary(
+                g => (g.VendorId, g.ProductId), g => g.InterfaceCount);
+            if (comparison.CurrentInterfaceCount != inventory.InterfaceCount ||
+                comparison.CurrentUnidentifiedCount != inventory.WithoutVidPidCount ||
+                comparison.Changes.Any(change =>
+                    currentCounts.GetValueOrDefault((change.VendorId, change.ProductId)) !=
+                    change.CurrentCount))
+                throw new ArgumentException(
+                    "HID comparison does not match the current inventory.", nameof(comparison));
+        }
+
         return new
         {
             App = "MECA Calibration Wizard v0.2.3",
