@@ -526,7 +526,12 @@ public partial class MainWindow : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (_device is null) return;
+        if (_device is null)
+        {
+            MessageBox.Show(this, "Select a USB controller before exporting a report.",
+                "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         var save = new SaveFileDialog
         {
             Filter = "JSON report (*.json)|*.json",
