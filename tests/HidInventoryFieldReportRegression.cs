@@ -56,7 +56,7 @@ internal static class HidInventoryFieldReportRegression
             first.UncalibratedSensorInputVerified || diff.UncalibratedSensorInputVerified)
             throw new Exception("FAILED: unverified WinMM/HID association asserted");
 
-        foreach (var report in new[] { first, second }.Select(JsonSerializer.Serialize)
+        foreach (var report in new[] { first, second }.Select(item => JsonSerializer.Serialize(item))
                      .Concat(new[] { JsonSerializer.Serialize(diff) }))
         {
             using var json = JsonDocument.Parse(report);
