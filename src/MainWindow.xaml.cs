@@ -526,9 +526,10 @@ public partial class MainWindow : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (_device is null)
+        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory))
         {
-            MessageBox.Show(this, "Select a USB controller before exporting a report.",
+            MessageBox.Show(this,
+                "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -541,7 +542,11 @@ public partial class MainWindow : Window
         if (save.ShowDialog(this) != true) return;
         try
         {
-            var report = new
+            object report;
+            if (_device is null)
+                report = ReadOnlyHidReport.Create(_hidInventory!, _hidInventoryComparison, DateTime.UtcNow);
+            else
+                report = new
             {
                 App = "MECA Calibration Wizard v0.2.3",
                 ExportedAtUtc = DateTime.UtcNow,
@@ -595,7 +600,8 @@ public partial class MainWindow : Window
                 }),
                 Note = "WinMM values may already be calibrated by Windows: not raw sensor ADC or physical force. Zero reported idle variation cannot prove correct earthing or absence of EMI. Axis names differ from DIView. No calibration is applied."
             };
-            File.WriteAllText(save.FileName, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(save.FileName,
+                JsonSerializer.Serialize(report, report.GetType(), new JsonSerializerOptions { WriteIndented = true }));
             MessageBox.Show(this, "Preview report saved. Device calibration was not changed.", "Export complete",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }

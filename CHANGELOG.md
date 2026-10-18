@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Allow an explicit successful HID inventory to be exported from Advanced diagnostics without a WinMM controller selection. HID-only JSON contains no device, pedal or sweep readings and declares both association and raw sensor verification false; add hardware-free eligibility, privacy and provenance regression. Windows GUI verification pending.
+
 - Add an Advanced diagnostics JSON export button reusing the existing read-only preview export, without repeating pedal capture. Explain when no WinMM controller is selected. Add a hardware-free XAML UI regression; Windows GUI validation pending.
 
 - Clarify that an unchanged total HID interface count can conceal VID/PID group changes; add synthetic swap, no-false-positive and JSON privacy regressions. No physical-device or WinMM association inferred. Windows GUI validation pending.
