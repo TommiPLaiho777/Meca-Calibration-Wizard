@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Reject HID-only JSON comparisons with impossible previous-scan totals, negative group counts, duplicate or zero-delta VID/PID changes. Add synthetic regression cases including a valid unidentified-interface transition. Does not verify device identity, raw ADC or WinMM association; Windows GUI verification pending.
+
 - Bind HID-only comparison export to the complete current VID/PID group counts, including unchanged groups. Reject stale comparisons with coincidentally equal totals; add synthetic accept/reject and JSON privacy regressions. No physical device identity, WinMM association or raw sensor access is established. Windows GUI validation pending.
 
 - Reject inconsistent HID-only inventory metadata (impossible totals, negative counts or duplicate VID/PID groups) before JSON export; synthetic fail-closed regressions preserve valid empty scans. Does not verify physical device identity or raw sensor access. Windows GUI verification pending.

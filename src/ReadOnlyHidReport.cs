@@ -32,6 +32,23 @@ internal static class ReadOnlyHidReport
         {
             var currentCounts = inventory.Groups.ToDictionary(
                 g => (g.VendorId, g.ProductId), g => g.InterfaceCount);
+            // Verify the previous scan's totals using count-only differences.
+            long previousGroupedCount =
+                (long)comparison.CurrentInterfaceCount - comparison.CurrentUnidentifiedCount +
+                comparison.Changes.Sum(change => (long)change.PreviousCount - change.CurrentCount);
+            if (comparison.PreviousInterfaceCount < 0 ||
+                comparison.PreviousUnidentifiedCount < 0 ||
+                comparison.PreviousUnidentifiedCount > comparison.PreviousInterfaceCount ||
+                comparison.Changes.Any(change =>
+                    change.PreviousCount < 0 || change.CurrentCount < 0 ||
+                    change.PreviousCount == change.CurrentCount) ||
+                comparison.Changes.Select(change => (change.VendorId, change.ProductId))
+                    .Distinct().Count() != comparison.Changes.Count ||
+                previousGroupedCount + comparison.PreviousUnidentifiedCount !=
+                    comparison.PreviousInterfaceCount)
+                throw new ArgumentException(
+                    "HID comparison counts are inconsistent.", nameof(comparison));
+
             if (comparison.CurrentGroupCounts is null ||
                 !comparison.CurrentGroupCounts
                     .OrderBy(g => g.VendorId).ThenBy(g => g.ProductId)
