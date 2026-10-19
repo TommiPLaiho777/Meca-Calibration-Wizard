@@ -382,6 +382,15 @@ static class Checks
                 advanced.Descendants().Any(e => e.Name.LocalName == "Button" &&
                     (string?)e.Attribute("Click") == "ScanHid_Click"),
             "Advanced must offer read-only JSON export alongside the explicit HID scan");
+        // Setup must visibly explain where the owner's HID scan and WinMM
+        // diagnostics live, without suggesting direct sensor/ADC access.
+        var advancedEntry = xaml.Descendants().Single(e => e.Name.LocalName == "Button" &&
+            (string?)e.Attribute("Click") == "Advanced_Click");
+        Require(((string?)advancedEntry.Attribute("Content"))?.Contains("Advanced diagnostics") == true &&
+                xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                    (string?)e.Attribute("Text") == "WinMM axes · HID identifiers · read-only"),
+            "setup must expose a clearly labelled, read-only HID/WinMM diagnostics entry");
+        Console.WriteLine("PASS: Advanced diagnostics discoverability and read-only scope");
         Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
 
         Console.WriteLine("ALL CHECKS PASSED");

@@ -95,6 +95,8 @@
                             </StackPanel>
                         </Border>
                         <Button Content="Advanced diagnostics  ›" Click="Advanced_Click" HorizontalAlignment="Left" Margin="0,24,0,0"/>
+                        <TextBlock Text="WinMM axes · HID identifiers · read-only" Foreground="{StaticResource DimBrush}"
+                                   FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Animated symbolic pedal capture -->
