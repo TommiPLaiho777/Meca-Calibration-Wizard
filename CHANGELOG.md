@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Make the Advanced diagnostics entry easier to find from setup with an explicit `WinMM axes · HID identifiers · read-only` caption. Add a hardware-free XAML discoverability regression and update the issue #2 documentation to distinguish the verified 2026-10-17 count-only scan from still-unverified WinMM↔HID association. Updated GUI caption not yet physically checked.
+
 - Validate optional HID inventory/comparison metadata in WinMM+HID JSON exports too; reject orphan or contradictory comparisons, while preserving exports when the optional HID scan is absent or unavailable. Add hardware-free regressions; Windows GUI verification pending.
 
 - Reject HID-only JSON comparisons with impossible previous-scan totals, negative group counts, duplicate or zero-delta VID/PID changes. Add synthetic regression cases including a valid unidentified-interface transition. Does not verify device identity, raw ADC or WinMM association; Windows GUI verification pending.
