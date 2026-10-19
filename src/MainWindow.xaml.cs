@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private Dictionary<string, uint>? _lastNoise;
     private Dictionary<string, SignalHealthStats>? _lastSignalHealth;
     private HidInventorySnapshot? _hidInventory;
+    private HidInventoryComparison? _hidInventoryComparison;
     private InputSweepRun? _sweep;
     private PedalKind? _sweepKind;
     private DateTime _sweepStartUtc;
@@ -43,7 +44,9 @@ public partial class MainWindow : Window
 
     private void RefreshDevices()
     {
-        _hidInventory = null; // A new device refresh invalidates the previous manual inventory.
+        _hidInventory = null; // Refresh starts a new explicit comparison sequence.
+        _hidInventoryComparison = null;
+        if (HidScanButton is not null) HidScanButton.Content = "Scan HID identifiers";
         if (HidInventoryText is not null)
             HidInventoryText.Text = "Not scanned. No HID device paths or serials are exported.";
         var previousId = _device?.Id;
@@ -140,6 +143,7 @@ public partial class MainWindow : Window
         BrakeSweepButton.IsEnabled = true;
         ThrottleSweepButton.IsEnabled = true;
         CheckSignalButton.IsEnabled = true;
+        LongSignalButton.IsEnabled = true;
         _step = step;
         WelcomeView.Visibility = step == 0 ? Visibility.Visible : Visibility.Collapsed;
         CaptureView.Visibility = step is >= 1 and <= 3 ? Visibility.Visible : Visibility.Collapsed;
@@ -275,7 +279,11 @@ public partial class MainWindow : Window
             {
                 StatusText.Text = "Controller unavailable · check USB connection";
                 _capture = null;
+                if (_noise is not null)
+                    SignalText.Text = "Signal check cancelled: controller disconnected.";
                 _noise = null;
+                CheckSignalButton.IsEnabled = true;
+                LongSignalButton.IsEnabled = true;
                 _sweep = null;
                 _sweepKind = null;
                 BrakeSweepButton.IsEnabled = true;
@@ -322,7 +330,8 @@ public partial class MainWindow : Window
 
         if (_noise is not null)
         {
-            _noise.Observe(sample);
+            var now = DateTime.UtcNow;
+            _noise.Observe(sample, now);
             if (_noise.Complete)
             {
                 _lastNoise = _mappings.ToDictionary(
@@ -332,7 +341,14 @@ public partial class MainWindow : Window
                     p => _noise.Analyze(p.Value.Axis, _device.Min[p.Value.Axis], _device.Max[p.Value.Axis]));
                 _noise = null;
                 CheckSignalButton.IsEnabled = true;
+                LongSignalButton.IsEnabled = true;
                 SignalText.Text = FormatNoise();
+            }
+            else
+            {
+                var remaining = Math.Max(0, _noise.RequestedDurationSeconds -
+                    (now - _noise.StartedUtc).TotalSeconds);
+                SignalText.Text = $"Keep pedals released · {remaining:0.0}s remaining";
             }
         }
 
@@ -462,8 +478,18 @@ public partial class MainWindow : Window
         HidScanButton.IsEnabled = false;
         try
         {
-            _hidInventory = HidInterfaceInventory.Scan();
-            HidInventoryText.Text = _hidInventory.Summary;
+            var previous = _hidInventory;
+            var current = HidInterfaceInventory.Scan();
+            _hidInventoryComparison = previous is { Available: true } && current.Available
+                ? HidInterfaceInventory.Compare(previous, current) : null;
+            _hidInventory = current;
+            HidInventoryText.Text = current.Summary +
+                (current.Available
+                    ? _hidInventoryComparison is null
+                        ? "\nScan again to compare grouped counts."
+                        : "\n\nCHANGES SINCE PREVIOUS SCAN\n" + _hidInventoryComparison.Summary
+                    : "\nComparison unavailable; scan again when enumeration works.");
+            HidScanButton.Content = current.Available ? "Rescan & compare" : "Scan HID identifiers";
         }
         finally
         {
@@ -471,14 +497,21 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CheckSignal_Click(object sender, RoutedEventArgs e)
+    private void CheckSignal_Click(object sender, RoutedEventArgs e) =>
+        BeginSignalCheck(NoiseRun.DurationSeconds);
+
+    private void CheckLongSignal_Click(object sender, RoutedEventArgs e) =>
+        BeginSignalCheck(NoiseRun.ExtendedDurationSeconds);
+
+    private void BeginSignalCheck(double seconds)
     {
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
-        _noise = new NoiseRun();
+        _noise = new NoiseRun(durationSeconds: seconds);
         _lastNoise = null;
         _lastSignalHealth = null;
         CheckSignalButton.IsEnabled = false;
-        SignalText.Text = "Measuring WinMM signal for 3s… keep all pedals released.";
+        LongSignalButton.IsEnabled = false;
+        SignalText.Text = $"Measuring WinMM signal for {seconds:0}s… keep all pedals released.";
     }
 
     private string FormatNoise()
@@ -486,22 +519,37 @@ public partial class MainWindow : Window
         if (_lastSignalHealth is null) return "Not measured";
         return string.Join("\n", _lastSignalHealth.Select(x =>
             $"{x.Key}: Δ{x.Value.SpanWinmm} · σ{x.Value.StandardDeviationWinmm:0.0} · " +
-            $"{x.Value.SamplingRateHz:0.0} Hz · {x.Value.Status} — {x.Value.Guidance}"));
+            $"{x.Value.SamplingRateHz:0.0} Hz" +
+            (x.Value.LargestSamplingGapSeconds is double gap ? $" · max gap {gap:0.00}s" : "") +
+            $" · {x.Value.Status} — {x.Value.Guidance}"));
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (_device is null) return;
+        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory))
+        {
+            MessageBox.Show(this,
+                "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
+                "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         var save = new SaveFileDialog
         {
             Filter = "JSON report (*.json)|*.json",
             FileName = $"meca-preview-{DateTime.Now:yyyyMMdd-HHmmss}.json",
-            Title = "Export calibration preview (read-only)"
+            Title = "Export read-only diagnostics report"
         };
         if (save.ShowDialog(this) != true) return;
         try
         {
-            var report = new
+            // Validate optional HID metadata on both export paths, including
+            // when a WinMM controller is selected.
+            ReadOnlyHidReport.ValidateOptionalMetadata(_hidInventory, _hidInventoryComparison);
+            object report;
+            if (_device is null)
+                report = ReadOnlyHidReport.Create(_hidInventory!, _hidInventoryComparison, DateTime.UtcNow);
+            else
+                report = new
             {
                 App = "MECA Calibration Wizard v0.2.3",
                 ExportedAtUtc = DateTime.UtcNow,
@@ -536,6 +584,7 @@ public partial class MainWindow : Window
                 SignalHealth = _lastSignalHealth,
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
                 HidInventory = _hidInventory, // optional explicit scan; aggregates only, no device paths
+                HidInventoryComparison = _hidInventoryComparison, // count-only difference between scans
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],
@@ -554,7 +603,8 @@ public partial class MainWindow : Window
                 }),
                 Note = "WinMM values may already be calibrated by Windows: not raw sensor ADC or physical force. Zero reported idle variation cannot prove correct earthing or absence of EMI. Axis names differ from DIView. No calibration is applied."
             };
-            File.WriteAllText(save.FileName, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(save.FileName,
+                JsonSerializer.Serialize(report, report.GetType(), new JsonSerializerOptions { WriteIndented = true }));
             MessageBox.Show(this, "Preview report saved. Device calibration was not changed.", "Export complete",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }

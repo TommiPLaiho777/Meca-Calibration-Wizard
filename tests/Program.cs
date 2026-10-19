@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using MecaCalibrationWizard;
 
 static class Checks
@@ -177,6 +178,28 @@ static class Checks
             noiseRun.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i*40));
         Require(noiseRun.Complete && noiseRun.Analyze(0, 0, 65535).SpanWinmm == 0,
                 "fixed-time signal capture");
+        // Optional longer stationary recording remains a pure WinMM observation.
+        var extended = new NoiseRun(fixedClock, NoiseRun.ExtendedDurationSeconds);
+        for (int i = 0; i < 250; i++)
+            extended.Observe(Axes(0, 42), fixedClock.AddMilliseconds(i * 40));
+        Require(!extended.Complete && extended.RequestedDurationSeconds == 10,
+            "long signal capture must not end before 10 seconds");
+        extended.Observe(Axes(0, 42), fixedClock.AddSeconds(10));
+        var extendedStats = extended.Analyze(0, 0, 65535);
+        Require(extended.Complete && extendedStats.WindowSeconds == 10 &&
+                extendedStats.SampleCount == 251 && extendedStats.SamplingRateHz == 25 &&
+                extendedStats.Status == "No variation resolved",
+            "10-second WinMM capture uses actual timestamps and unchanged diagnostics");
+        foreach (var invalidDuration in new[] { 0.0, -1.0, double.NaN, double.PositiveInfinity, 61.0 })
+        {
+            try
+            {
+                _ = new NoiseRun(fixedClock, invalidDuration);
+                throw new Exception("FAILED: invalid signal-check duration accepted");
+            }
+            catch (ArgumentOutOfRangeException) { }
+        }
+        Console.WriteLine("PASS: optional 10s stationary WinMM capture and duration validation");
         // Observed 2026-10-15 WinMM brake idle-check span reached 25769;
         // this cannot be interpreted as idle electrical noise.
         var observedMotion = Enumerable.Repeat(0u, 64).ToArray();
@@ -188,6 +211,84 @@ static class Checks
             "large WinMM movement must prompt repeat, not a false EMI diagnosis");
         Require(flat.Guidance.Contains("deadzones"),
             "zero variation must not imply a proven noise-free sensor");
+        // Eight identical values over 3 seconds cannot justify a quiet-signal
+        // conclusion; 8 values over 1 second still exercise the existing
+        // small-variation fixture above.
+        var sparseIdle = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(0u, 8).ToArray(), 0, 65535, 3.0);
+        Require(sparseIdle.SampleCount == 8 &&
+                sparseIdle.SpanWinmm == 0 &&
+                sparseIdle.SamplingRateHz == 2.33 &&
+                sparseIdle.Status == "Insufficient samples" &&
+                sparseIdle.Guidance.Contains("widely spaced"),
+            "sparse idle WinMM samples must not be reported as resolved stability");
+        var adequateIdle = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(0u, 16).ToArray(), 0, 65535, 3.0);
+        Require(adequateIdle.SamplingRateHz == 5.0 &&
+                adequateIdle.Status == "No variation resolved",
+            "five-Hz minimum threshold is inclusive");
+        var sparseMoving = SignalHealthDiagnostics.Evaluate(
+            new uint[] { 0, 0, 0, 25000, 0, 0, 0, 0 }, 0, 65535, 3.0);
+        Require(sparseMoving.Status == "Insufficient samples" &&
+                sparseMoving.SpanWinmm == 25000 &&
+                sparseMoving.LargeStepCount == 2,
+            "sparse recordings must retain numerical motion evidence");
+        // A burst of valid samples before and after a 1.4s polling outage
+        // must not be labelled stable merely because the average rate is high.
+        var gapClock = new DateTime(2026, 10, 16, 0, 0, 0, DateTimeKind.Utc);
+        var gappedRun = new NoiseRun(gapClock);
+        for (int i = 0; i <= 20; i++)
+            gappedRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(i * 40));
+        for (int i = 0; i <= 20; i++)
+            gappedRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(2200 + i * 40));
+        var gappedHealth = gappedRun.Analyze(0, 0, 65535);
+        Require(gappedRun.Complete && gappedHealth.SampleCount == 42 &&
+                gappedHealth.SamplingRateHz > 5 &&
+                gappedHealth.LargestSamplingGapSeconds == 1.4 &&
+                gappedHealth.Status == "Insufficient samples" &&
+                gappedHealth.SpanWinmm == 0,
+            "long WinMM polling gap must override misleading average sample rate");
+        var steadyRun = new NoiseRun(gapClock);
+        for (int i = 0; i <= 75; i++)
+            steadyRun.Observe(Axes(), gapClock.AddMilliseconds(i * 40));
+        var steadyHealth = steadyRun.Analyze(0, 0, 65535);
+        Require(steadyHealth.LargestSamplingGapSeconds == 0.04 &&
+                steadyHealth.Status == "No variation resolved",
+            "normal 40ms WinMM polling must remain acceptable");
+        var firstSampleDelayed = new NoiseRun(gapClock);
+        for (int i = 0; i <= 40; i++)
+            firstSampleDelayed.Observe(Axes(), gapClock.AddMilliseconds(1400 + i * 40));
+        Require(firstSampleDelayed.Analyze(0, 0, 65535).LargestSamplingGapSeconds == 1.4 &&
+                firstSampleDelayed.Analyze(0, 0, 65535).Status == "Insufficient samples",
+            "initial blind spot must also invalidate idle-signal quality");
+        Require(SignalHealthDiagnostics.Evaluate(
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.0).Status == "No variation resolved" &&
+                SignalHealthDiagnostics.Evaluate(
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.001).Status == "Insufficient samples",
+            "one-second gap threshold must be inclusive");
+        // A wall-clock rollback during capture must never be treated as a
+        // normal flat trace or as a positive polling gap.
+        var rollbackRun = new NoiseRun(gapClock);
+        for (int i = 0; i < 15; i++)
+            rollbackRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(i * 40));
+        rollbackRun.Observe(Axes(0, 0), gapClock.AddMilliseconds(400));
+        var rollbackHealth = rollbackRun.Analyze(0, 0, 65535);
+        Require(rollbackRun.Complete && rollbackHealth.TimestampRegressionDetected &&
+                rollbackHealth.Status == "Insufficient samples" &&
+                rollbackHealth.SampleCount == 15 &&
+                rollbackHealth.LargestSamplingGapSeconds == 0.04 &&
+                rollbackHealth.Guidance.Contains("timestamps moved backwards"),
+            "WinMM clock rollback must terminate capture and invalidate stability");
+        rollbackRun.Observe(Axes(0, 5000), gapClock.AddSeconds(10));
+        Require(rollbackRun.Analyze(0, 0, 65535).SampleCount == 15,
+            "invalid WinMM capture must not accept further samples");
+        var firstTimestampBeforeStart = new NoiseRun(gapClock);
+        firstTimestampBeforeStart.Observe(Axes(), gapClock.AddMilliseconds(-10));
+        Require(firstTimestampBeforeStart.Complete &&
+                firstTimestampBeforeStart.Analyze(0, 0, 65535).Status == "Insufficient samples" &&
+                firstTimestampBeforeStart.Analyze(0, 0, 65535).TimestampRegressionDetected,
+            "clock rollback before first sample must not hang or look stable");
+        Console.WriteLine("PASS: backward WinMM timestamps invalidate capture safely");
         Console.WriteLine("PASS: signal-health metrics, timing and conservative statuses");
 
         var caps = new WinmmJoystick.Device(3, "Example", new uint[6], new uint[6],
@@ -224,6 +325,64 @@ static class Checks
                 @"\\?\hid#pid_abcd&vid_1234#PRIVATE_SERIAL", out _, out _),
             "invalid HID identifier patterns must not be accepted");
         Console.WriteLine("PASS: read-only HID interface ID aggregation and path privacy");
+
+
+        // Counts only: a changed group is not a proven physical controller identity.
+        var nextHid = HidInterfaceInventory.FromPaths(new[]
+        {
+            @"\\?\hid#VID_1234&PID_ABCD#PRIVATE_SERIAL_F#{GUID}",
+            @"\\?\hid#VID_1A2B&PID_3C4D#PRIVATE_SERIAL_G#{GUID}",
+            @"\\?\hid#VID_1A2B&PID_3C4D#PRIVATE_SERIAL_H#{GUID}",
+            @"\\?\hid#col01#PRIVATE_SERIAL_I#{GUID}"
+        });
+        var difference = HidInterfaceInventory.Compare(hid, nextHid);
+        Require(difference.PreviousInterfaceCount == 5 &&
+                difference.CurrentInterfaceCount == 4 &&
+                difference.PreviousUnidentifiedCount == 2 &&
+                difference.CurrentUnidentifiedCount == 1 &&
+                difference.Changes.Count == 2 &&
+                difference.Changes.Single(c => c.VendorId == 0x1234).Delta == -1 &&
+                difference.Changes.Single(c => c.VendorId == 0x1A2B).Delta == 1 &&
+                difference.Summary.Contains("not a verified MECA or WinMM match"),
+            "count-only HID inventory comparison must not infer physical device identity");
+        var differenceJson = JsonSerializer.Serialize(difference);
+        Require(!differenceJson.Contains("PRIVATE_SERIAL") &&
+                !differenceJson.Contains("DevicePath"),
+            "comparison JSON must never export instance paths or serials");
+        var equalCountsDifferentPaths = HidInterfaceInventory.FromPaths(new[]
+        {
+            @"\\?\hid#VID_1234&PID_ABCD#NEW_SERIAL_A#{GUID}",
+            @"\\?\hid#VID_1234&PID_ABCD#NEW_SERIAL_B#{GUID}",
+            @"\\?\hid#VID_1A2B&PID_3C4D#NEW_SERIAL_C#{GUID}",
+            @"\\?\hid#col01#NEW_SERIAL_D#{GUID}",
+            @"\\?\hid#VID_123&PID_9999#NEW_SERIAL_E#{GUID}"
+        });
+        var unchanged = HidInterfaceInventory.Compare(hid, equalCountsDifferentPaths);
+        Require(unchanged.Changes.Count == 0 &&
+                unchanged.Summary.Contains("individual interfaces may still have changed"),
+            "equal VID/PID counts cannot prove the same physical device remains");
+        try
+        {
+            HidInterfaceInventory.Compare(hid,
+                new HidInventorySnapshot(false, "failed", 0, 0, Array.Empty<HidInterfaceGroup>()));
+            throw new Exception("FAILED: incomplete scan accepted as valid comparison");
+        }
+        catch (ArgumentException) { }
+        Console.WriteLine("PASS: HID count-difference diagnostics and privacy boundaries");
+
+        // Inspect UI markup without requiring a Windows desktop or physical pedals.
+        // The Windows CI job also compiles the real WPF application.
+        var xaml = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        var advanced = xaml.Descendants().Single(e => e.Name.LocalName == "StackPanel" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "AdvancedView"));
+        var exportButton = advanced.Descendants().Single(e => e.Name.LocalName == "Button" &&
+            (string?)e.Attribute("Content") == "Export read-only report (JSON)");
+        Require((string?)exportButton.Attribute("Click") == "Export_Click" &&
+                ((string?)exportButton.Attribute("ToolTip"))?.Contains("No controller settings are changed.") == true &&
+                advanced.Descendants().Any(e => e.Name.LocalName == "Button" &&
+                    (string?)e.Attribute("Click") == "ScanHid_Click"),
+            "Advanced must offer read-only JSON export alongside the explicit HID scan");
+        Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
 
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;

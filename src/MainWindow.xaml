@@ -94,7 +94,7 @@
                                            Foreground="{StaticResource DimBrush}" Margin="0,7,0,0" FontSize="12" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
-                        <Button Content="Raw axis monitor  ›" Click="Advanced_Click" HorizontalAlignment="Left" Margin="0,24,0,0"/>
+                        <Button Content="Advanced diagnostics  ›" Click="Advanced_Click" HorizontalAlignment="Left" Margin="0,24,0,0"/>
                     </StackPanel>
 
                     <!-- Animated symbolic pedal capture -->
@@ -183,7 +183,9 @@
                                 <TextBlock Text="SIGNAL HEALTH" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
                                 <TextBlock Text="Keep all pedals released. Zero variation may be masked by Windows deadzones." FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,5,0,9"/>
                                 <DockPanel LastChildFill="True">
-                                    <Button x:Name="CheckSignalButton" DockPanel.Dock="Left" Content="Check Signal" Click="CheckSignal_Click"/>
+                                    <Button x:Name="CheckSignalButton" DockPanel.Dock="Left" Content="Check Signal · 3s" Click="CheckSignal_Click"/>
+                                    <Button x:Name="LongSignalButton" DockPanel.Dock="Left" Content="Long check · 10s"
+                                            Click="CheckLongSignal_Click" Margin="8,0,0,0"/>
                                     <TextBlock x:Name="SignalText" Text="Not measured" TextWrapping="Wrap"
                                                VerticalAlignment="Center" Margin="13,0,0,0" FontSize="12"/>
                                 </DockPanel>
@@ -220,7 +222,7 @@
                     <!-- Raw monitor -->
                     <StackPanel x:Name="AdvancedView" Visibility="Collapsed">
                         <TextBlock Text="ADVANCED  /  READ-ONLY" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="Bold"/>
-                        <TextBlock Text="Raw input monitor" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
+                        <TextBlock Text="Input diagnostics" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
                         <TextBlock Text="Windows joystick axis names may differ from DIView labels."
                                    Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,25,0,0" Padding="23" CornerRadius="12">
@@ -231,7 +233,7 @@
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,15,0,0" Padding="14" CornerRadius="10">
                             <StackPanel>
                                 <TextBlock Text="HID INTERFACE INVENTORY · READ-ONLY" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
-                                <TextBlock Text="Optional scan of all present Windows HID interfaces. It does not identify the pedal controller or read sensor values."
+                                <TextBlock Text="Scan twice to compare HID interface counts. No cable changes are required. Counts do not verify a pedal, WinMM association or sensor values."
                                            Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,8"/>
                                 <Button x:Name="HidScanButton" Content="Scan HID identifiers" Click="ScanHid_Click"
                                         HorizontalAlignment="Left"/>
@@ -239,6 +241,9 @@
                                            FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" Margin="0,9,0,0"/>
                             </StackPanel>
                         </Border>
+                        <Button x:Name="AdvancedExportButton" Content="Export read-only report (JSON)" Click="Export_Click"
+                                ToolTip="Save HID count metadata and any WinMM preview measurements. No controller settings are changed."
+                                HorizontalAlignment="Left" Margin="0,16,0,0"/>
                         <TextBlock Text="These are WinMM-reported values, which may already include Windows calibration. No settings are written."
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,19,0,0"/>
                         <Button Content="Return to setup" Click="ReturnToSetup_Click" HorizontalAlignment="Left" Margin="0,18,0,0"/>
