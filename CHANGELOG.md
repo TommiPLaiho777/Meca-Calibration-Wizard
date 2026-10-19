@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Reject inconsistent HID-only inventory metadata (impossible totals, negative counts or duplicate VID/PID groups) before JSON export; synthetic fail-closed regressions preserve valid empty scans. Does not verify physical device identity or raw sensor access. Windows GUI verification pending.
+
 - Reject HID-only JSON exports that pair a successful inventory with an inconsistent stale count comparison (totals, unidentified counts, or changed VID/PID groups). Add hardware-free regressions; does not establish device identity or raw sensor access. Windows GUI verification pending.
 
 - Allow an explicit successful HID inventory to be exported from Advanced diagnostics without a WinMM controller selection. HID-only JSON contains no device, pedal or sweep readings and declares both association and raw sensor verification false; add hardware-free eligibility, privacy and provenance regression. Windows GUI verification pending.

@@ -30,6 +30,35 @@ internal static class ReadOnlyHidReportChecks
         }
         catch (ArgumentException) { }
 
+        // Synthetic invalid inventories must fail closed before JSON export.
+        void RejectMalformed(HidInventorySnapshot malformed)
+        {
+            try
+            {
+                _ = ReadOnlyHidReport.Create(malformed, null, DateTime.UnixEpoch);
+            }
+            catch (ArgumentException)
+            {
+                return;
+            }
+            throw new Exception("FAILED: inconsistent HID inventory was exported");
+        }
+
+        RejectMalformed(inventory with { InterfaceCount = 3 });
+        RejectMalformed(inventory with { WithoutVidPidCount = -1 });
+        RejectMalformed(inventory with { Groups = new[]
+        {
+            new HidInterfaceGroup(0x1DD2, 0x22D2, 1),
+            new HidInterfaceGroup(0x1DD2, 0x22D2, 1)
+        } });
+        RejectMalformed(inventory with { Groups = new[]
+        {
+            new HidInterfaceGroup(0x1DD2, 0x22D2, -1)
+        } });
+        // A valid, successful scan can legitimately contain zero interfaces.
+        _ = ReadOnlyHidReport.Create(
+            HidInterfaceInventory.FromPaths(Array.Empty<string>()), null, DateTime.UnixEpoch);
+
         // A previous comparison must not silently be paired with a newer
         // or different HID inventory in an exported JSON report.
         void RejectStale(HidInventoryComparison stale)

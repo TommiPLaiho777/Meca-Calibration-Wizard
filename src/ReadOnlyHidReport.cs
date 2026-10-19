@@ -15,6 +15,16 @@ internal static class ReadOnlyHidReport
         if (!inventory.Available)
             throw new ArgumentException("Only a complete HID inventory may be exported.", nameof(inventory));
 
+        // Successful metadata scans must have internally consistent totals.
+        // Do not export impossible counts or duplicate VID/PID groups.
+        if (inventory.InterfaceCount < 0 || inventory.WithoutVidPidCount < 0 ||
+            inventory.Groups.Any(g => g.InterfaceCount <= 0) ||
+            inventory.Groups.Select(g => (g.VendorId, g.ProductId)).Distinct().Count() !=
+                inventory.Groups.Count ||
+            inventory.Groups.Sum(g => (long)g.InterfaceCount) +
+                inventory.WithoutVidPidCount != inventory.InterfaceCount)
+            throw new ArgumentException("HID inventory counts are inconsistent.", nameof(inventory));
+
         // Do not attach a comparison captured for another scan to this export.
         // Count-only metadata cannot prove physical identity, but it must at
         // least describe the current grouped inventory consistently.
