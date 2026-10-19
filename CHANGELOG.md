@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Validate optional HID inventory/comparison metadata in WinMM+HID JSON exports too; reject orphan or contradictory comparisons, while preserving exports when the optional HID scan is absent or unavailable. Add hardware-free regressions; Windows GUI verification pending.
+
 - Reject HID-only JSON comparisons with impossible previous-scan totals, negative group counts, duplicate or zero-delta VID/PID changes. Add synthetic regression cases including a valid unidentified-interface transition. Does not verify device identity, raw ADC or WinMM association; Windows GUI verification pending.
 
 - Bind HID-only comparison export to the complete current VID/PID group counts, including unchanged groups. Reject stale comparisons with coincidentally equal totals; add synthetic accept/reject and JSON privacy regressions. No physical device identity, WinMM association or raw sensor access is established. Windows GUI validation pending.

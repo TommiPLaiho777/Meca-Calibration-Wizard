@@ -542,6 +542,9 @@ public partial class MainWindow : Window
         if (save.ShowDialog(this) != true) return;
         try
         {
+            // Validate optional HID metadata on both export paths, including
+            // when a WinMM controller is selected.
+            ReadOnlyHidReport.ValidateOptionalMetadata(_hidInventory, _hidInventoryComparison);
             object report;
             if (_device is null)
                 report = ReadOnlyHidReport.Create(_hidInventory!, _hidInventoryComparison, DateTime.UtcNow);

@@ -9,11 +9,18 @@ internal static class ReadOnlyHidReport
     internal static bool CanExport(bool hasWinmmController, HidInventorySnapshot? inventory) =>
         hasWinmmController || inventory is { Available: true };
 
-    internal static object Create(
-        HidInventorySnapshot inventory, HidInventoryComparison? comparison, DateTime exportedAtUtc)
+    // Use this for both WinMM+HID and HID-only exports. A failed optional
+    // scan can be reported with WinMM data, but never with a comparison.
+    internal static void ValidateOptionalMetadata(
+        HidInventorySnapshot? inventory, HidInventoryComparison? comparison)
     {
-        if (!inventory.Available)
-            throw new ArgumentException("Only a complete HID inventory may be exported.", nameof(inventory));
+        if (inventory is null || !inventory.Available)
+        {
+            if (comparison is not null)
+                throw new ArgumentException(
+                    "HID comparison requires a successful current inventory.", nameof(comparison));
+            return;
+        }
 
         // Successful metadata scans must have internally consistent totals.
         // Do not export impossible counts or duplicate VID/PID groups.
@@ -62,6 +69,15 @@ internal static class ReadOnlyHidReport
                 throw new ArgumentException(
                     "HID comparison does not match the current inventory.", nameof(comparison));
         }
+
+    }
+
+    internal static object Create(
+        HidInventorySnapshot inventory, HidInventoryComparison? comparison, DateTime exportedAtUtc)
+    {
+        if (!inventory.Available)
+            throw new ArgumentException("Only a complete HID inventory may be exported.", nameof(inventory));
+        ValidateOptionalMetadata(inventory, comparison);
 
         return new
         {
