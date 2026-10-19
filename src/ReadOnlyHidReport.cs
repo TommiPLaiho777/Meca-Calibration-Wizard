@@ -32,7 +32,12 @@ internal static class ReadOnlyHidReport
         {
             var currentCounts = inventory.Groups.ToDictionary(
                 g => (g.VendorId, g.ProductId), g => g.InterfaceCount);
-            if (comparison.CurrentInterfaceCount != inventory.InterfaceCount ||
+            if (comparison.CurrentGroupCounts is null ||
+                !comparison.CurrentGroupCounts
+                    .OrderBy(g => g.VendorId).ThenBy(g => g.ProductId)
+                    .SequenceEqual(inventory.Groups
+                        .OrderBy(g => g.VendorId).ThenBy(g => g.ProductId)) ||
+                comparison.CurrentInterfaceCount != inventory.InterfaceCount ||
                 comparison.CurrentUnidentifiedCount != inventory.WithoutVidPidCount ||
                 comparison.Changes.Any(change =>
                     currentCounts.GetValueOrDefault((change.VendorId, change.ProductId)) !=

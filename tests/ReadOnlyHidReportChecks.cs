@@ -95,6 +95,12 @@ internal static class ReadOnlyHidReportChecks
             "hid#VID_AAAA&PID_BBBB#B"
         });
         RejectStale(HidInterfaceInventory.Compare(inventory, swapped));
+        // Equal totals and an empty change list do not make a comparison
+        // from a different VID/PID inventory current.
+        RejectStale(HidInterfaceInventory.Compare(swapped, swapped));
+        // A comparison whose second scan is this inventory remains valid.
+        _ = ReadOnlyHidReport.Create(inventory,
+            HidInterfaceInventory.Compare(swapped, inventory), DateTime.UnixEpoch);
 
         var diff = HidInterfaceInventory.Compare(inventory, inventory);
         var report = ReadOnlyHidReport.Create(inventory, diff, DateTime.UnixEpoch);
@@ -114,7 +120,8 @@ internal static class ReadOnlyHidReportChecks
             root.GetProperty("WinmmAssociationVerified").GetBoolean() ||
             root.GetProperty("UncalibratedSensorInputVerified").GetBoolean() ||
             json.Contains("PRIVATE_SERIAL_", StringComparison.Ordinal) ||
-            json.Contains("DevicePath", StringComparison.Ordinal))
+            json.Contains("DevicePath", StringComparison.Ordinal) ||
+            json.Contains("CurrentGroupCounts", StringComparison.Ordinal))
             throw new Exception("FAILED: HID-only JSON must not claim WinMM identity or leak paths");
 
         Console.WriteLine("PASS: HID-only export eligibility, stale comparison rejection, JSON provenance and privacy");

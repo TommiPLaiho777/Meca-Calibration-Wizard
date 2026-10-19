@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
 
 namespace MecaCalibrationWizard;
 
@@ -53,6 +54,11 @@ internal sealed record HidInventoryComparison(
     int PreviousUnidentifiedCount, int CurrentUnidentifiedCount,
     IReadOnlyList<HidInventoryCountChange> Changes)
 {
+    // Keep the complete current grouped counts, including unchanged groups,
+    // for export provenance checks. Internal, count-only, never serialized.
+    [JsonIgnore]
+    internal IReadOnlyList<HidInterfaceGroup>? CurrentGroupCounts { get; init; }
+
     public string InputSource => "WINDOWS_SETUPAPI_HID_INTERFACE_COUNT_DIFFERENCE_NOT_DEVICE_MATCH_NOT_SENSOR_ADC";
     public bool WinmmAssociationVerified => false;
     public bool UncalibratedSensorInputVerified => false;
@@ -219,7 +225,10 @@ internal static class HidInterfaceInventory
             .Where(c => c.Delta != 0).ToArray();
         return new HidInventoryComparison(
             previous.InterfaceCount, current.InterfaceCount,
-            previous.WithoutVidPidCount, current.WithoutVidPidCount, changes);
+            previous.WithoutVidPidCount, current.WithoutVidPidCount, changes)
+        {
+            CurrentGroupCounts = current.Groups.ToArray()
+        };
     }
 
     private static HidInventorySnapshot Unavailable(string reason) =>
