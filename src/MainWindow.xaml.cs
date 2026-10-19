@@ -598,6 +598,7 @@ public partial class MainWindow : Window
                     p.Value.AtHighLimitSamples,
                     p.Value.FirstHighLimitMs,
                     p.Value.LongestHighLimitRunSamples,
+                    p.Value.HighLimitInterpretation,
                     Assessment = SweepDiagnostics.Evaluate(p.Value.Trace, _device.Min[_mappings[p.Key].Axis], _device.Max[_mappings[p.Key].Axis]),
                     p.Value.Trace
                 }),

@@ -118,6 +118,14 @@ static class Checks
         Require(sweep.Result.AtHighLimitSamples >= 20, "endpoint samples counted");
         Require(sweep.Result.DistinctValues >= 50, "axis distinguishable steps");
         Require(sweep.Result.Trace.Count == 201, "time trace recorded");
+        Require(sweep.Result.HighLimitInterpretation.Contains("WinMM high axis limit observed") &&
+                sweep.Result.HighLimitInterpretation.Contains("does not verify sensor ADC clipping"),
+            "WinMM axis saturation must not be presented as sensor clipping");
+        var sweepJson = JsonSerializer.Serialize(sweep.Result);
+        Require(sweepJson.Contains("\"HighLimitInterpretation\"") &&
+                sweepJson.Contains("does not verify sensor ADC clipping") &&
+                !sweepJson.Contains("sensor clipped"),
+            "serialized sweep must explain the high-limit provenance");
         Console.WriteLine("PASS: 8s progressive sweep and clipping statistics");
 
         var stationary = new InputSweepRun(0, 0, 65535, sweepClock);
@@ -125,7 +133,11 @@ static class Checks
         stationary.Observe(Axes(), sweepClock.AddSeconds(8));
         Require(stationary.Result is not null && stationary.Result.DistinctValues == 1 &&
                 stationary.Result.IntermediateSamples == 0, "idle signal is not full sweep");
+        Require(stationary.Result.HighLimitInterpretation.Contains("No Windows WinMM high-limit samples observed") &&
+                stationary.Result.HighLimitInterpretation.Contains("does not establish sensor headroom"),
+            "absence of WinMM saturation must not imply native sensor headroom");
         Console.WriteLine("PASS: no movement is not a valid full sweep");
+        Console.WriteLine("PASS: additive WinMM high-limit interpretation in read-only sweep JSON");
 
         var fixturePath = Path.Combine(AppContext.BaseDirectory, "fixtures", "real-winmm-sweeps-20261014.json");
         using (var fixture = JsonDocument.Parse(File.ReadAllText(fixturePath)))
