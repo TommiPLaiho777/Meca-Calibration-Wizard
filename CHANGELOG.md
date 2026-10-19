@@ -2,6 +2,8 @@
 
 ## v0.2.3 (development candidate, 2026-10-15)
 
+- Ignore WinMM sweep observations with negative or backward UTC timestamps, preventing clock adjustments from creating nonmonotonic JSON traces. Add synthetic rollback and equal-millisecond regressions; no physical pedal validation or Windows settings changes.
+
 - Add conservative `HighLimitInterpretation` to read-only WinMM sweep JSON. Reaching the Windows axis ceiling does not prove sensor ADC clipping; not reaching it does not prove sensor headroom. Add synthetic high-limit and stationary-sweep regressions. No hardware or calibration changes; Windows GUI verification pending.
 
 - Make the Advanced diagnostics entry easier to find from setup with an explicit `WinMM axes · HID identifiers · read-only` caption. Add a hardware-free XAML discoverability regression and update the issue #2 documentation to distinguish the verified 2026-10-17 count-only scan from still-unverified WinMM↔HID association. Updated GUI caption not yet physically checked.

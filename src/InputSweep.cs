@@ -55,7 +55,11 @@ internal sealed class InputSweepRun
     public void Observe(uint[] reading, DateTime utcNow)
     {
         if (Complete || reading.Length <= _axis) return;
-        _trace.Add(new SweepPoint(Math.Max(0, (long)(utcNow - _startUtc).TotalMilliseconds), reading[_axis]));
+        // A Windows clock adjustment can move UTC backwards mid-capture.
+        // Drop retrograde samples rather than exporting a nonmonotonic trace.
+        long timeMs = (long)(utcNow - _startUtc).TotalMilliseconds;
+        if (timeMs < 0 || (_trace.Count > 0 && timeMs < _trace[^1].TimeMs)) return;
+        _trace.Add(new SweepPoint(timeMs, reading[_axis]));
         if (Progress(utcNow) < 1) return;
 
         // Within 0.2% of the device's WinMM-reported min/max counts as at-limit.

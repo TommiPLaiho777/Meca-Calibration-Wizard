@@ -139,6 +139,22 @@ static class Checks
         Console.WriteLine("PASS: no movement is not a valid full sweep");
         Console.WriteLine("PASS: additive WinMM high-limit interpretation in read-only sweep JSON");
 
+        // Clock rollback must not create out-of-order samples or artificial spikes.
+        // Equal-millisecond observations remain valid for coarse Windows clocks.
+        var rollbackSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        rollbackSweep.Observe(Axes(0, 99), sweepClock.AddMilliseconds(-40));
+        rollbackSweep.Observe(Axes(0, 100), sweepClock);
+        rollbackSweep.Observe(Axes(0, 200), sweepClock.AddMilliseconds(120));
+        rollbackSweep.Observe(Axes(0, 9999), sweepClock.AddMilliseconds(80));
+        rollbackSweep.Observe(Axes(0, 300), sweepClock.AddMilliseconds(120));
+        rollbackSweep.Observe(Axes(0, 400), sweepClock.AddSeconds(8));
+        Require(rollbackSweep.Result is { SampleCount: 4 } &&
+                rollbackSweep.Result.Trace.Select(p => p.TimeMs)
+                    .SequenceEqual(new long[] { 0, 120, 120, 8000 }) &&
+                !rollbackSweep.Result.Trace.Any(p => p.WinmmValue == 9999),
+            "clock rollback must not corrupt exported WinMM sweep timestamps or readings");
+        Console.WriteLine("PASS: WinMM sweep clock-rollback timestamp integrity");
+
         var fixturePath = Path.Combine(AppContext.BaseDirectory, "fixtures", "real-winmm-sweeps-20261014.json");
         using (var fixture = JsonDocument.Parse(File.ReadAllText(fixturePath)))
         {
