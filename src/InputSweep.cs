@@ -62,8 +62,9 @@ internal sealed class InputSweepRun
         _trace.Add(new SweepPoint(timeMs, reading[_axis]));
         if (Progress(utcNow) < 1) return;
 
-        // Within 0.2% of the device's WinMM-reported min/max counts as at-limit.
-        var margin = Math.Max(1, _range * 0.002);
+        // For normal WinMM ranges, count samples within 0.2% of either axis limit.
+        // Cap the margin on narrow axes so low/high bands never overlap.
+        var margin = Math.Min(Math.Max(1.0, _range * 0.002), _range / 3.0);
         var lower = _lower + margin;
         var upper = _upper - margin;
         var midLow = _lower + _range * 0.02;
