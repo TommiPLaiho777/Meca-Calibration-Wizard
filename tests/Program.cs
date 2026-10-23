@@ -421,10 +421,34 @@ static class Checks
         Console.WriteLine("PASS: Advanced diagnostics discoverability and read-only scope");
         Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
 
+        // A controller-only export is permitted but must ask for confirmation.
+        // Completed HID scans and any WinMM measurements are meaningful exports.
+        Require(ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, null),
+            "empty WinMM controller-only report requires confirmation");
+        Require(!ReadOnlyHidReport.IsControllerOnlyExport(false, 0, false, false, 0, null) &&
+                !ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, hid) &&
+                !ReadOnlyHidReport.IsControllerOnlyExport(true, 1, false, false, 0, null) &&
+                !ReadOnlyHidReport.IsControllerOnlyExport(true, 0, true, false, 0, null) &&
+                !ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, true, 0, null) &&
+                !ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 1, null),
+            "HID or measured WinMM reports must not be mislabeled controller-only");
+
         // Hardware-free source-contract guard: after a successful pedal
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        int exportStart = windowSource.IndexOf("private void Export_Click(", StringComparison.Ordinal);
+        int saveDialogStart = windowSource.IndexOf("var save = new SaveFileDialog", exportStart, StringComparison.Ordinal);
+        Require(exportStart >= 0 && saveDialogStart > exportStart,
+            "read-only JSON export handler and save dialog must exist");
+        string exportPreamble = windowSource[exportStart..saveDialogStart];
+        Require(exportPreamble.Contains("ReadOnlyHidReport.IsControllerOnlyExport(") &&
+                exportPreamble.Contains("MessageBoxButton.YesNo") &&
+                exportPreamble.Contains("MessageBoxResult.No") &&
+                exportPreamble.Contains("MessageBoxResult.Yes"),
+            "controller-only exports must show an opt-in warning before choosing a file");
+        Console.WriteLine("PASS: controller-only report warning contract");
+
         int recaptureStart = windowSource.IndexOf("if (guide.Result is { } result)", StringComparison.Ordinal);
         Require(recaptureStart >= 0, "successful guided-capture branch must exist");
         int recaptureEnd = windowSource.IndexOf("\n                else", recaptureStart, StringComparison.Ordinal);
