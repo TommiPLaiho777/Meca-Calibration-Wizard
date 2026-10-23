@@ -28,12 +28,13 @@ internal static class SweepDiagnostics
         bool full = max >= .98;
         double observedTravel = (max - min) * 100;
 
-        // Order matters: release -> large stroke -> release. An idle trace, or
-        // a trace that starts at full throttle, is not a complete guided sweep.
+        // A complete guided sweep must start released, reach the pressed end,
+        // and finish released. Searching for any early/late rest sample can
+        // misclassify a trace that started pressed or ended with a second press.
         int pressIndex = Array.FindIndex(values, x => x >= .80);
-        bool startedNearRest = values.Take(Math.Min(8, values.Length)).Any(x => x <= .03);
-        bool returnedToRest = pressIndex >= 0 && values.Skip(pressIndex + 1).Any(x => x <= .03);
-        bool complete = startedNearRest && pressIndex >= 0 && returnedToRest;
+        bool startedNearRest = values[0] <= .03;
+        bool endedNearRest = values[^1] <= .03;
+        bool complete = startedNearRest && pressIndex > 0 && endedNearRest;
 
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
