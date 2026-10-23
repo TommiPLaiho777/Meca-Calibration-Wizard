@@ -24,7 +24,7 @@ internal sealed record InputSweepResult(
     // WinMM reports Windows joystick-axis values, not the native sensor ADC.
     // Neither reaching nor avoiding the axis ceiling establishes physical force.
     public string HighLimitInterpretation => AtHighLimitSamples > 0
-        ? "Windows WinMM high axis limit observed. This does not verify sensor ADC clipping or physical pedal force."
+        ? "Windows WinMM high-end axis band observed. This does not verify sensor ADC clipping or physical pedal force; band counts alone do not establish the exact Windows axis maximum."
         : "No Windows WinMM high-limit samples observed. This does not establish sensor headroom or physical pedal force.";
 }
 
