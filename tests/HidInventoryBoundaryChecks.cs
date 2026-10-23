@@ -44,6 +44,20 @@ internal static class HidInventoryBoundaryChecks
                 @"\\?\HiD#vId_1234&pId_abcd&mi_00#PRIVATE_SERIAL", out var mixedVid, out var mixedPid) ||
             mixedVid != 0x1234 || mixedPid != 0xABCD)
             throw new Exception("FAILED: valid mixed-case HID hardware ID was rejected");
+        // The SetupAPI scan probes index 512 after counting 0..511.
+        // A normal end-of-enumeration is complete; 513+ or an API error is not.
+        if (!HidInterfaceInventory.EnumerationEnded(false, 259) ||
+            HidInterfaceInventory.EnumerationEnded(true, 0) ||
+            HidInterfaceInventory.EnumerationEnded(false, 5))
+            throw new Exception("FAILED: HID enumeration cap/end-of-list classification");
+
+        var atCap = HidInterfaceInventory.FromPaths(
+            Enumerable.Repeat("hid#VID_1234&PID_ABCD#SYNTHETIC", 512));
+        if (!atCap.Available || atCap.InterfaceCount != 512 ||
+            atCap.WithoutVidPidCount != 0 ||
+            atCap.Groups.Count != 1 || atCap.Groups[0].InterfaceCount != 512)
+            throw new Exception("FAILED: complete 512-interface synthetic aggregation");
+        Console.WriteLine("PASS: 512-interface HID inventory cap classification (synthetic)");
         Console.WriteLine("PASS: terminated HID paths, hardware-ID boundaries and aggregate counts");
     }
 }
