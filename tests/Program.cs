@@ -128,6 +128,25 @@ static class Checks
             "serialized sweep must explain the high-limit provenance");
         Console.WriteLine("PASS: 8s progressive sweep and clipping statistics");
 
+        // Narrow WinMM axes must never count the same sample at both limits.
+        // Use only synthetic values: no physical pedal or Windows device access.
+        foreach (var (width, expectedLow, expectedHigh) in new[]
+        {
+            (1u, 1, 1), (2u, 1, 1), (3u, 2, 2)
+        })
+        {
+            var narrow = new InputSweepRun(0, 0, width, sweepClock);
+            for (uint value = 0; value <= width; value++)
+                narrow.Observe(Axes(0, value), sweepClock.AddMilliseconds(value * 100));
+            narrow.Observe(Axes(0, 0), sweepClock.AddSeconds(8));
+            Require(narrow.Result is { } narrowResult &&
+                    narrowResult.AtLowLimitSamples == expectedLow + 1 &&
+                    narrowResult.AtHighLimitSamples == expectedHigh &&
+                    narrowResult.AtLowLimitSamples + narrowResult.AtHighLimitSamples <= narrowResult.SampleCount,
+                $"axis width {width}: WinMM low/high limit bands must be disjoint");
+        }
+        Console.WriteLine("PASS: narrow WinMM axis endpoint bands are disjoint");
+
         var stationary = new InputSweepRun(0, 0, 65535, sweepClock);
         stationary.Observe(Axes(), sweepClock);
         stationary.Observe(Axes(), sweepClock.AddSeconds(8));
