@@ -118,7 +118,7 @@ static class Checks
         Require(sweep.Result.AtHighLimitSamples >= 20, "endpoint samples counted");
         Require(sweep.Result.DistinctValues >= 50, "axis distinguishable steps");
         Require(sweep.Result.Trace.Count == 201, "time trace recorded");
-        Require(sweep.Result.HighLimitInterpretation.Contains("WinMM high axis limit observed") &&
+        Require(sweep.Result.HighLimitInterpretation.Contains("WinMM high-end axis band observed") &&
                 sweep.Result.HighLimitInterpretation.Contains("does not verify sensor ADC clipping"),
             "WinMM axis saturation must not be presented as sensor clipping");
         var sweepJson = JsonSerializer.Serialize(sweep.Result);
@@ -219,6 +219,39 @@ static class Checks
                 $"{name}: reject false complete WinMM press-and-release");
         }
         Console.WriteLine("PASS: ordered WinMM sweep start/end regression checks");
+        // Near-ceiling WinMM readings can enter the 0.2% high-end band without
+        // ever observing the exact axis maximum. The JSON must distinguish them.
+        var nearHighValues = Enumerable.Range(0, 16)
+            .Select(index => (uint)Math.Round(65500.0 * index / 15))
+            .Concat(Enumerable.Range(0, 16)
+                .Select(index => (uint)Math.Round(65500.0 * (15 - index) / 15)))
+            .ToArray();
+        var nearHighTrace = nearHighValues
+            .Select((value, index) => new SweepPoint(index * 260L, value)).ToArray();
+        var nearHighAssessment = SweepDiagnostics.Evaluate(nearHighTrace, 0, 65535);
+        Require(nearHighAssessment.CompletePressAndRelease &&
+                nearHighAssessment.Status == "Sweep captured" &&
+                !nearHighAssessment.ReachesReportedMaximum &&
+                nearHighAssessment.Explanation.Contains("maximum was not reached"),
+            "99.95% WinMM sweep must not claim exact Windows axis maximum");
+        var nearHighRun = new InputSweepRun(0, 0, 65535, sweepClock);
+        foreach (var point in nearHighTrace)
+            nearHighRun.Observe(Axes(0, point.WinmmValue), sweepClock.AddMilliseconds(point.TimeMs));
+        Require(nearHighRun.Complete && nearHighRun.Result is { AtHighLimitSamples: > 0 } nearHighResult &&
+                nearHighResult.HighLimitInterpretation.Contains("high-end axis band") &&
+                nearHighResult.HighLimitInterpretation.Contains("band counts alone"),
+            "near-high WinMM band count must not claim an exact endpoint");
+        var exactHighTrace = nearHighTrace
+            .Select(point => point with { WinmmValue = point.WinmmValue == 65500u ? 65535u : point.WinmmValue })
+            .ToArray();
+        var exactHighAssessment = SweepDiagnostics.Evaluate(exactHighTrace, 0, 65535);
+        Require(exactHighAssessment.CompletePressAndRelease &&
+                exactHighAssessment.ReachesReportedMaximum &&
+                exactHighAssessment.Explanation.Contains("Windows axis reached its limit"),
+            "observed exact WinMM maximum remains recognized");
+        Console.WriteLine("PASS: near-high band versus exact WinMM endpoint distinction");
+
+
         Console.WriteLine("PASS: invalid sweep cases correctly rejected");
 
 
