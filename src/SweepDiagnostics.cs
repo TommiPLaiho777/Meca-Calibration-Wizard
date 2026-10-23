@@ -25,7 +25,9 @@ internal static class SweepDiagnostics
         var distinct = trace.Select(s => s.WinmmValue).Distinct().Count();
         var min = values.Min();
         var max = values.Max();
-        bool full = max >= .98;
+        // Only an observed exact WinMM endpoint establishes that the reported axis maximum was reached.
+        // A 98–99.9% reading is near the limit, not proof of an endpoint sample.
+        bool full = trace.Any(point => point.WinmmValue == axisMax);
         double observedTravel = (max - min) * 100;
 
         // A complete guided sweep must start released, reach the pressed end,
