@@ -548,6 +548,15 @@ public partial class MainWindow : Window
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        if (ReadOnlyHidReport.IsControllerOnlyExport(
+                _device is not null, _mappings.Count, _lastNoise is not null,
+                _lastSignalHealth is not null, _sweepResults.Count, _hidInventory) &&
+            MessageBox.Show(this,
+                "No pedal measurements or HID scan are included. This report will contain only the selected WinMM controller details. Continue exporting?",
+                "Controller-only report", MessageBoxButton.YesNo,
+                MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+
         var save = new SaveFileDialog
         {
             Filter = "JSON report (*.json)|*.json",
