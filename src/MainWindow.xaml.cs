@@ -109,6 +109,16 @@ public partial class MainWindow : Window
         {
             _mappings.Remove(PedalKind.Clutch);
             _calibrationResults.Remove(PedalKind.Clutch);
+            // An earlier signal check may contain a now-disabled clutch.
+            // Discard the cached WinMM snapshots instead of exporting stale
+            // clutch data under the current pedal selection.
+            if (_lastNoise is not null || _lastSignalHealth is not null)
+            {
+                _lastNoise = null;
+                _lastSignalHealth = null;
+                if (SignalText is not null)
+                    SignalText.Text = "Pedal selection changed · run signal check again.";
+            }
         }
         UpdateMappingLabels();
         if (_step == 4) ClutchTestArea.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
