@@ -449,6 +449,19 @@ static class Checks
             "controller-only exports must show an opt-in warning before choosing a file");
         Console.WriteLine("PASS: controller-only report warning contract");
 
+        // Source-level contract for the WPF WinMM+HID JSON path. The HID-only
+        // serializer already emits these fields; both export paths must state
+        // that matching identifiers do not prove device identity or raw ADC.
+        int winmmExportStart = windowSource.IndexOf("else\n                report = new", exportStart, StringComparison.Ordinal);
+        int reportWriteStart = windowSource.IndexOf("File.WriteAllText(save.FileName", winmmExportStart, StringComparison.Ordinal);
+        Require(winmmExportStart >= 0 && reportWriteStart > winmmExportStart,
+            "WinMM JSON export object must exist");
+        string winmmExportObject = windowSource[winmmExportStart..reportWriteStart];
+        Require(winmmExportObject.Contains("WinmmAssociationVerified = false,") &&
+                winmmExportObject.Contains("UncalibratedSensorInputVerified = false,"),
+            "WinMM+HID JSON must explicitly disavow verified device identity and raw ADC access");
+        Console.WriteLine("PASS: WinMM+HID JSON top-level provenance flags");
+
         int recaptureStart = windowSource.IndexOf("if (guide.Result is { } result)", StringComparison.Ordinal);
         Require(recaptureStart >= 0, "successful guided-capture branch must exist");
         int recaptureEnd = windowSource.IndexOf("\n                else", recaptureStart, StringComparison.Ordinal);
