@@ -58,7 +58,11 @@ jobs:
       - name: Zip artifact
         shell: pwsh
         run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.2.3-win-x64.zip
+      # CI always verifies and builds; only an explicitly requested run
+      # uploads a package, preventing routine PR pushes from exhausting
+      # artifact storage. Existing artifacts are preserved.
       - name: Upload verified Windows build
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: MecaCalibrationWizard-v0.2.3-win-x64
