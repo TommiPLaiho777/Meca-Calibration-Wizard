@@ -234,6 +234,12 @@ internal static class HidInterfaceInventory
     private static HidInventorySnapshot Unavailable(string reason) =>
         new(false, reason, 0, 0, Array.Empty<HidInterfaceGroup>());
 
+    // A successful probe at the cap means at least one more interface exists.
+    // ERROR_NO_MORE_ITEMS is the only result that proves a complete inventory.
+    // Kept pure so the 512/513 boundary can be regression-tested without HID hardware.
+    internal static bool EnumerationEnded(bool nextFound, int lastError) =>
+        !nextFound && lastError == ErrorNoMoreItems;
+
     // Explicit user action only. SetupAPI reads present interface metadata, not reports.
     internal static HidInventorySnapshot Scan()
     {
@@ -289,7 +295,21 @@ internal static class HidInterfaceInventory
                         Marshal.FreeHGlobal(detail);
                     }
                 }
-                return Unavailable("More than 512 HID interfaces; inventory not reported.");
+                // Indices 0..511 were successfully counted. Probe index 512
+                // without opening a device or retaining its path: exactly 512
+                // is complete, while 513+ must not be exported as complete.
+                var extraData = new SpDeviceInterfaceData
+                {
+                    Size = (uint)Marshal.SizeOf<SpDeviceInterfaceData>()
+                };
+                bool nextFound = SetupDiEnumDeviceInterfaces(
+                    deviceSet, IntPtr.Zero, ref hidGuid, (uint)MaxInterfaces, ref extraData);
+                int lastError = nextFound ? 0 : Marshal.GetLastPInvokeError();
+                if (EnumerationEnded(nextFound, lastError))
+                    return counter.Snapshot();
+                return nextFound
+                    ? Unavailable("More than 512 HID interfaces; inventory not reported.")
+                    : Unavailable($"HID enumeration incomplete (Windows error {lastError}).");
             }
             finally
             {
