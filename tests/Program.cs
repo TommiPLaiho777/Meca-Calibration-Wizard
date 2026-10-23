@@ -182,6 +182,24 @@ static class Checks
         var missingRelease = Enumerable.Range(0, 30).Select(i => new SweepPoint(i*100, (uint)(65535 * i / 29))).ToArray();
         Require(SweepDiagnostics.Evaluate(missingRelease, 0, 65535).Status == "Incomplete sweep",
             "missing release fails the quality check");
+        // Regressions: an early rest sample or a previous completed stroke
+        // must not hide a pressed start or an unreleased final stroke.
+        var startsPressed = new uint[] { 65535, 0, 7000, 16000, 32000, 53000, 65535 };
+        var secondStrokeHeld = new uint[] { 0, 8000, 30000, 56000, 0, 9000, 35000, 65535 };
+        var startsPartPressed = new uint[] { 32000, 0, 8000, 16000, 35000, 55000, 0 };
+        foreach (var (name, values) in new[]
+        {
+            ("starts pressed, finishes pressed", startsPressed),
+            ("second stroke not released", secondStrokeHeld),
+            ("starts partially pressed", startsPartPressed)
+        })
+        {
+            var trace = values.Select((value, index) => new SweepPoint(index * 100, value)).ToArray();
+            var assessment = SweepDiagnostics.Evaluate(trace, 0, 65535);
+            Require(!assessment.CompletePressAndRelease && assessment.Status == "Incomplete sweep",
+                $"{name}: reject false complete WinMM press-and-release");
+        }
+        Console.WriteLine("PASS: ordered WinMM sweep start/end regression checks");
         Console.WriteLine("PASS: invalid sweep cases correctly rejected");
 
 
