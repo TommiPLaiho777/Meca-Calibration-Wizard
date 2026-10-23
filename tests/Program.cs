@@ -421,6 +421,21 @@ static class Checks
         Console.WriteLine("PASS: Advanced diagnostics discoverability and read-only scope");
         Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
 
+        // Hardware-free source-contract guard: after a successful pedal
+        // recapture, old WinMM noise/health statistics must not be exported
+        // under a potentially different axis mapping.
+        var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        int recaptureStart = windowSource.IndexOf("if (guide.Result is { } result)", StringComparison.Ordinal);
+        Require(recaptureStart >= 0, "successful guided-capture branch must exist");
+        int recaptureEnd = windowSource.IndexOf("\n                else", recaptureStart, StringComparison.Ordinal);
+        Require(recaptureEnd > recaptureStart, "successful guided-capture branch must be bounded");
+        string recaptureBranch = windowSource[recaptureStart..recaptureEnd];
+        Require(recaptureBranch.Contains("_sweepResults.Remove(guide.Kind)") &&
+                recaptureBranch.Contains("_lastNoise = null;") &&
+                recaptureBranch.Contains("_lastSignalHealth = null;"),
+            "successful pedal recapture must invalidate old sweep, noise and signal-health results");
+        Console.WriteLine("PASS: guided recapture invalidates stale WinMM diagnostics cache");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
