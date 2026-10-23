@@ -313,6 +313,11 @@ public partial class MainWindow : Window
                     _mappings[guide.Kind] = result.Mapping;
                     _calibrationResults[guide.Kind] = result;
                     _sweepResults.Remove(guide.Kind); // mapping changed; old sweep no longer applies
+                    // A new pedal capture may select a different WinMM axis.
+                    // Existing noise and signal-health results were sampled using
+                    // the previous mappings, so they must not be exported as current.
+                    _lastNoise = null;
+                    _lastSignalHealth = null;
                     UpdateMappingLabels();
                     CaptureQualityText.Text = result.PeakSpreadSummary;
                     CaptureFooter.Text = $"WinMM {WinmmJoystick.AxisNames[result.Mapping.Axis]} · Preview measured. No changes saved.";
