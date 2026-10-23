@@ -436,6 +436,22 @@ static class Checks
             "successful pedal recapture must invalidate old sweep, noise and signal-health results");
         Console.WriteLine("PASS: guided recapture invalidates stale WinMM diagnostics cache");
 
+        // Hardware-free WPF source contract: disabling an optional clutch
+        // must not leave its previously sampled WinMM noise/health results
+        // eligible for export alongside the remaining brake/throttle pedals.
+        int clutchHandlerStart = windowSource.IndexOf("private void ClutchCheck_Changed(", StringComparison.Ordinal);
+        int clutchHandlerEnd = windowSource.IndexOf("private void UpdateMappingLabels(", clutchHandlerStart, StringComparison.Ordinal);
+        Require(clutchHandlerStart >= 0 && clutchHandlerEnd > clutchHandlerStart,
+            "optional clutch selection handler must exist");
+        string clutchHandler = windowSource[clutchHandlerStart..clutchHandlerEnd];
+        Require(clutchHandler.Contains("_mappings.Remove(PedalKind.Clutch)") &&
+                clutchHandler.Contains("_calibrationResults.Remove(PedalKind.Clutch)") &&
+                clutchHandler.Contains("_lastNoise = null;") &&
+                clutchHandler.Contains("_lastSignalHealth = null;") &&
+                clutchHandler.Contains("run signal check again."),
+            "disabling clutch must invalidate prior signal snapshots and explain the next step");
+        Console.WriteLine("PASS: disabling clutch invalidates cached WinMM signal diagnostics");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
