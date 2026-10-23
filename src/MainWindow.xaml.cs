@@ -609,6 +609,8 @@ public partial class MainWindow : Window
                 InputSource = "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC",
                 HidInventory = _hidInventory, // optional explicit scan; aggregates only, no device paths
                 HidInventoryComparison = _hidInventoryComparison, // count-only difference between scans
+                WinmmAssociationVerified = false, // same numeric VID/PID values do not prove a device match
+                UncalibratedSensorInputVerified = false, // WinMM is not raw sensor ADC
                 Sweeps = _sweepResults.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],
