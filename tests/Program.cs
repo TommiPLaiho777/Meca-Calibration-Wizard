@@ -234,6 +234,21 @@ static class Checks
                 invertedAssessment.ReachesReportedMaximum &&
                 !normalAssessment.CompletePressAndRelease,
             "inverted WinMM sweep must use calibrated pedal direction while retaining raw endpoint semantics");
+        Require(invertedAssessment.Explanation.Contains("released end of this inverted mapping") &&
+                invertedAssessment.Explanation.Contains("does not establish pedal-force clipping"),
+            "inverted WinMM raw high endpoint must be described as released, not pedal-force saturation");
+        // Even a partial inverted press may report the exact raw maximum at rest.
+        // Do not mistake that endpoint for proof of a full-force press.
+        var partialInvertedTrace = Enumerable.Range(0, 41)
+            .Select(i => new SweepPoint(i * 200L,
+                (uint)Math.Round(10000.0 + 55535.0 * Math.Abs(i - 20) / 20)))
+            .ToArray();
+        var partialInvertedAssessment = SweepDiagnostics.Evaluate(
+            partialInvertedTrace, 0, 65535, inverted: true);
+        Require(partialInvertedAssessment.Status == "Sweep captured" &&
+                partialInvertedAssessment.ReachesReportedMaximum &&
+                partialInvertedAssessment.Explanation.Contains("released end of this inverted mapping"),
+            "partial inverted press must not mislabel released WinMM high endpoint as pressed saturation");
         foreach (var (name, values) in new[]
         {
             ("starts pressed", new uint[] { 0, 65535, 52000, 44000, 32000, 18000, 0, 65535 }),
