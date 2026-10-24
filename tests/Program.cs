@@ -496,8 +496,21 @@ static class Checks
         Require(!HidInterfaceInventory.TryParseVidPid(
                 @"\\?\hid#notvid_1234&pid_abcd#PRIVATE_SERIAL", out _, out _) &&
                 !HidInterfaceInventory.TryParseVidPid(
-                @"\\?\hid#pid_abcd&vid_1234#PRIVATE_SERIAL", out _, out _),
-            "invalid HID identifier patterns must not be accepted");
+                @"\\?\hid#pid_abcd&vid_1234#PRIVATE_SERIAL", out _, out _) &&
+                !HidInterfaceInventory.TryParseVidPid(
+                @"\\?\hid#VID_1234&PID_ABCD", out _, out _),
+            "invalid or truncated HID identifier patterns must not be accepted");
+        var truncatedPath = HidInterfaceInventory.FromPaths(new[]
+        {
+            @"\\?\hid#VID_1234&PID_ABCD",
+            @"\\?\hid#VID_1234&PID_ABCD#PRIVATE_SERIAL#{GUID}"
+        });
+        Require(truncatedPath.InterfaceCount == 2 &&
+                truncatedPath.WithoutVidPidCount == 1 &&
+                truncatedPath.Groups.Count == 1 &&
+                truncatedPath.Groups[0].InterfaceCount == 1 &&
+                !JsonSerializer.Serialize(truncatedPath).Contains("PRIVATE_SERIAL"),
+            "truncated HID path must be unidentified; complete path must remain grouped");
         Console.WriteLine("PASS: read-only HID interface ID aggregation and path privacy");
 
 
