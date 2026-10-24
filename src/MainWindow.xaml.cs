@@ -142,6 +142,21 @@ public partial class MainWindow : Window
         if (ClutchCheck is null) return;
         if (ClutchCheck.IsChecked != true)
         {
+            // Disabling an optional clutch while its guided capture is running
+            // must not let a later WinMM sample resurrect a disabled pedal.
+            if (_capture?.Kind == PedalKind.Clutch)
+            {
+                _capture = null;
+                CaptureButton.IsEnabled = true;
+                CaptureCounter.Text = "0 / 3 presses";
+                CaptureQualityText.Text = "";
+                CaptureFooter.Text = "Clutch disabled · capture cancelled. No clutch data saved.";
+                if (_step == 3)
+                {
+                    NextButton.IsEnabled = true;
+                    NextButton.Content = "Skip  →";
+                }
+            }
             _mappings.Remove(PedalKind.Clutch);
             _calibrationResults.Remove(PedalKind.Clutch);
             // A removed pedal must not leave an orphan sweep: JSON export
