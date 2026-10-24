@@ -131,6 +131,15 @@ static class Checks
         Require(sweep.Result.HighLimitInterpretation.Contains("WinMM high-end axis band observed") &&
                 sweep.Result.HighLimitInterpretation.Contains("does not verify sensor ADC clipping"),
             "WinMM axis saturation must not be presented as sensor clipping");
+        // A near-high WinMM sample is counted in the band without reaching
+        // the exact reported axis maximum. Keep GUI wording precise.
+        var nearHighSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        nearHighSweep.Observe(Axes(0, 0), sweepClock);
+        nearHighSweep.Observe(Axes(0, 65480), sweepClock.AddSeconds(8));
+        Require(nearHighSweep.Result is { AtHighLimitSamples: 1, MaximumWinmm: 65480 } &&
+                nearHighSweep.Result.Summary.Contains("in high-end WinMM band") &&
+                !nearHighSweep.Result.Summary.Contains("at high axis limit"),
+            "near-high WinMM band counts must not claim exact axis maximum");
         var sweepJson = JsonSerializer.Serialize(sweep.Result);
         Require(sweepJson.Contains("\"HighLimitInterpretation\"") &&
                 sweepJson.Contains("does not verify sensor ADC clipping") &&
