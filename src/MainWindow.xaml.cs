@@ -556,6 +556,16 @@ public partial class MainWindow : Window
                     : "\nComparison unavailable; scan again when enumeration works.");
             HidScanButton.Content = current.Available ? "Rescan & compare" : "Scan HID identifiers";
         }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // Unexpected scan failures must not crash the diagnostics UI or
+            // leave a previous HID inventory looking like a fresh result.
+            // Do not display native device paths or exception details.
+            _hidInventory = null;
+            _hidInventoryComparison = null;
+            HidInventoryText.Text = "HID scan failed unexpectedly. No current HID inventory is available. Retry the scan; no controller settings were changed.";
+            HidScanButton.Content = "Retry HID scan";
+        }
         finally
         {
             HidScanButton.IsEnabled = true;
