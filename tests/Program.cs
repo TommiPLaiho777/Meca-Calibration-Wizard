@@ -647,6 +647,22 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // Source-level WPF regression: disabling the optional clutch while
+        // a capture is active must cancel it before a later Poll can save it.
+        // The Windows build compiles the handler; this is not a hardware test.
+        int clutchHandlerStart = windowSource.IndexOf("private void ClutchCheck_Changed(", StringComparison.Ordinal);
+        int clutchHandlerEnd = windowSource.IndexOf("private void UpdateMappingLabels(", clutchHandlerStart, StringComparison.Ordinal);
+        Require(clutchHandlerStart >= 0 && clutchHandlerEnd > clutchHandlerStart,
+            "optional clutch selection handler must exist");
+        string clutchHandlerSource = windowSource[clutchHandlerStart..clutchHandlerEnd];
+        Require(clutchHandlerSource.Contains("_capture?.Kind == PedalKind.Clutch") &&
+                clutchHandlerSource.Contains("_capture = null;") &&
+                clutchHandlerSource.Contains("CaptureButton.IsEnabled = true;") &&
+                clutchHandlerSource.Contains("Clutch disabled · capture cancelled.") &&
+                clutchHandlerSource.Contains("_mappings.Remove(PedalKind.Clutch);") &&
+                clutchHandlerSource.Contains("_calibrationResults.Remove(PedalKind.Clutch);"),
+            "disabling clutch must cancel active capture and remove old mapping/results");
+        Console.WriteLine("PASS: disabling optional clutch cancels active WPF capture (source contract)");
         // Hardware-free source contract: a recoverable HID scan exception
         // must not crash the UI or leave a previous successful inventory
         // eligible for export as if it were freshly collected.
