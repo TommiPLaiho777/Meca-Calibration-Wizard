@@ -32,7 +32,7 @@
                 <StackPanel>
                     <TextBlock Text="SETUP STATUS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                     <TextBlock x:Name="DeviceText" Text="No controller selected" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold" Margin="0,15,0,4"/>
-                    <TextBlock x:Name="StatusText" Text="Connect the pedal USB controller" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}"/>
+                    <TextBlock x:Name="StatusText" Text="Select a WinMM controller" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}"/>
                     <Border Background="{StaticResource BorderBrush}" Height="1" Margin="0,23,0,19"/>
                     <TextBlock Text="PEDAL MAPPING" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                     <Grid Margin="0,17,0,0">
@@ -73,10 +73,10 @@
                     <StackPanel x:Name="WelcomeView">
                         <TextBlock Text="01  /  CONNECT" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" FontSize="12"/>
                         <TextBlock Text="Your pedals. Ready to go." FontSize="26" FontWeight="Bold" Margin="0,10,0,4"/>
-                        <TextBlock Text="Choose your USB pedal controller to start the visual setup." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
+                        <TextBlock Text="Choose the WinMM controller used by your pedals. Physical USB identity is not verified." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="14" Margin="0,22,0,20" Padding="23">
                             <StackPanel>
-                                <TextBlock Text="USB CONTROLLER" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
+                                <TextBlock Text="WINMM CONTROLLER" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                                 <DockPanel Margin="0,12,0,4" LastChildFill="True">
                                     <Button DockPanel.Dock="Right" Content="Refresh" Click="Refresh_Click" Margin="12,0,0,0"/>
                                     <ComboBox x:Name="DeviceCombo" SelectionChanged="DeviceCombo_SelectionChanged"/>
