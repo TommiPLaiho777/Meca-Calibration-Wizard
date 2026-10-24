@@ -13,7 +13,7 @@ internal sealed record SweepAssessment(
 
 internal static class SweepDiagnostics
 {
-    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax)
+    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax, bool inverted = false)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid Windows-reported axis range.");
         if (trace.Count < 3)
@@ -21,7 +21,14 @@ internal static class SweepDiagnostics
                 0, 0, "Insufficient data", "Record an eight-second press, hold and release sweep.");
 
         double scale = (double)axisMax - axisMin;
-        double[] values = trace.Select(s => Math.Clamp((s.WinmmValue - (double)axisMin) / scale, 0, 1)).ToArray();
+        // Classify press/release in pedal direction, not raw WinMM axis direction.
+        // Inverted mappings rest near the high endpoint and press toward the low endpoint.
+        // Keep ReachesReportedMaximum tied to the raw Windows axis maximum below.
+        double[] values = trace.Select(s =>
+        {
+            double rawFraction = Math.Clamp((s.WinmmValue - (double)axisMin) / scale, 0, 1);
+            return inverted ? 1 - rawFraction : rawFraction;
+        }).ToArray();
         var distinct = trace.Select(s => s.WinmmValue).Distinct().Count();
         var min = values.Min();
         var max = values.Max();
