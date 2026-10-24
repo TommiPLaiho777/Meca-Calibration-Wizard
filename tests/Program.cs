@@ -589,6 +589,24 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // Hardware-free source contract: a recoverable HID scan exception
+        // must not crash the UI or leave a previous successful inventory
+        // eligible for export as if it were freshly collected.
+        int hidScanStart = windowSource.IndexOf("private void ScanHid_Click(", StringComparison.Ordinal);
+        int hidScanEnd = windowSource.IndexOf("private void CheckSignal_Click(", hidScanStart, StringComparison.Ordinal);
+        Require(hidScanStart >= 0 && hidScanEnd > hidScanStart,
+            "read-only HID scan handler must exist");
+        string hidScanSource = windowSource[hidScanStart..hidScanEnd];
+        Require(hidScanSource.Contains("catch (Exception ex) when (ex is not OutOfMemoryException)") &&
+                hidScanSource.Contains("_hidInventory = null;") &&
+                hidScanSource.Contains("_hidInventoryComparison = null;") &&
+                hidScanSource.Contains("No current HID inventory is available.") &&
+                hidScanSource.Contains("Retry HID scan") &&
+                hidScanSource.Contains("finally") &&
+                hidScanSource.Contains("HidScanButton.IsEnabled = true;"),
+            "unexpected HID scan failure must clear stale counts and offer safe retry");
+        Console.WriteLine("PASS: unexpected HID scan failure invalidates stale metadata (WPF source contract)");
+
         Require(windowSource.Contains("WinMM controller selected · physical USB identity not verified") &&
                 !windowSource.Contains("Device found · USB game controller"),
             "WinMM selection status must not claim physical USB identity");
