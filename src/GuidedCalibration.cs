@@ -17,12 +17,14 @@ internal sealed record PedalCalibrationResult(
         ? "Windows axis limit reached - physical-force repeatability unknown"
         : $"WinMM peak spread {RepeatabilitySpreadPercent:0.0}% - not a physical-force test";
 
-    public string RepeatabilityLabel => AtAxisLimit ? "Axis limit reached" :
+    // Labels are exported to JSON. WinMM peak similarity must never be
+    // presented as verified repeatability of physical pedal force.
+    public string RepeatabilityLabel => AtAxisLimit ? "WinMM limit (force unverified)" :
         RepeatabilitySpreadPercent switch
         {
-            <= 5.0 => "Consistent",
-            <= 12.0 => "Some variation",
-            _ => "Consider repeating"
+            <= 5.0 => "Similar WinMM peaks (force unverified)",
+            <= 12.0 => "WinMM peak variation (force unverified)",
+            _ => "Repeat WinMM capture (force unverified)"
         };
 }
 
