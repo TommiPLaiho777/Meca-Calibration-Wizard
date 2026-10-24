@@ -198,9 +198,9 @@ public partial class MainWindow : Window
             var kind = StepKind();
             var info = kind switch
             {
-                PedalKind.Brake => ("02 / BRAKE", "Brake calibration", "Release, then press to your comfortable maximum three times."),
-                PedalKind.Throttle => ("03 / THROTTLE", "Throttle calibration", "Release, press fully three times."),
-                _ => ("04 / CLUTCH", "Clutch calibration", "Release, press fully three times.")
+                PedalKind.Brake => ("02 / BRAKE", "Brake input preview", "Release, then press to your comfortable maximum three times."),
+                PedalKind.Throttle => ("03 / THROTTLE", "Throttle input preview", "Release, press fully three times."),
+                _ => ("04 / CLUTCH", "Clutch input preview", "Release, press fully three times.")
             };
             CaptureStepText.Text = info.Item1;
             CaptureTitle.Text = info.Item2;
@@ -209,7 +209,7 @@ public partial class MainWindow : Window
             ThrottleIcon.Visibility = kind == PedalKind.Throttle ? Visibility.Visible : Visibility.Collapsed;
             ClutchIcon.Visibility = kind == PedalKind.Clutch ? Visibility.Visible : Visibility.Collapsed;
             StepLabel.Text = info.Item1;
-            StepHint.Text = "Measure rest, three presses and repeatability";
+            StepHint.Text = "Read-only WinMM preview · rest, three presses and repeatability";
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
                 ? "3 / 3 presses" : "0 / 3 presses";
             CaptureQualityText.Text = current is null ? "" :
