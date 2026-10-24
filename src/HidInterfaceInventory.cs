@@ -169,7 +169,8 @@ internal static class HidInterfaceInventory
         // handling for bounded native buffers, but reject unterminated
         // fragments that omit the instance separator.
         if (nextSeparator < 0 && end < 0) return false;
-        string hardwareId = devicePath[(firstSeparator + 1)..nextSeparator];
+        string hardwareId = devicePath[(firstSeparator + 1)..
+            (nextSeparator < 0 ? devicePath.Length : nextSeparator)];
         var match = VidPidPattern.Match(hardwareId);
         return match.Success &&
                ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber,
