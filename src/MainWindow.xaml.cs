@@ -465,16 +465,24 @@ public partial class MainWindow : Window
         {
             var now = DateTime.UtcNow;
             _sweep.Observe(sample, now);
-            SweepProgress.Value = _sweep.Progress(now) * 100;
-            SweepStatusText.Text = $"{sweepPedal}: recording… {Math.Max(0, InputSweepRun.DurationSeconds - (now - _sweepStartUtc).TotalSeconds):0.0}s";
-            if (_sweep.Complete)
+            if (_sweep.Failed)
             {
-                if (_sweep.Result is { } result)
+                SweepProgress.Value = 0;
+                SweepStatusText.Text = $"{sweepPedal}: {_sweep.FailureReason}";
+            }
+            else
+            {
+                SweepProgress.Value = _sweep.Progress(now) * 100;
+                SweepStatusText.Text = $"{sweepPedal}: recording… {Math.Max(0, InputSweepRun.DurationSeconds - (now - _sweepStartUtc).TotalSeconds):0.0}s";
+                if (_sweep.Complete && _sweep.Result is { } result)
                 {
                     _sweepResults[sweepPedal] = result;
                     SweepStatusText.Text = $"{sweepPedal}: {result.Summary}. Export JSON to inspect trace.";
                     UpdateSweepDetails();
                 }
+            }
+            if (_sweep.Failed || _sweep.Complete)
+            {
                 _sweep = null;
                 _sweepKind = null;
                 BrakeSweepButton.IsEnabled = true;
