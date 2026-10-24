@@ -79,8 +79,12 @@ internal static class SweepDiagnostics
         else
         {
             status = "Sweep captured";
+            // On inverted pedals the raw WinMM high endpoint is the released end,
+            // not the pressed end. Do not imply the pedal saturated under load.
             explanation = full
-                ? "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
+                ? inverted
+                    ? "Press and release recorded. Windows axis high endpoint was observed at the released end of this inverted mapping; this does not establish pedal-force clipping."
+                    : "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
                 : "Press and release recorded. The Windows axis maximum was not reached in this sweep.";
         }
         return new SweepAssessment(complete, full, distinct, Math.Round(observedTravel, 2),
