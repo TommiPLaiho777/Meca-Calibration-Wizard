@@ -592,12 +592,17 @@ public partial class MainWindow : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid))
+        // Do not export a mixture of completed results and a measurement still in progress.
+        bool measurementInProgress = _capture is not null || _noise is not null || _sweep is not null;
+        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid,
+                measurementInProgress))
         {
             MessageBox.Show(this,
-                _winmmSessionInvalid
-                    ? "WinMM input was interrupted. Return to Connect, click Refresh, and capture pedals again before exporting."
-                    : "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
+                measurementInProgress
+                    ? "A WinMM measurement is in progress. Wait for it to finish before exporting."
+                    : _winmmSessionInvalid
+                        ? "WinMM input was interrupted. Return to Connect, click Refresh, and capture pedals again before exporting."
+                        : "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
