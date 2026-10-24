@@ -585,6 +585,16 @@ static class Checks
                     ((string?)e.Attribute("Text"))?.Contains("Physical USB identity is not verified.") == true),
             "WinMM selection UI must not assert verified physical USB identity");
         Console.WriteLine("PASS: WinMM controller selection UI states USB identity is unverified");
+        // Setup copy must not imply that WinMM peak similarity measures
+        // native load-cell force or physically verified repeatability.
+        Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                    ((string?)e.Attribute("Text"))?.Contains("compares reported pedal peaks") == true &&
+                    ((string?)e.Attribute("Text"))?.Contains("Physical force is not measured") == true) &&
+                !xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                    ((string?)e.Attribute("Text"))?.Contains("measures repeatability") == true),
+            "setup must label WinMM peak comparisons without claiming physical force repeatability");
+        Console.WriteLine("PASS: setup explains WinMM peak comparisons are not physical-force measurements");
+
 
         // A controller-only export is permitted but must ask for confirmation.
         // Completed HID scans and any WinMM measurements are meaningful exports.
