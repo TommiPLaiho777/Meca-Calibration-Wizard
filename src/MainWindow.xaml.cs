@@ -131,6 +131,9 @@ public partial class MainWindow : Window
         {
             _mappings.Remove(PedalKind.Clutch);
             _calibrationResults.Remove(PedalKind.Clutch);
+            // A removed pedal must not leave an orphan sweep: JSON export
+            // resolves each saved sweep through the active pedal mapping.
+            _sweepResults.Remove(PedalKind.Clutch);
             // An earlier signal check may contain a now-disabled clutch.
             // Discard the cached WinMM snapshots instead of exporting stale
             // clutch data under the current pedal selection.
