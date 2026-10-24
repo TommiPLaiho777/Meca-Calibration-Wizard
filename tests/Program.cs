@@ -601,6 +601,12 @@ static class Checks
                 clutchHandler.Contains("_lastSignalHealth = null;") &&
                 clutchHandler.Contains("run signal check again."),
             "disabling clutch must invalidate prior signal snapshots and explain the next step");
+        // WPF is source-checked here; the runtime event path still needs physical
+        // GUI validation. An orphan clutch sweep would cause JSON export to
+        // index a missing pedal mapping and fail instead of saving the report.
+        Require(clutchHandler.Contains("_sweepResults.Remove(PedalKind.Clutch);"),
+            "disabling clutch must remove its cached sweep before JSON export");
+        Console.WriteLine("PASS: optional clutch removal clears orphan sweep (WPF source contract)");
         Console.WriteLine("PASS: disabling clutch invalidates cached WinMM signal diagnostics");
 
         // Hardware-free C# regression: a failed WinMM read must prevent stale
