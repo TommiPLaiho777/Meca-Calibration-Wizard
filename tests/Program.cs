@@ -519,6 +519,20 @@ static class Checks
             "controller-only exports must show an opt-in warning before choosing a file");
         Console.WriteLine("PASS: controller-only report warning contract");
 
+        // An in-progress WinMM capture/noise/sweep cannot be mixed into an
+        // apparently complete JSON export. Pure C# policy and WPF source contract.
+        Require(!ReadOnlyHidReport.CanExport(true, null, false, true) &&
+                !ReadOnlyHidReport.CanExport(false, hid, false, true) &&
+                ReadOnlyHidReport.CanExport(true, null, false, false) &&
+                ReadOnlyHidReport.CanExport(false, hid, false, false),
+            "active measurement must block both export paths without blocking completed reports");
+        Require(exportPreamble.Contains("bool measurementInProgress = _capture is not null || _noise is not null || _sweep is not null;") &&
+                exportPreamble.Contains("ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid,") &&
+                exportPreamble.Contains("measurementInProgress))") &&
+                exportPreamble.Contains("Wait for it to finish before exporting."),
+            "WPF export must enforce active WinMM measurement guard with clear English guidance");
+        Console.WriteLine("PASS: active WinMM measurement blocks report export (C# policy + WPF source contract)");
+
         // Source-level contract for the WPF WinMM+HID JSON path. The HID-only
         // serializer already emits these fields; both export paths must state
         // that matching identifiers do not prove device identity or raw ADC.
@@ -579,7 +593,7 @@ static class Checks
                 pollSource.Contains("_winmmSessionInvalid = true;") &&
                 pollSource.Contains("_raw = Array.Empty<uint>();"),
             "WinMM poll must latch read failure and refuse silent same-ID recovery");
-        Require(windowSource.Contains("ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid)") &&
+        Require(windowSource.Contains("ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid,") &&
                 windowSource.Contains("private void Refresh_Click(") &&
                 windowSource.Contains("StepHint.Text = \"Controller refreshed") &&
                 windowSource.Contains("_mappings.Clear();") &&
