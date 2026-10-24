@@ -57,6 +57,14 @@ static class Checks
         Require(brake.Result.PeakSpreadSummary.Contains("WinMM peak spread") &&
                 brake.Result.PeakSpreadSummary.Contains("not a physical-force test"),
             "non-saturated WinMM peaks are not physical-force measurements");
+        // The exported Repeatability label describes WinMM peaks only; no
+        // physical-force repeatability is established by this preview.
+        Require(brake.Result.RepeatabilityLabel == "Similar WinMM peaks (force unverified)" &&
+                (brake.Result with { RepeatabilitySpreadPercent = 8.0 }).RepeatabilityLabel ==
+                    "WinMM peak variation (force unverified)" &&
+                (brake.Result with { RepeatabilitySpreadPercent = 13.0 }).RepeatabilityLabel ==
+                    "Repeat WinMM capture (force unverified)",
+            "WinMM peak similarity labels must not claim physical-force repeatability");
         Console.WriteLine("PASS: three-press brake calibration");
 
         var throttle = Session(PedalKind.Throttle, 3, false,
@@ -65,6 +73,8 @@ static class Checks
             "R axis recognition with X reserved");
         Require(throttle.Result.Mapping.Full == 65500, "throttle median");
         Require(throttle.Result.AtAxisLimit, "clipped throttle limit is flagged");
+        Require(throttle.Result.RepeatabilityLabel == "WinMM limit (force unverified)",
+            "WinMM endpoint must not imply physical-force repeatability");
         Require(throttle.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
                 !throttle.Result.PeakSpreadSummary.Contains("%"),
             "saturated WinMM peaks must not display a misleading percentage");
