@@ -59,6 +59,10 @@ public partial class MainWindow : Window
         next ??= devices.FirstOrDefault(x => x.Name.Contains("MECA", StringComparison.OrdinalIgnoreCase))
              ?? (devices.Count == 1 ? devices[0] : null);
         DeviceCombo.SelectedItem = next;
+        // WinMM IDs can be reused. SelectionChanged compares IDs, so an
+        // unchanged ID must still receive this scan's fresh capabilities.
+        // This does not establish physical USB identity.
+        _device = next;
         if (next is null)
         {
             _device = null;
