@@ -83,7 +83,7 @@
                                 </DockPanel>
                                 <TextBlock Text="Refresh clears captured pedal measurements. WinMM ID and name do not prove physical device identity."
                                            Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,7,0,0"/>
-                                <CheckBox x:Name="ClutchCheck" Content="Clutch installed (optional)" Foreground="{StaticResource LabelBrush}"
+                                <CheckBox x:Name="ClutchCheck" Content="Clutch pedal installed (optional)" ToolTip="Enable only when a physical clutch is connected. An unused WinMM axis does not prove a clutch exists; press the clutch during capture to identify its axis." Foreground="{StaticResource LabelBrush}"
                                           Margin="2,19,0,0" FontSize="13" Checked="ClutchCheck_Changed" Unchecked="ClutchCheck_Changed"/>
                             </StackPanel>
                         </Border>
