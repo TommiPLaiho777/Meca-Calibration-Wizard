@@ -164,8 +164,11 @@ internal static class HidInterfaceInventory
             !prefix.Equals(@"\\?\hid", StringComparison.OrdinalIgnoreCase))
             return false;
         int nextSeparator = devicePath.IndexOf('#', firstSeparator + 1);
-        string hardwareId = devicePath[(firstSeparator + 1)..
-            (nextSeparator < 0 ? devicePath.Length : nextSeparator)];
+        // A complete Windows HID interface path has a second separator
+        // before the private instance segment. A truncated path is not
+        // reliable VID/PID metadata: count it as unidentified instead.
+        if (nextSeparator < 0) return false;
+        string hardwareId = devicePath[(firstSeparator + 1)..nextSeparator];
         var match = VidPidPattern.Match(hardwareId);
         return match.Success &&
                ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber,
