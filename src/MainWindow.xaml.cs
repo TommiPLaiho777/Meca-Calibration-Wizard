@@ -14,6 +14,9 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly Dictionary<PedalKind, PedalMapping> _mappings = new();
     private WinmmJoystick.Device? _device;
+    // A read failure may indicate device replacement even if WinMM reuses the ID.
+    // Require an explicit refresh and fresh captures before exporting again.
+    private bool _winmmSessionInvalid;
     private uint[] _raw = Array.Empty<uint>();
     private GuidedCalibration? _capture;
     private readonly Dictionary<PedalKind, PedalCalibrationResult> _calibrationResults = new();
@@ -79,13 +82,28 @@ public partial class MainWindow : Window
             WinmmIdsText.Text = _device?.WinmmIdsSummary ?? "No WinMM controller selected";
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshDevices();
+    private void Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        // A reused WinMM ID/name is not proof of the same physical controller.
+        // Explicit refresh starts a fresh read-only capture session.
+        _winmmSessionInvalid = false;
+        _mappings.Clear();
+        _calibrationResults.Clear();
+        _sweepResults.Clear();
+        _lastNoise = null;
+        _lastSignalHealth = null;
+        _raw = Array.Empty<uint>();
+        RefreshDevices();
+        ChangeStep(0);
+        StepHint.Text = "Controller refreshed · capture pedals again before exporting measurements";
+    }
 
     private void DeviceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var next = DeviceCombo.SelectedItem as WinmmJoystick.Device;
         if (next?.Id != _device?.Id)
         {
+            _winmmSessionInvalid = false; // deliberate selection begins a fresh session
             _device = next;
             _raw = Array.Empty<uint>();
             _capture = null;
@@ -230,6 +248,12 @@ public partial class MainWindow : Window
         if (_step == 5) { ChangeStep(_returnStep); return; }
         if (_step == 0)
         {
+            if (_winmmSessionInvalid)
+            {
+                MessageBox.Show(this, "WinMM input was interrupted. Click Refresh to start a new session and capture pedals again.",
+                    "Refresh required", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             if (_device is null) { MessageBox.Show("Select the MECA USB controller first."); return; }
             ChangeStep(1);
         }
@@ -265,6 +289,11 @@ public partial class MainWindow : Window
 
     private void Capture_Click(object sender, RoutedEventArgs e)
     {
+        if (_winmmSessionInvalid)
+        {
+            CaptureFooter.Text = "WinMM input interrupted · return to Connect and click Refresh.";
+            return;
+        }
         if (_device is null || !WinmmJoystick.TryRead(_device.Id, out var sample))
         {
             CaptureFooter.Text = "Controller not available. Reconnect and try again.";
@@ -283,11 +312,19 @@ public partial class MainWindow : Window
 
     private void Poll(object? sender, EventArgs e)
     {
+        if (_winmmSessionInvalid)
+        {
+            StatusText.Text = "WinMM session interrupted · return to Connect and click Refresh, then re-capture.";
+            return;
+        }
         if (_device is null || !WinmmJoystick.TryRead(_device.Id, out var sample))
         {
             if (_device is not null)
             {
-                StatusText.Text = "Controller unavailable · check USB connection";
+                _winmmSessionInvalid = true;
+                _raw = Array.Empty<uint>();
+                AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
+                StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
                 _capture = null;
                 if (_noise is not null)
                     SignalText.Text = "Signal check cancelled: controller disconnected.";
@@ -437,6 +474,11 @@ public partial class MainWindow : Window
 
     private void BeginSweep(PedalKind kind)
     {
+        if (_winmmSessionInvalid)
+        {
+            SweepStatusText.Text = "WinMM session interrupted · return to Connect and click Refresh.";
+            return;
+        }
         if (_device is null || !_mappings.TryGetValue(kind, out var mapping))
         {
             SweepStatusText.Text = $"{kind} is not captured. Complete guided setup first.";
@@ -520,6 +562,11 @@ public partial class MainWindow : Window
 
     private void BeginSignalCheck(double seconds)
     {
+        if (_winmmSessionInvalid)
+        {
+            SignalText.Text = "WinMM session interrupted · return to Connect and click Refresh.";
+            return;
+        }
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
         _noise = new NoiseRun(durationSeconds: seconds);
         _lastNoise = null;
@@ -541,10 +588,12 @@ public partial class MainWindow : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory))
+        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid))
         {
             MessageBox.Show(this,
-                "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
+                _winmmSessionInvalid
+                    ? "WinMM input was interrupted. Return to Connect, click Refresh, and capture pedals again before exporting."
+                    : "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
