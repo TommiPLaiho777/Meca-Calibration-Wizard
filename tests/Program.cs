@@ -757,6 +757,34 @@ static class Checks
         Require(clutchHandler.Contains("_sweepResults.Remove(PedalKind.Clutch);"),
             "disabling clutch must remove its cached sweep before JSON export");
         Console.WriteLine("PASS: optional clutch removal clears orphan sweep (WPF source contract)");
+        // Third-pedal sweep wiring: XAML/source checks are not a physical GUI test.
+        var clutchSweepButton = xaml.Descendants().Single(e => e.Name.LocalName == "Button" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "ClutchSweepButton"));
+        var clutchSweepLine = xaml.Descendants().Single(e => e.Name.LocalName == "Polyline" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "ClutchSweepLine"));
+        Require((string?)clutchSweepButton.Attribute("Click") == "ClutchSweep_Click" &&
+                (string?)clutchSweepButton.Attribute("Visibility") == "Collapsed" &&
+                (string?)clutchSweepLine.Attribute("Visibility") == "Collapsed" &&
+                windowSource.Contains("BeginSweep(PedalKind.Clutch)") &&
+                windowSource.Contains("DrawTrace(PedalKind.Clutch, ClutchSweepLine)") &&
+                clutchHandler.Contains("_sweepKind == PedalKind.Clutch") &&
+                clutchHandler.Contains("_sweep = null;") &&
+                clutchHandler.Contains("_sweepResults.Remove(PedalKind.Clutch);") &&
+                clutchHandler.Contains("No clutch sweep saved."),
+            "optional clutch sweep must be hidden until enabled, charted and cancelled safely");
+        Console.WriteLine("PASS: optional clutch sweep WPF wiring (source contract, not physical test)");
+        var clutchSweepStart = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
+        var clutchSweep = new InputSweepRun(2, 0, 65535, clutchSweepStart);
+        for (int i = 0; i <= 40; i++)
+        {
+            uint reading = (uint)Math.Round(65535.0 * Math.Abs(i - 20) / 20);
+            clutchSweep.Observe(Axes(2, reading), clutchSweepStart.AddMilliseconds(i * 200));
+        }
+        Require(clutchSweep.Complete && clutchSweep.Result is { } clutchResult &&
+                SweepDiagnostics.Evaluate(clutchResult.Trace, 0, 65535, inverted: true)
+                    .Status == "Sweep captured",
+            "synthetic inverted clutch sweep uses the same read-only WinMM evaluation");
+        Console.WriteLine("PASS: synthetic inverted clutch sweep (not a physical pedal test)");
         Console.WriteLine("PASS: disabling clutch invalidates cached WinMM signal diagnostics");
 
         // Hardware-free C# regression: a failed WinMM read must prevent stale
