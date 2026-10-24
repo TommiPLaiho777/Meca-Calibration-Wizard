@@ -737,6 +737,28 @@ static class Checks
             "WPF export must respect session invalidation and explicit refresh must clear captures");
         Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
 
+        // Refresh may be pressed while a capture, idle-noise check or sweep is
+        // still active. Even if the same WinMM ID is selected afterward, none
+        // of those old-session measurements may finish into the new report.
+        int refreshStart = windowSource.IndexOf("private void Refresh_Click(", StringComparison.Ordinal);
+        int refreshEnd = windowSource.IndexOf("private void DeviceCombo_SelectionChanged(", refreshStart, StringComparison.Ordinal);
+        Require(refreshStart >= 0 && refreshEnd > refreshStart,
+            "explicit WinMM refresh handler must exist");
+        string refreshSource = windowSource[refreshStart..refreshEnd];
+        foreach (string cancelled in new[] { "_capture = null;", "_noise = null;", "_sweep = null;", "_sweepKind = null;" })
+            Require(refreshSource.Contains(cancelled),
+                $"WinMM refresh must cancel old-session activity: {cancelled}");
+        Require(refreshSource.IndexOf("_sweep = null;", StringComparison.Ordinal) <
+                refreshSource.IndexOf("RefreshDevices();", StringComparison.Ordinal) &&
+                refreshSource.Contains("CheckSignalButton.IsEnabled = true;") &&
+                refreshSource.Contains("LongSignalButton.IsEnabled = true;") &&
+                refreshSource.Contains("BrakeSweepButton.IsEnabled = true;") &&
+                refreshSource.Contains("ThrottleSweepButton.IsEnabled = true;") &&
+                refreshSource.Contains("Controller refreshed · run signal check again.") &&
+                refreshSource.Contains("Controller refreshed · record a new sweep."),
+            "WinMM refresh must restore controls and explicitly require fresh diagnostics");
+        Console.WriteLine("PASS: explicit WinMM refresh cancels in-flight captures (WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
