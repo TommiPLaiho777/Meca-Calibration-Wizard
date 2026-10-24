@@ -35,13 +35,18 @@ internal sealed class InputSweepRun
     private readonly uint _lower;
     private readonly uint _upper;
     private readonly double _range;
+    private readonly bool _requireContinuousSamples;
+    private const long MaximumContinuousGapMs = 500;
     private readonly DateTime _startUtc;
     private readonly List<SweepPoint> _trace = new();
     public bool Complete { get; private set; }
+    public bool Failed { get; private set; }
+    public string FailureReason { get; private set; } = "";
     public InputSweepResult? Result { get; private set; }
     public double Progress(DateTime time) => Math.Clamp((time - _startUtc).TotalSeconds / DurationSeconds, 0, 1);
 
-    public InputSweepRun(int axis, uint min, uint max, DateTime? startUtc = null)
+    public InputSweepRun(int axis, uint min, uint max, DateTime? startUtc = null,
+        bool requireContinuousSamples = true)
     {
         if (axis is < 0 or > 5) throw new ArgumentOutOfRangeException(nameof(axis));
         if (min >= max) throw new ArgumentException("Axis minimum must be lower than maximum.");
@@ -49,16 +54,28 @@ internal sealed class InputSweepRun
         _lower = min;
         _upper = max;
         _range = (double)max - min;
+        _requireContinuousSamples = requireContinuousSamples;
         _startUtc = startUtc ?? DateTime.UtcNow;
     }
 
     public void Observe(uint[] reading, DateTime utcNow)
     {
-        if (Complete || reading.Length <= _axis) return;
-        // A Windows clock adjustment can move UTC backwards mid-capture.
-        // Drop retrograde samples rather than exporting a nonmonotonic trace.
+        if (Complete || Failed || reading.Length <= _axis) return;
         long timeMs = (long)(utcNow - _startUtc).TotalMilliseconds;
-        if (timeMs < 0 || (_trace.Count > 0 && timeMs < _trace[^1].TimeMs)) return;
+        long previousMs = _trace.Count > 0 ? _trace[^1].TimeMs : 0;
+        // In a real sweep, a clock rollback or a polling stall over 0.5s
+        // invalidates the timing evidence. Never export it as a complete trace.
+        // Sparse synthetic endpoint-statistic checks can opt out explicitly.
+        if (_requireContinuousSamples &&
+            (timeMs < previousMs || timeMs - previousMs > MaximumContinuousGapMs))
+        {
+            Failed = true;
+            FailureReason = "WinMM sweep timing interrupted. Release the pedal and retry.";
+            return;
+        }
+        // Legacy sparse diagnostic fixtures ignore retrograde observations;
+        // they are not used by the live WPF capture path.
+        if (timeMs < 0 || timeMs < previousMs) return;
         _trace.Add(new SweepPoint(timeMs, reading[_axis]));
         if (Progress(utcNow) < 1) return;
 
