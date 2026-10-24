@@ -637,6 +637,14 @@ static class Checks
                     ((string?)e.Attribute("Text"))?.Contains("Physical USB identity is not verified.") == true),
             "WinMM selection UI must not assert verified physical USB identity");
         Console.WriteLine("PASS: WinMM controller selection UI states USB identity is unverified");
+        // The initial live capture readout must never imply native sensor ADC
+        // access before the first WinMM sample updates its label.
+        var liveReadout = xaml.Descendants().Single(e => e.Name.LocalName == "TextBlock" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "LiveRaw"));
+        Require(((string?)liveReadout.Attribute("Text"))?.Contains("WinMM reading:") == true &&
+                ((string?)liveReadout.Attribute("Text"))?.Contains("not sensor ADC") == true,
+            "initial live input label must identify WinMM and disclaim sensor ADC");
+        Console.WriteLine("PASS: initial live pedal reading is labelled WinMM, not sensor ADC");
         // Setup copy must not imply that WinMM peak similarity measures
         // native load-cell force or physically verified repeatability.
         Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
