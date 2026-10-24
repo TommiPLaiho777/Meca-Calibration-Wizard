@@ -10,9 +10,10 @@ internal static class ReadOnlyHidReport
     // cannot make stale WinMM measurements eligible for export.
     internal static bool CanExport(
         bool hasWinmmController, HidInventorySnapshot? inventory,
-        bool winmmSessionInvalid = false) =>
-        (hasWinmmController && !winmmSessionInvalid) ||
-        (!hasWinmmController && inventory is { Available: true });
+        bool winmmSessionInvalid = false, bool measurementInProgress = false) =>
+        !measurementInProgress &&
+        ((hasWinmmController && !winmmSessionInvalid) ||
+         (!hasWinmmController && inventory is { Available: true }));
 
     // Controller-only exports remain permitted, but the user should explicitly
     // acknowledge when no pedal measurement or HID inventory is present.
