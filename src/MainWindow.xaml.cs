@@ -91,12 +91,25 @@ public partial class MainWindow : Window
         // A reused WinMM ID/name is not proof of the same physical controller.
         // Explicit refresh starts a fresh read-only capture session.
         _winmmSessionInvalid = false;
+        // Refresh is a session boundary even when WinMM reuses the same ID.
+        // Cancel all in-flight captures before any new sample can complete them.
+        _capture = null;
+        _noise = null;
+        _sweep = null;
+        _sweepKind = null;
         _mappings.Clear();
         _calibrationResults.Clear();
         _sweepResults.Clear();
         _lastNoise = null;
         _lastSignalHealth = null;
         _raw = Array.Empty<uint>();
+        CaptureButton.IsEnabled = true;
+        CheckSignalButton.IsEnabled = true;
+        LongSignalButton.IsEnabled = true;
+        BrakeSweepButton.IsEnabled = true;
+        ThrottleSweepButton.IsEnabled = true;
+        SignalText.Text = "Controller refreshed · run signal check again.";
+        SweepStatusText.Text = "Controller refreshed · record a new sweep.";
         RefreshDevices();
         ChangeStep(0);
         StepHint.Text = "Controller refreshed · capture pedals again before exporting measurements";
