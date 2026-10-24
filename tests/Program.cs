@@ -559,6 +559,35 @@ static class Checks
             "disabling clutch must invalidate prior signal snapshots and explain the next step");
         Console.WriteLine("PASS: disabling clutch invalidates cached WinMM signal diagnostics");
 
+        // Hardware-free C# regression: a failed WinMM read must prevent stale
+        // WinMM exports even if an unrelated HID inventory is available.
+        Require(ReadOnlyHidReport.CanExport(true, null) &&
+                !ReadOnlyHidReport.CanExport(true, null, true) &&
+                !ReadOnlyHidReport.CanExport(true, hid, true) &&
+                ReadOnlyHidReport.CanExport(false, hid, true) &&
+                !ReadOnlyHidReport.CanExport(false, null, true),
+            "invalid WinMM session must block exports; HID-only remains available");
+
+        // WPF is not executed in this test project. Guard the source path and
+        // rely on Windows CI for WPF compilation; physical device tests remain separate.
+        int pollStart = windowSource.IndexOf("private void Poll(", StringComparison.Ordinal);
+        int pollEnd = windowSource.IndexOf("private double GetPercent(", pollStart, StringComparison.Ordinal);
+        Require(pollStart >= 0 && pollEnd > pollStart, "WinMM poll source must exist");
+        string pollSource = windowSource[pollStart..pollEnd];
+        Require(pollSource.IndexOf("if (_winmmSessionInvalid)", StringComparison.Ordinal) <
+                pollSource.IndexOf("WinmmJoystick.TryRead(", StringComparison.Ordinal) &&
+                pollSource.Contains("_winmmSessionInvalid = true;") &&
+                pollSource.Contains("_raw = Array.Empty<uint>();"),
+            "WinMM poll must latch read failure and refuse silent same-ID recovery");
+        Require(windowSource.Contains("ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid)") &&
+                windowSource.Contains("private void Refresh_Click(") &&
+                windowSource.Contains("StepHint.Text = \"Controller refreshed") &&
+                windowSource.Contains("_mappings.Clear();") &&
+                windowSource.Contains("_calibrationResults.Clear();") &&
+                windowSource.Contains("_sweepResults.Clear();"),
+            "WPF export must respect session invalidation and explicit refresh must clear captures");
+        Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
