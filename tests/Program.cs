@@ -219,6 +219,33 @@ static class Checks
                 $"{name}: reject false complete WinMM press-and-release");
         }
         Console.WriteLine("PASS: ordered WinMM sweep start/end regression checks");
+
+        // Inverted WinMM axes rest at the high endpoint and press toward low.
+        // Evaluate the same synthetic trace in both polarities to avoid silently
+        // classifying a correct inverted pedal stroke as an incomplete sweep.
+        var invertedTrace = Enumerable.Range(0, 41)
+            .Select(i => new SweepPoint(i * 200L,
+                (uint)Math.Round(65535.0 * Math.Abs(i - 20) / 20)))
+            .ToArray();
+        var invertedAssessment = SweepDiagnostics.Evaluate(invertedTrace, 0, 65535, inverted: true);
+        var normalAssessment = SweepDiagnostics.Evaluate(invertedTrace, 0, 65535);
+        Require(invertedAssessment.CompletePressAndRelease &&
+                invertedAssessment.Status == "Sweep captured" &&
+                invertedAssessment.ReachesReportedMaximum &&
+                !normalAssessment.CompletePressAndRelease,
+            "inverted WinMM sweep must use calibrated pedal direction while retaining raw endpoint semantics");
+        foreach (var (name, values) in new[]
+        {
+            ("starts pressed", new uint[] { 0, 65535, 52000, 44000, 32000, 18000, 0, 65535 }),
+            ("ends pressed", new uint[] { 65535, 52000, 44000, 32000, 18000, 8000, 0 })
+        })
+        {
+            var trace = values.Select((value, index) => new SweepPoint(index * 200L, value)).ToArray();
+            var assessment = SweepDiagnostics.Evaluate(trace, 0, 65535, inverted: true);
+            Require(!assessment.CompletePressAndRelease && assessment.Status == "Incomplete sweep",
+                $"inverted WinMM sweep {name}: must reject missing released endpoint");
+        }
+        Console.WriteLine("PASS: inverted WinMM sweep orientation and incomplete-stroke regression");
         // Near-ceiling WinMM readings can enter the 0.2% high-end band without
         // ever observing the exact axis maximum. The JSON must distinguish them.
         var nearHighValues = Enumerable.Range(0, 16)
@@ -507,6 +534,9 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        Require(windowSource.Contains("mapping.Full < mapping.Rest") &&
+                windowSource.Contains("_mappings[p.Key].Full < _mappings[p.Key].Rest"),
+            "WPF sweep display and JSON export must use the captured WinMM pedal polarity");
         int exportStart = windowSource.IndexOf("private void Export_Click(", StringComparison.Ordinal);
         int saveDialogStart = windowSource.IndexOf("var save = new SaveFileDialog", exportStart, StringComparison.Ordinal);
         Require(exportStart >= 0 && saveDialogStart > exportStart,
