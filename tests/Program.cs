@@ -111,6 +111,41 @@ static class Checks
         Require(idle.Phase == GuidePhase.Failed, "timeout retry");
         Console.WriteLine("PASS: capture timeout");
 
+        // Hardware-free regression: a wall-clock jump must not make a short
+        // rest baseline or a press capture appear valid. No WinMM device is used.
+        var guidedClockStart = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
+        var guidedClockJump = new GuidedCalibration(PedalKind.Brake, Device,
+            Array.Empty<int>(), guidedClockStart);
+        for (int i = 1; i <= 16; i++)
+            guidedClockJump.Observe(Axes(0, 0), guidedClockStart.AddMilliseconds(i * 40));
+        guidedClockJump.Observe(Axes(0, 0), guidedClockStart.AddMilliseconds(1300));
+        Require(guidedClockJump.Phase == GuidePhase.Failed &&
+                guidedClockJump.Result is null &&
+                guidedClockJump.FailureReason.Contains("timing interrupted"),
+            "forward clock jump must invalidate guided rest baseline");
+
+        var guidedClockRollback = new GuidedCalibration(PedalKind.Brake, Device,
+            Array.Empty<int>(), guidedClockStart);
+        for (int i = 1; i <= 20; i++)
+            guidedClockRollback.Observe(Axes(0, 0), guidedClockStart.AddMilliseconds(i * 40));
+        guidedClockRollback.Observe(Axes(0, 0), guidedClockStart.AddMilliseconds(760));
+        Require(guidedClockRollback.Phase == GuidePhase.Failed &&
+                guidedClockRollback.Result is null,
+            "backward clock jump must invalidate guided rest baseline");
+
+        var guidedPressJump = new GuidedCalibration(PedalKind.Brake, Device,
+            Array.Empty<int>(), guidedClockStart);
+        for (int i = 1; i <= 32; i++)
+            guidedPressJump.Observe(Axes(0, 0), guidedClockStart.AddMilliseconds(i * 40));
+        Require(guidedPressJump.Phase == GuidePhase.AwaitingPress,
+            "normal guided rest samples must still pass");
+        guidedPressJump.Observe(Axes(0, 20000), guidedClockStart.AddMilliseconds(1900));
+        Require(guidedPressJump.Phase == GuidePhase.Failed &&
+                guidedPressJump.Result is null,
+            "forward clock jump during press must not produce a captured pedal");
+        Console.WriteLine("PASS: guided WinMM timestamp interruptions require recapture (synthetic C#)");
+
+
         // A progressive sweep should include intermediate readings and an endpoint hold.
         var sweepClock = new DateTime(2026, 10, 14, 10, 0, 0, DateTimeKind.Utc);
         var sweep = new InputSweepRun(0, 0, 65535, sweepClock);
