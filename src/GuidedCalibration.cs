@@ -41,6 +41,7 @@ internal sealed class GuidedCalibration
     private readonly double[] _rest = new double[6];
     private readonly List<uint> _peaks = new();
     private readonly DateTime _startUtc;
+    private DateTime _lastSampleUtc;
     private DateTime _movementStartUtc;
     private double _currentPeak;
     private int _strokeSamples;
@@ -61,6 +62,7 @@ internal sealed class GuidedCalibration
     {
         Kind = kind;
         _startUtc = startUtc ?? DateTime.UtcNow;
+        _lastSampleUtc = _startUtc;
         _movementStartUtc = _startUtc;
         _reservedAxes = reservedAxes.ToHashSet();
         _deviceMin = (uint[])device.Min.Clone();
@@ -96,6 +98,16 @@ internal sealed class GuidedCalibration
     public void Observe(uint[] reading, DateTime utcNow)
     {
         if (Phase is GuidePhase.Complete or GuidePhase.Failed || reading.Length != 6) return;
+        // Wall-clock adjustments and long WinMM polling stalls must not make a
+        // short rest baseline or a pedal press appear to have elapsed normally.
+        // Fail conservatively; no calibration is written to Windows or the device.
+        double sampleGapSeconds = (utcNow - _lastSampleUtc).TotalSeconds;
+        if (sampleGapSeconds < 0 || sampleGapSeconds > 0.5)
+        {
+            Fail("WinMM sample timing interrupted. Release the pedal and retry capture.");
+            return;
+        }
+        _lastSampleUtc = utcNow;
         if (Phase == GuidePhase.MeasuringRest)
         {
             for (int i = 0; i < 6; i++)
