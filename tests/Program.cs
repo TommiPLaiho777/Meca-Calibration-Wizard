@@ -168,7 +168,7 @@ static class Checks
             "WinMM axis saturation must not be presented as sensor clipping");
         // A near-high WinMM sample is counted in the band without reaching
         // the exact reported axis maximum. Keep GUI wording precise.
-        var nearHighSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        var nearHighSweep = new InputSweepRun(0, 0, 65535, sweepClock, requireContinuousSamples: false);
         nearHighSweep.Observe(Axes(0, 0), sweepClock);
         nearHighSweep.Observe(Axes(0, 65480), sweepClock.AddSeconds(8));
         Require(nearHighSweep.Result is { AtHighLimitSamples: 1, MaximumWinmm: 65480 } &&
@@ -189,7 +189,7 @@ static class Checks
             (1u, 1, 1), (2u, 1, 1), (3u, 2, 2)
         })
         {
-            var narrow = new InputSweepRun(0, 0, width, sweepClock);
+            var narrow = new InputSweepRun(0, 0, width, sweepClock, requireContinuousSamples: false);
             for (uint value = 0; value <= width; value++)
                 narrow.Observe(Axes(0, value), sweepClock.AddMilliseconds(value * 100));
             narrow.Observe(Axes(0, 0), sweepClock.AddSeconds(8));
@@ -201,7 +201,7 @@ static class Checks
         }
         Console.WriteLine("PASS: narrow WinMM axis endpoint bands are disjoint");
 
-        var stationary = new InputSweepRun(0, 0, 65535, sweepClock);
+        var stationary = new InputSweepRun(0, 0, 65535, sweepClock, requireContinuousSamples: false);
         stationary.Observe(Axes(), sweepClock);
         stationary.Observe(Axes(), sweepClock.AddSeconds(8));
         Require(stationary.Result is not null && stationary.Result.DistinctValues == 1 &&
@@ -214,7 +214,7 @@ static class Checks
 
         // Clock rollback must not create out-of-order samples or artificial spikes.
         // Equal-millisecond observations remain valid for coarse Windows clocks.
-        var rollbackSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        var rollbackSweep = new InputSweepRun(0, 0, 65535, sweepClock, requireContinuousSamples: false);
         rollbackSweep.Observe(Axes(0, 99), sweepClock.AddMilliseconds(-40));
         rollbackSweep.Observe(Axes(0, 100), sweepClock);
         rollbackSweep.Observe(Axes(0, 200), sweepClock.AddMilliseconds(120));
@@ -227,6 +227,32 @@ static class Checks
                 !rollbackSweep.Result.Trace.Any(p => p.WinmmValue == 9999),
             "clock rollback must not corrupt exported WinMM sweep timestamps or readings");
         Console.WriteLine("PASS: WinMM sweep clock-rollback timestamp integrity");
+
+        // Live WinMM captures require continuous timing. Sparse endpoint-only
+        // fixtures above explicitly opt out; they do not represent a valid sweep.
+        var forwardGapSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        forwardGapSweep.Observe(Axes(0, 0), sweepClock);
+        forwardGapSweep.Observe(Axes(0, 40000), sweepClock.AddMilliseconds(650));
+        Require(forwardGapSweep.Failed && !forwardGapSweep.Complete &&
+                forwardGapSweep.Result is null &&
+                forwardGapSweep.FailureReason.Contains("timing interrupted"),
+            "live sweep must reject a forward clock jump or WinMM polling gap");
+        forwardGapSweep.Observe(Axes(0, 0), sweepClock.AddSeconds(8));
+        Require(forwardGapSweep.Result is null && !forwardGapSweep.Complete,
+            "interrupted sweep must never resume into an exportable trace");
+
+        var reverseTimeSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        reverseTimeSweep.Observe(Axes(0, 0), sweepClock);
+        reverseTimeSweep.Observe(Axes(0, 1000), sweepClock.AddMilliseconds(40));
+        reverseTimeSweep.Observe(Axes(0, 50000), sweepClock.AddMilliseconds(20));
+        Require(reverseTimeSweep.Failed && reverseTimeSweep.Result is null,
+            "live sweep must reject retrograde Windows timestamps");
+
+        var delayedFirstSweep = new InputSweepRun(0, 0, 65535, sweepClock);
+        delayedFirstSweep.Observe(Axes(0, 0), sweepClock.AddMilliseconds(600));
+        Require(delayedFirstSweep.Failed && delayedFirstSweep.Result is null,
+            "live sweep must reject an initial sample delayed beyond 0.5 seconds");
+        Console.WriteLine("PASS: interrupted live WinMM sweeps require recapture (synthetic C#)");
 
         var fixturePath = Path.Combine(AppContext.BaseDirectory, "fixtures", "real-winmm-sweeps-20261014.json");
         using (var fixture = JsonDocument.Parse(File.ReadAllText(fixturePath)))
@@ -840,6 +866,12 @@ static class Checks
                 windowSource.Contains("_sweepResults.Clear();"),
             "WPF export must respect session invalidation and explicit refresh must clear captures");
         Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
+        Require(pollSource.Contains("if (_sweep.Failed)") &&
+                pollSource.Contains("if (_sweep.Failed || _sweep.Complete)") &&
+                pollSource.Contains("SweepStatusText.Text = $\"{sweepPedal}: {_sweep.FailureReason}\";") &&
+                pollSource.Contains("SweepProgress.Value = 0;"),
+            "WPF must cancel an interrupted WinMM sweep and display a retry message");
+        Console.WriteLine("PASS: interrupted sweep WPF cancellation contract (source check)");
 
         // Refresh may be pressed while a capture, idle-noise check or sweep is
         // still active. Even if the same WinMM ID is selected afterward, none
