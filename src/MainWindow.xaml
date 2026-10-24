@@ -203,17 +203,21 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button x:Name="BrakeSweepButton" Content="Brake sweep" Click="BrakeSweep_Click" Margin="0,0,10,0"/>
                                     <Button x:Name="ThrottleSweepButton" Content="Throttle sweep" Click="ThrottleSweep_Click"/>
+                                     <Button x:Name="ClutchSweepButton" Content="Clutch sweep" Click="ClutchSweep_Click"
+                                             Visibility="Collapsed" Margin="10,0,0,0"/>
                                 </StackPanel>
                                 <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"/>
                                 <TextBlock x:Name="SweepStatusText" Text="Not measured" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
                                 <TextBlock x:Name="SweepAnalysisText" Text="Complete a sweep to review its signal shape." TextWrapping="Wrap"
                                            Foreground="{StaticResource DimBrush}" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Text="WINDOWS-REPORTED RESPONSE · Brake (red), Throttle (green)" FontSize="10" FontWeight="Bold"
+                                <TextBlock Text="WINDOWS-REPORTED RESPONSE · Brake (red), Throttle (green), Clutch (blue if installed)" FontSize="10" FontWeight="Bold"
                                            Foreground="{StaticResource DimBrush}" Margin="0,13,0,6"/>
                                 <Border Background="#142329" CornerRadius="6" Padding="8">
                                     <Canvas Width="460" Height="102" HorizontalAlignment="Left">
                                         <Polyline x:Name="BrakeSweepLine" Stroke="#EC776B" StrokeThickness="2" SnapsToDevicePixels="True"/>
                                         <Polyline x:Name="ThrottleSweepLine" Stroke="#52D2AC" StrokeThickness="2" SnapsToDevicePixels="True"/>
+                                         <Polyline x:Name="ClutchSweepLine" Stroke="#7BA4F2" StrokeThickness="2"
+                                                   Visibility="Collapsed" SnapsToDevicePixels="True"/>
                                     </Canvas>
                                 </Border>
                                 <TextBlock Text="At-limit counts cannot prove early clipping or consistent physical force."
