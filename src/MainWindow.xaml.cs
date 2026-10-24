@@ -164,8 +164,8 @@ public partial class MainWindow : Window
     {
         if (DeviceText is null || StatusText is null) return;
         DeviceText.Text = _device?.Name ?? "No controller selected";
-        StatusText.Text = _device is null ? "Select a connected USB pedal controller"
-            : "Device found · USB game controller";
+        StatusText.Text = _device is null ? "Select a WinMM controller to preview inputs"
+            : "WinMM controller selected · physical USB identity not verified";
     }
 
     private void ChangeStep(int step)
@@ -189,7 +189,7 @@ public partial class MainWindow : Window
         if (step == 0)
         {
             StepLabel.Text = "STEP 1 / CONNECT";
-            StepHint.Text = "Select the correct USB controller";
+            StepHint.Text = "Select a WinMM controller · physical identity not verified";
             NextButton.Content = "Begin  →";
             NextButton.IsEnabled = _device is not null;
         }
@@ -261,7 +261,7 @@ public partial class MainWindow : Window
                     "Refresh required", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            if (_device is null) { MessageBox.Show("Select the MECA USB controller first."); return; }
+            if (_device is null) { MessageBox.Show("Select a WinMM controller first."); return; }
             ChangeStep(1);
         }
         else if (_step == 1 && _mappings.ContainsKey(PedalKind.Brake)) ChangeStep(2);
@@ -606,7 +606,7 @@ public partial class MainWindow : Window
                     ? "A WinMM measurement is in progress. Wait for it to finish before exporting."
                     : _winmmSessionInvalid
                         ? "WinMM input was interrupted. Return to Connect, click Refresh, and capture pedals again before exporting."
-                        : "Select a USB controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
+                        : "Select a WinMM controller, or scan HID identifiers in Advanced diagnostics, before exporting.",
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
