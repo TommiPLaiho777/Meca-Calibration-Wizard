@@ -85,7 +85,9 @@ internal static class SweepDiagnostics
                 ? inverted
                     ? "Press and release recorded. Windows axis high endpoint was observed at the released end of this inverted mapping; this does not establish pedal-force clipping."
                     : "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
-                : "Press and release recorded. The Windows axis maximum was not reached in this sweep.";
+                : inverted
+                    ? "Press and release recorded. The Windows axis high endpoint was not observed (released end of this inverted mapping); this does not establish physical pedal force."
+                    : "Press and release recorded. The Windows axis maximum was not reached in this sweep.";
         }
         return new SweepAssessment(complete, full, distinct, Math.Round(observedTravel, 2),
             reversals, status, explanation);
