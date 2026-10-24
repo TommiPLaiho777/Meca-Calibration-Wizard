@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         LongSignalButton.IsEnabled = true;
         BrakeSweepButton.IsEnabled = true;
         ThrottleSweepButton.IsEnabled = true;
+        ClutchSweepButton.IsEnabled = true;
         SignalText.Text = "Controller refreshed · run signal check again.";
         SweepStatusText.Text = "Controller refreshed · record a new sweep.";
         RefreshDevices();
@@ -140,6 +141,11 @@ public partial class MainWindow : Window
     private void ClutchCheck_Changed(object sender, RoutedEventArgs e)
     {
         if (ClutchCheck is null) return;
+        // An unused WinMM axis is not evidence of a physical clutch.
+        if (ClutchSweepButton is not null)
+            ClutchSweepButton.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (ClutchSweepLine is not null)
+            ClutchSweepLine.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         if (ClutchCheck.IsChecked != true)
         {
             // Disabling an optional clutch while its guided capture is running
@@ -156,6 +162,16 @@ public partial class MainWindow : Window
                     NextButton.IsEnabled = true;
                     NextButton.Content = "Skip  →";
                 }
+            }
+            if (_sweepKind == PedalKind.Clutch)
+            {
+                _sweep = null;
+                _sweepKind = null;
+                BrakeSweepButton.IsEnabled = true;
+                ThrottleSweepButton.IsEnabled = true;
+                ClutchSweepButton.IsEnabled = true;
+                SweepProgress.Value = 0;
+                SweepStatusText.Text = "Clutch disabled · sweep cancelled. No clutch sweep saved.";
             }
             _mappings.Remove(PedalKind.Clutch);
             _calibrationResults.Remove(PedalKind.Clutch);
@@ -174,7 +190,11 @@ public partial class MainWindow : Window
             }
         }
         UpdateMappingLabels();
-        if (_step == 4) ClutchTestArea.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (_step == 4)
+        {
+            ClutchTestArea.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            UpdateSweepDetails();
+        }
     }
 
     private void UpdateMappingLabels()
@@ -205,6 +225,7 @@ public partial class MainWindow : Window
         CaptureButton.IsEnabled = true;
         BrakeSweepButton.IsEnabled = true;
         ThrottleSweepButton.IsEnabled = true;
+        ClutchSweepButton.IsEnabled = true;
         CheckSignalButton.IsEnabled = true;
         LongSignalButton.IsEnabled = true;
         _step = step;
@@ -370,6 +391,7 @@ public partial class MainWindow : Window
                 _sweepKind = null;
                 BrakeSweepButton.IsEnabled = true;
                 ThrottleSweepButton.IsEnabled = true;
+                ClutchSweepButton.IsEnabled = true;
                 SweepStatusText.Text = "Sweep cancelled: controller disconnected.";
                 CaptureButton.IsEnabled = true;
             }
@@ -457,6 +479,7 @@ public partial class MainWindow : Window
                 _sweepKind = null;
                 BrakeSweepButton.IsEnabled = true;
                 ThrottleSweepButton.IsEnabled = true;
+                ClutchSweepButton.IsEnabled = true;
             }
         }
 
@@ -506,9 +529,15 @@ public partial class MainWindow : Window
 
     private void BrakeSweep_Click(object sender, RoutedEventArgs e) => BeginSweep(PedalKind.Brake);
     private void ThrottleSweep_Click(object sender, RoutedEventArgs e) => BeginSweep(PedalKind.Throttle);
+    private void ClutchSweep_Click(object sender, RoutedEventArgs e) => BeginSweep(PedalKind.Clutch);
 
     private void BeginSweep(PedalKind kind)
     {
+        if (kind == PedalKind.Clutch && ClutchCheck.IsChecked != true)
+        {
+            SweepStatusText.Text = "Enable the installed clutch and capture its WinMM axis first.";
+            return;
+        }
         if (_winmmSessionInvalid)
         {
             SweepStatusText.Text = "WinMM session interrupted · return to Connect and click Refresh.";
@@ -526,13 +555,14 @@ public partial class MainWindow : Window
         _sweepKind = kind;
         BrakeSweepButton.IsEnabled = false;
         ThrottleSweepButton.IsEnabled = false;
+        ClutchSweepButton.IsEnabled = false;
         SweepProgress.Value = 0;
         SweepStatusText.Text = $"{kind}: slowly press, hold, release within 8 seconds.";
     }
 
     private void UpdateSweepDetails()
     {
-        if (SweepAnalysisText is null || BrakeSweepLine is null || ThrottleSweepLine is null) return;
+        if (SweepAnalysisText is null || BrakeSweepLine is null || ThrottleSweepLine is null || ClutchSweepLine is null) return;
         var descriptions = new List<string>();
         foreach (var pair in _sweepResults.OrderBy(p => p.Key))
         {
@@ -546,6 +576,7 @@ public partial class MainWindow : Window
             : string.Join("\n", descriptions);
         DrawTrace(PedalKind.Brake, BrakeSweepLine);
         DrawTrace(PedalKind.Throttle, ThrottleSweepLine);
+        DrawTrace(PedalKind.Clutch, ClutchSweepLine);
     }
 
     private void DrawTrace(PedalKind kind, Polyline line)
