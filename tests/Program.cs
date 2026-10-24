@@ -650,11 +650,11 @@ static class Checks
         // Source-level WPF regression: disabling the optional clutch while
         // a capture is active must cancel it before a later Poll can save it.
         // The Windows build compiles the handler; this is not a hardware test.
-        int clutchHandlerStart = windowSource.IndexOf("private void ClutchCheck_Changed(", StringComparison.Ordinal);
-        int clutchHandlerEnd = windowSource.IndexOf("private void UpdateMappingLabels(", clutchHandlerStart, StringComparison.Ordinal);
-        Require(clutchHandlerStart >= 0 && clutchHandlerEnd > clutchHandlerStart,
+        int clutchToggleStart = windowSource.IndexOf("private void ClutchCheck_Changed(", StringComparison.Ordinal);
+        int clutchToggleEnd = windowSource.IndexOf("private void UpdateMappingLabels(", clutchToggleStart, StringComparison.Ordinal);
+        Require(clutchToggleStart >= 0 && clutchToggleEnd > clutchToggleStart,
             "optional clutch selection handler must exist");
-        string clutchHandlerSource = windowSource[clutchHandlerStart..clutchHandlerEnd];
+        string clutchHandlerSource = windowSource[clutchToggleStart..clutchToggleEnd];
         Require(clutchHandlerSource.Contains("_capture?.Kind == PedalKind.Clutch") &&
                 clutchHandlerSource.Contains("_capture = null;") &&
                 clutchHandlerSource.Contains("CaptureButton.IsEnabled = true;") &&
