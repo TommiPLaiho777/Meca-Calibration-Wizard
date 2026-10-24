@@ -32,9 +32,10 @@ internal static class SignalHealthDiagnostics
     // Conservative minimum *average* polling rate for a useful at-rest assessment.
     // Not a claim about the USB HID report rate or native load-cell sampling.
     private const double MinimumUsefulAverageSamplingRateHz = 5.0;
-    // A one-second blind spot makes a 3s or 10s at-rest check inconclusive,
-    // even if the remaining samples yield a high average polling rate.
-    private const double MaximumUsefulSamplingGapSeconds = 1.0;
+    // A gap above 0.5s is inconclusive for a 3s or 10s idle check.
+    // This also prevents a +0.6s Windows wall-clock jump from producing a
+    // valid-looking flat trace: timestamps alone cannot prove continuous sampling.
+    private const double MaximumUsefulSamplingGapSeconds = 0.5;
 
     public static SignalHealthStats Evaluate(
         IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds,
