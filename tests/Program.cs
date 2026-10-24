@@ -412,10 +412,25 @@ static class Checks
                 firstSampleDelayed.Analyze(0, 0, 65535).Status == "Insufficient samples",
             "initial blind spot must also invalidate idle-signal quality");
         Require(SignalHealthDiagnostics.Evaluate(
-                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.0).Status == "No variation resolved" &&
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 0.5).Status == "No variation resolved" &&
                 SignalHealthDiagnostics.Evaluate(
-                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 1.001).Status == "Insufficient samples",
-            "one-second gap threshold must be inclusive");
+                Enumerable.Repeat(0u, 40).ToArray(), 0, 65535, 3, 0.501).Status == "Insufficient samples",
+            "half-second WinMM gap threshold must be inclusive");
+        // A +0.6s wall-clock adjustment during a nominal 3s idle check can
+        // prematurely finish a flat trace. Do not call it stable when the
+        // timestamps show an implausible 0.64s interval between 40ms polls.
+        var forwardJump = new NoiseRun(gapClock);
+        for (int i = 0; i <= 60; i++)
+            forwardJump.Observe(Axes(), gapClock.AddMilliseconds(i * 40));
+        forwardJump.Observe(Axes(), gapClock.AddMilliseconds(3040));
+        var forwardJumpStats = forwardJump.Analyze(0, 0, 65535);
+        Require(forwardJump.Complete && forwardJumpStats.SampleCount == 62 &&
+                forwardJumpStats.LargestSamplingGapSeconds == 0.64 &&
+                forwardJumpStats.SpanWinmm == 0 &&
+                forwardJumpStats.Status == "Insufficient samples" &&
+                forwardJumpStats.Guidance.Contains("widely spaced"),
+            "0.6s forward clock jump must not produce a valid-looking quiet WinMM report");
+        Console.WriteLine("PASS: forward WinMM timestamp jump is inconclusive (synthetic)");
         // A wall-clock rollback during capture must never be treated as a
         // normal flat trace or as a positive polling gap.
         var rollbackRun = new NoiseRun(gapClock);
