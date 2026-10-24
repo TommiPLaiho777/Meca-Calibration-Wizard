@@ -19,7 +19,7 @@ internal sealed record InputSweepResult(
 {
     public string Summary =>
         $"{SampleCount} samples · {DistinctValues} distinct · {IntermediateSamples} intermediate · " +
-        $"{AtHighLimitSamples} at high axis limit";
+        $"{AtHighLimitSamples} in high-end WinMM band (not necessarily exact axis maximum)";
 
     // WinMM reports Windows joystick-axis values, not the native sensor ADC.
     // Neither reaching nor avoiding the axis ceiling establishes physical force.
