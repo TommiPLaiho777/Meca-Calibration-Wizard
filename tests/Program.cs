@@ -557,6 +557,12 @@ static class Checks
             "setup must expose a clearly labelled, read-only HID/WinMM diagnostics entry");
         Console.WriteLine("PASS: Advanced diagnostics discoverability and read-only scope");
         Console.WriteLine("PASS: Advanced HID export control and read-only guidance");
+        Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                    (string?)e.Attribute("Text") == "WINMM CONTROLLER") &&
+                xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                    ((string?)e.Attribute("Text"))?.Contains("Physical USB identity is not verified.") == true),
+            "WinMM selection UI must not assert verified physical USB identity");
+        Console.WriteLine("PASS: WinMM controller selection UI states USB identity is unverified");
 
         // A controller-only export is permitted but must ask for confirmation.
         // Completed HID scans and any WinMM measurements are meaningful exports.
@@ -574,6 +580,9 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        Require(windowSource.Contains("WinMM controller selected · physical USB identity not verified") &&
+                !windowSource.Contains("Device found · USB game controller"),
+            "WinMM selection status must not claim physical USB identity");
         Require(windowSource.Contains("mapping.Full < mapping.Rest") &&
                 windowSource.Contains("_mappings[p.Key].Full < _mappings[p.Key].Rest"),
             "WPF sweep display and JSON export must use the captured WinMM pedal polarity");
