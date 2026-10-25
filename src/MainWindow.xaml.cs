@@ -589,6 +589,22 @@ public partial class MainWindow : Window
             value.Text = "Not captured";
             return;
         }
+        // A successful WinMM poll can still return a value outside the
+        // controller's advertised (or assumed) axis range. Do not display
+        // a plausible pedal percentage for that invalid live reading.
+        if (_device is null || _raw.Length <= _mappings[kind].Axis)
+        {
+            bar.Value = 0;
+            value.Text = "No live input";
+            return;
+        }
+        int axis = _mappings[kind].Axis;
+        if (_raw[axis] < _device.Min[axis] || _raw[axis] > _device.Max[axis])
+        {
+            bar.Value = 0;
+            value.Text = "Invalid WinMM reading";
+            return;
+        }
         var percent = GetPercent(kind);
         bar.Value = percent;
         value.Text = $"{percent:0}%";
