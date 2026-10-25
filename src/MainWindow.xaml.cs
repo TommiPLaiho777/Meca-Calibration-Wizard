@@ -553,14 +553,20 @@ public partial class MainWindow : Window
         if (_step is >= 1 and <= 3)
         {
             var kind = StepKind();
-            var percent = _capture is not null
-                ? _capture.PreviewPercent(sample) : GetPercent(kind);
-            LiveValue.Text = _capture is not null || _mappings.ContainsKey(kind)
-                ? $"{percent:0}%" : "—";
-            CaptureProgress.Value = percent;
             int shownAxis = _capture?.Axis ?? (_mappings.TryGetValue(kind, out var map) ? map.Axis : -1);
+            // Guided preview uses the same WinMM range guard as the final test bars.
+            // Never show a plausible percentage when the selected axis is invalid.
+            bool invalidWinmmReading = shownAxis >= 0 &&
+                (sample[shownAxis] < _device.Min[shownAxis] || sample[shownAxis] > _device.Max[shownAxis]);
+            var percent = invalidWinmmReading ? 0 : _capture is not null
+                ? _capture.PreviewPercent(sample) : GetPercent(kind);
+            LiveValue.Text = invalidWinmmReading ? "Invalid WinMM reading"
+                : _capture is not null || _mappings.ContainsKey(kind)
+                    ? $"{percent:0}%" : "—";
+            CaptureProgress.Value = percent;
             LiveRaw.Text = shownAxis >= 0
-                ? $"WinMM reading: {sample[shownAxis]} · axis {WinmmJoystick.AxisNames[shownAxis]}"
+                ? $"WinMM reading: {sample[shownAxis]} · axis {WinmmJoystick.AxisNames[shownAxis]}" +
+                    (invalidWinmmReading ? " · OUTSIDE WINMM AXIS RANGE" : "")
                 : "Awaiting pedal movement to identify WinMM axis";
             NeedleRotation.Angle = -5 + (percent * 1.1);
             ClutchDiscShift.X = percent * 0.32;
