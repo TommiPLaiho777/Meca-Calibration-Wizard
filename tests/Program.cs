@@ -911,6 +911,32 @@ static class Checks
             "WinMM refresh must restore controls and explicitly require fresh diagnostics");
         Console.WriteLine("PASS: explicit WinMM refresh cancels in-flight captures (WPF source contract)");
 
+        // Hardware-free WPF source contract: a failed WinMM read must not leave
+        // a previous pedal percentage or gauge visible as if it were live.
+        // Windows CI compiles the actual WPF code; physical pedals are not tested.
+        int unavailableStart = windowSource.IndexOf(
+            "private void MarkLiveReadingsUnavailable(", StringComparison.Ordinal);
+        int unavailableEnd = windowSource.IndexOf(
+            "private void UpdateDeviceInfo(", unavailableStart, StringComparison.Ordinal);
+        Require(unavailableStart >= 0 && unavailableEnd > unavailableStart,
+            "WinMM live-display invalidation helper must exist");
+        string unavailableSource = windowSource[unavailableStart..unavailableEnd];
+        Require(unavailableSource.Contains("LiveValue.Text = \"—\";") &&
+                unavailableSource.Contains("LiveRaw.Text = \"WinMM input interrupted") &&
+                unavailableSource.Contains("CaptureProgress.Value = 0;") &&
+                unavailableSource.Contains("BrakeProgress.Value = 0;") &&
+                unavailableSource.Contains("ThrottleProgress.Value = 0;") &&
+                unavailableSource.Contains("ClutchProgress.Value = 0;") &&
+                unavailableSource.Contains("BrakeValue.Text = \"No live input\";") &&
+                unavailableSource.Contains("ThrottleValue.Text = \"No live input\";") &&
+                unavailableSource.Contains("ClutchValue.Text = \"No live input\";") &&
+                unavailableSource.Contains("UpdateMappingLabels();") &&
+                windowSource.Contains("STALE — refresh required") &&
+                pollSource.Contains("MarkLiveReadingsUnavailable();") &&
+                captureSource.Contains("MarkLiveReadingsUnavailable();"),
+            "failed WinMM reads must clear stale live gauges and label saved mappings stale");
+        Console.WriteLine("PASS: interrupted WinMM stream clears stale live UI (WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
