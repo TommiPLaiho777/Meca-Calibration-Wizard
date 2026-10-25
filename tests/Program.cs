@@ -906,6 +906,15 @@ static class Checks
             "guided WinMM capture handler must exist");
         string captureSource = windowSource[captureStart..captureEnd];
         int captureRead = captureSource.IndexOf("if (!WinmmJoystick.TryRead(", StringComparison.Ordinal);
+        // Defense-in-depth: the capture button must not start a guided pedal
+        // read while another WinMM measurement is active, even if invoked
+        // outside the normal WPF navigation flow. Source contract only.
+        int captureOverlapGuard = captureSource.IndexOf(activeWinmmGuard, StringComparison.Ordinal);
+        Require(captureOverlapGuard >= 0 && captureRead > captureOverlapGuard &&
+                captureSource.Contains("Finish or cancel it before capturing a pedal.") &&
+                captureSource.IndexOf("_capture = new GuidedCalibration(", StringComparison.Ordinal) > captureOverlapGuard,
+            "guided capture must reject overlapping WinMM measurements before reading or changing state");
+        Console.WriteLine("PASS: guided WinMM capture overlap rejected (WPF source contract)");
         int invalidateRead = captureSource.IndexOf("_winmmSessionInvalid = true;", StringComparison.Ordinal);
         Require(captureRead >= 0 && invalidateRead > captureRead &&
                 captureSource.Contains("_raw = Array.Empty<uint>();") &&
