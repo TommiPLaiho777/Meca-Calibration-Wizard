@@ -373,6 +373,13 @@ public partial class MainWindow : Window
             CaptureFooter.Text = "Select a WinMM controller before capturing.";
             return;
         }
+        // Keep guided capture separate from any active WinMM signal check or sweep.
+        // Do not interrupt an in-flight measurement or read a competing sample.
+        if (_capture is not null || _noise is not null || _sweep is not null)
+        {
+            CaptureFooter.Text = "Another WinMM measurement is in progress. Finish or cancel it before capturing a pedal.";
+            return;
+        }
         if (!WinmmJoystick.TryRead(_device.Id, out var sample))
         {
             // A failed direct capture read must invalidate the session immediately,
