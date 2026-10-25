@@ -1017,6 +1017,25 @@ static class Checks
             "WinMM JSON must preserve six axis bounds and distinguish assumed from reported ranges");
         Console.WriteLine("PASS: WinMM JSON axis-range provenance (WPF source contract)");
 
+        // Hardware-free WPF source contract: an out-of-range WinMM axis must
+        // not be rendered as a normal-looking live pedal percentage.
+        // Windows CI compiles the WPF application; this does not test hardware.
+        int testBarStart = windowSource.IndexOf("private void UpdateTestBar(", StringComparison.Ordinal);
+        int testBarEnd = windowSource.IndexOf("private void BrakeSweep_Click(", testBarStart, StringComparison.Ordinal);
+        Require(testBarStart >= 0 && testBarEnd > testBarStart,
+            "WinMM live test-bar handler must exist");
+        string testBarSource = windowSource[testBarStart..testBarEnd];
+        int invalidBarGuard = testBarSource.IndexOf(
+            "if (_raw[axis] < _device.Min[axis] || _raw[axis] > _device.Max[axis])",
+            StringComparison.Ordinal);
+        int percentRead = testBarSource.IndexOf("var percent = GetPercent(kind);", StringComparison.Ordinal);
+        Require(invalidBarGuard >= 0 && percentRead > invalidBarGuard &&
+                testBarSource.Contains("value.Text = \"Invalid WinMM reading\";") &&
+                testBarSource.Contains("bar.Value = 0;") &&
+                testBarSource.Contains("value.Text = \"No live input\";"),
+            "out-of-range WinMM live values must not appear as valid pedal percentages");
+        Console.WriteLine("PASS: out-of-range WinMM live test bars suppressed (WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
