@@ -1036,6 +1036,27 @@ static class Checks
             "out-of-range WinMM live values must not appear as valid pedal percentages");
         Console.WriteLine("PASS: out-of-range WinMM live test bars suppressed (WPF source contract)");
 
+        // The guided capture pages (steps 1-3) also render a live gauge.
+        // Out-of-range values must not appear as normal pedal percentages there.
+        // This is a hardware-free source contract; Windows CI compiles WPF.
+        int guidedUiStart = windowSource.IndexOf("if (_step is >= 1 and <= 3)", StringComparison.Ordinal);
+        int guidedUiEnd = windowSource.IndexOf("else if (_step == 4)", guidedUiStart, StringComparison.Ordinal);
+        Require(guidedUiStart >= 0 && guidedUiEnd > guidedUiStart,
+            "guided WinMM preview UI branch must exist");
+        string guidedUiSource = windowSource[guidedUiStart..guidedUiEnd];
+        int guidedInvalidGuard = guidedUiSource.IndexOf(
+            "bool invalidWinmmReading = shownAxis >= 0 &&", StringComparison.Ordinal);
+        int guidedPercent = guidedUiSource.IndexOf(
+            "var percent = invalidWinmmReading ? 0", StringComparison.Ordinal);
+        Require(guidedInvalidGuard >= 0 && guidedPercent > guidedInvalidGuard &&
+                guidedUiSource.Contains("sample[shownAxis] < _device.Min[shownAxis]") &&
+                guidedUiSource.Contains("sample[shownAxis] > _device.Max[shownAxis]") &&
+                guidedUiSource.Contains("LiveValue.Text = invalidWinmmReading ? \"Invalid WinMM reading\"") &&
+                guidedUiSource.Contains("CaptureProgress.Value = percent;") &&
+                guidedUiSource.Contains("OUTSIDE WINMM AXIS RANGE"),
+            "guided preview must suppress out-of-range WinMM percentages");
+        Console.WriteLine("PASS: guided WinMM preview suppresses invalid live values (WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
