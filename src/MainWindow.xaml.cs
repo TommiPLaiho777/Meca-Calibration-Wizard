@@ -205,8 +205,26 @@ public partial class MainWindow : Window
     }
 
     private string MapLabel(PedalKind kind) => _mappings.TryGetValue(kind, out var mapping)
-        ? $"WinMM {WinmmJoystick.AxisNames[mapping.Axis]} · Preview"
+        ? $"WinMM {WinmmJoystick.AxisNames[mapping.Axis]} · {(_winmmSessionInvalid ? "STALE — refresh required" : "Preview")}"
         : "Not captured";
+
+    // Never leave the last successful pedal position looking like a live value
+    // after a WinMM read fails. Preserve the stored measurements for review,
+    // but label their mappings stale and keep JSON export blocked.
+    private void MarkLiveReadingsUnavailable()
+    {
+        LiveValue.Text = "—";
+        LiveRaw.Text = "WinMM input interrupted · no current reading.";
+        CaptureProgress.Value = 0;
+        BrakeProgress.Value = 0;
+        ThrottleProgress.Value = 0;
+        ClutchProgress.Value = 0;
+        BrakeValue.Text = "No live input";
+        ThrottleValue.Text = "No live input";
+        ClutchValue.Text = "No live input";
+        SweepProgress.Value = 0;
+        UpdateMappingLabels();
+    }
 
     private void UpdateDeviceInfo()
     {
@@ -362,6 +380,7 @@ public partial class MainWindow : Window
             // under a potentially replaced controller with the same WinMM ID.
             _winmmSessionInvalid = true;
             _raw = Array.Empty<uint>();
+            MarkLiveReadingsUnavailable();
             _capture = null;
             _noise = null;
             _sweep = null;
@@ -401,6 +420,7 @@ public partial class MainWindow : Window
             {
                 _winmmSessionInvalid = true;
                 _raw = Array.Empty<uint>();
+                MarkLiveReadingsUnavailable();
                 AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
                 StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
                 _capture = null;
