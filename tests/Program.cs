@@ -785,6 +785,16 @@ static class Checks
             "WinMM sweep and signal-check handlers must exist");
         string beginSweepSource = windowSource[beginSweepStart..beginSweepEnd];
         string beginSignalSource = windowSource[beginSignalStart..beginSignalEnd];
+        // Hardware-free WPF source contract: an unmapped WinMM controller
+        // must not yield an empty idle check that bypasses the controller-only warning.
+        int noMappingGuard = beginSignalSource.IndexOf("if (_mappings.Count == 0)", StringComparison.Ordinal);
+        Require(noMappingGuard >= 0 &&
+                noMappingGuard < beginSignalSource.IndexOf("_noise = new NoiseRun(", StringComparison.Ordinal) &&
+                beginSignalSource.Contains("Capture at least one pedal before checking WinMM signal at rest.") &&
+                exportPreamble.Contains("(_lastNoise?.Count ?? 0) > 0") &&
+                exportPreamble.Contains("(_lastSignalHealth?.Count ?? 0) > 0"),
+            "unmapped WinMM signal checks must not create empty measurements or suppress the controller-only export warning");
+        Console.WriteLine("PASS: empty WinMM diagnostics cannot masquerade as measured pedal data (WPF source contract)");
         const string activeWinmmGuard = "if (_capture is not null || _noise is not null || _sweep is not null)";
         Require(beginSweepSource.Contains(activeWinmmGuard) &&
                 beginSweepSource.IndexOf(activeWinmmGuard, StringComparison.Ordinal) <
