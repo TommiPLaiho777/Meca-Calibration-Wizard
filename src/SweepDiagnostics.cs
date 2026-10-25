@@ -29,6 +29,19 @@ internal static class SweepDiagnostics
                 0, 0, "Invalid WinMM range",
                 "WinMM readings are outside the axis bounds used for this preview (reported or assumed). Discard this sweep and capture again.");
 
+        // Direct assessments can receive imported/cached traces. A reversed or
+        // negative timestamp is not a trustworthy press/release chronology.
+        // The live sweep already checks timing; reject malformed traces here too.
+        for (int i = 0; i < trace.Count; i++)
+        {
+            if (trace[i].TimeMs < 0 ||
+                (i > 0 && trace[i].TimeMs < trace[i - 1].TimeMs))
+                return new SweepAssessment(false, false,
+                    trace.Select(point => point.WinmmValue).Distinct().Count(),
+                    0, 0, "Invalid sweep timing",
+                    "Sweep timestamps are negative or move backwards. Discard this trace and capture again.");
+        }
+
         double scale = (double)axisMax - axisMin;
         // Classify press/release in pedal direction, not raw WinMM axis direction.
         // Inverted mappings rest near the high endpoint and press toward the low endpoint.
