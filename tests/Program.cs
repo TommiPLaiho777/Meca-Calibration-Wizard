@@ -272,6 +272,22 @@ static class Checks
                 Console.WriteLine($"PASS: recorded October 14 {pedal.ToLowerInvariant()} sweep regression");
             }
         }
+        // Cached/imported traces bypass the live sweep guard; direct assessment
+        // must not turn impossible WinMM samples into a valid captured sweep.
+        foreach (var invalid in new[]
+        {
+            new[] { new SweepPoint(0, 100u), new SweepPoint(100, 150u), new SweepPoint(200, 201u), new SweepPoint(300, 100u) },
+            new[] { new SweepPoint(0, 100u), new SweepPoint(100, 99u), new SweepPoint(200, 180u), new SweepPoint(300, 100u) }
+        })
+        {
+            var rejected = SweepDiagnostics.Evaluate(invalid, 100, 200);
+            Require(rejected.Status == "Invalid WinMM range" &&
+                    !rejected.CompletePressAndRelease && !rejected.ReachesReportedMaximum &&
+                    rejected.Explanation.Contains("reported or assumed"),
+                "direct WinMM sweep assessment must reject out-of-bounds cached traces");
+        }
+        Console.WriteLine("PASS: out-of-range cached WinMM sweeps rejected (synthetic C#)");
+
         var emptyTrace = new[] { new SweepPoint(0, 0u), new SweepPoint(8000, 0u) };
         Require(SweepDiagnostics.Evaluate(emptyTrace, 0, 65535).Status == "Insufficient data",
             "short trace rejects false validation");
