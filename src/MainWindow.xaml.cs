@@ -793,7 +793,18 @@ public partial class MainWindow : Window
                     _device.Id, _device.Name,
                     WinmmManufacturerId = _device.ManufacturerId,
                     WinmmProductId = _device.ProductId,
-                    WinmmIdsSource = "WINMM_JOYGETDEVCAPSW_NOT_VERIFIED_USB_VID_PID"
+                    WinmmIdsSource = "WINMM_JOYGETDEVCAPSW_NOT_VERIFIED_USB_VID_PID",
+                    // Report per-axis WinMM capability provenance. A 0..65535
+                    // fallback is not a driver-reported range or raw sensor ADC.
+                    WinmmAxisRanges = Enumerable.Range(0, 6).Select(i => new
+                    {
+                        Axis = WinmmJoystick.AxisNames[i],
+                        MinimumWinmm = _device.Min[i],
+                        MaximumWinmm = _device.Max[i],
+                        RangeSource = _device.AssumedAxisRanges is { Length: 6 } assumed
+                            ? assumed[i] ? "ASSUMED_FALLBACK_NOT_REPORTED" : "WINMM_JOYGETDEVCAPSW"
+                            : "UNKNOWN_NOT_VERIFIED"
+                    }).ToArray()
                 },
                 Pedals = _mappings.ToDictionary(p => p.Key.ToString(), p => new
                 {
