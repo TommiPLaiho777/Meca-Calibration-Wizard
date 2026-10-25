@@ -598,6 +598,13 @@ public partial class MainWindow : Window
             SweepStatusText.Text = $"{kind} is not captured. Complete guided setup first.";
             return;
         }
+        // Never overlap a sweep with guided capture or an at-rest signal check.
+        // Mixed measurements could misrepresent intentional pedal motion as noise.
+        if (_capture is not null || _noise is not null || _sweep is not null)
+        {
+            SweepStatusText.Text = "Another WinMM measurement is in progress. Finish or cancel it before starting a sweep.";
+            return;
+        }
         _sweepResults.Remove(kind);
         UpdateSweepDetails();
         _sweepStartUtc = DateTime.UtcNow;
@@ -695,6 +702,13 @@ public partial class MainWindow : Window
             return;
         }
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
+        // An idle check cannot be interpreted while a pedal sweep or guided
+        // press is active. Keep existing measurements and request a clean run.
+        if (_capture is not null || _noise is not null || _sweep is not null)
+        {
+            SignalText.Text = "Another WinMM measurement is in progress. Finish or cancel it before checking signal at rest.";
+            return;
+        }
         _noise = new NoiseRun(durationSeconds: seconds);
         _lastNoise = null;
         _lastSignalHealth = null;
