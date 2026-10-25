@@ -350,9 +350,31 @@ public partial class MainWindow : Window
             CaptureFooter.Text = "WinMM input interrupted · return to Connect and click Refresh.";
             return;
         }
-        if (_device is null || !WinmmJoystick.TryRead(_device.Id, out var sample))
+        if (_device is null)
         {
-            CaptureFooter.Text = "Controller not available. Reconnect and try again.";
+            CaptureFooter.Text = "Select a WinMM controller before capturing.";
+            return;
+        }
+        if (!WinmmJoystick.TryRead(_device.Id, out var sample))
+        {
+            // A failed direct capture read must invalidate the session immediately,
+            // even before the next timer Poll. Never export earlier measurements
+            // under a potentially replaced controller with the same WinMM ID.
+            _winmmSessionInvalid = true;
+            _raw = Array.Empty<uint>();
+            _capture = null;
+            _noise = null;
+            _sweep = null;
+            _sweepKind = null;
+            CheckSignalButton.IsEnabled = true;
+            LongSignalButton.IsEnabled = true;
+            BrakeSweepButton.IsEnabled = true;
+            ThrottleSweepButton.IsEnabled = true;
+            ClutchSweepButton.IsEnabled = true;
+            CaptureButton.IsEnabled = true;
+            AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
+            StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
+            CaptureFooter.Text = "WinMM read failed. Return to Connect and click Refresh; capture pedals again.";
             return;
         }
         _raw = sample;
