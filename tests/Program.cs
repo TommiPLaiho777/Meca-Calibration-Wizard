@@ -977,6 +977,20 @@ static class Checks
             "failed WinMM reads must clear stale live gauges and label saved mappings stale");
         Console.WriteLine("PASS: interrupted WinMM stream clears stale live UI (WPF source contract)");
 
+        // Source contract for the WPF-only WinMM JSON export path.
+        // The Windows CI job compiles WPF; this synthetic test does not use pedals.
+        int exportStart = windowSource.IndexOf("private void Export_Click(", StringComparison.Ordinal);
+        Require(exportStart >= 0, "WinMM JSON export handler must exist");
+        string exportSource = windowSource[exportStart..];
+        Require(exportSource.Contains("WinmmAxisRanges = Enumerable.Range(0, 6)", StringComparison.Ordinal) &&
+                exportSource.Contains("MinimumWinmm = _device.Min[i]", StringComparison.Ordinal) &&
+                exportSource.Contains("MaximumWinmm = _device.Max[i]", StringComparison.Ordinal) &&
+                exportSource.Contains("ASSUMED_FALLBACK_NOT_REPORTED", StringComparison.Ordinal) &&
+                exportSource.Contains("WINMM_JOYGETDEVCAPSW", StringComparison.Ordinal) &&
+                exportSource.Contains("UNKNOWN_NOT_VERIFIED", StringComparison.Ordinal),
+            "WinMM JSON must preserve six axis bounds and distinguish assumed from reported ranges");
+        Console.WriteLine("PASS: WinMM JSON axis-range provenance (WPF source contract)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
