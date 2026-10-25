@@ -66,7 +66,15 @@ internal static class SweepDiagnostics
         int pressIndex = Array.FindIndex(values, x => x >= .80);
         bool startedNearRest = values[0] <= .03;
         bool endedNearRest = values[^1] <= .03;
-        bool complete = startedNearRest && pressIndex > 0 && endedNearRest;
+        bool strokeShapeComplete = startedNearRest && pressIndex > 0 && endedNearRest;
+        // Imported/cached traces bypass the live eight-second capture gate.
+        // A few milliseconds of plausible-looking values, or a large missing
+        // interval, must not be reported as a complete physical pedal sweep.
+        // These are Windows sample-timing checks, not force measurements.
+        bool timingEvidenceSufficient = trace[^1].TimeMs - trace[0].TimeMs >= 2000 &&
+            !Enumerable.Range(1, trace.Count - 1)
+                .Any(i => trace[i].TimeMs - trace[i - 1].TimeMs > 500);
+        bool complete = strokeShapeComplete && timingEvidenceSufficient;
 
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
@@ -88,6 +96,11 @@ internal static class SweepDiagnostics
         {
             status = "Little movement";
             explanation = "The recorded axis did not move through a useful range. Repeat the sweep.";
+        }
+        else if (strokeShapeComplete && !timingEvidenceSufficient)
+        {
+            status = "Insufficient sweep timing";
+            explanation = "The WinMM trace is too short or contains a sampling gap over 0.5 seconds. Record a continuous eight-second sweep.";
         }
         else if (!complete)
         {
