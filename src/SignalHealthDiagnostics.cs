@@ -23,6 +23,8 @@ internal sealed record SignalHealthStats(
             "No WinMM samples received. Check the controller connection and repeat.",
         "Insufficient samples" =>
             "Too few or too widely spaced WinMM samples to assess rest stability. Keep pedals released and repeat.",
+        "Invalid WinMM range" =>
+            "WinMM readings fell outside the controller's reported axis range. This idle check is invalid; refresh the controller and repeat without changing device settings.",
         _ => "WinMM variation alone cannot identify electrical interference."
     };
 }
@@ -71,10 +73,15 @@ internal static class SignalHealthDiagnostics
         double averageRate = windowSeconds > 0 ? (readings.Count - 1) / windowSeconds : 0;
         // A flat trace sampled too sparsely must not be presented as a valid
         // zero-variation result. Preserve the numerical metrics for review.
-        string status = timestampRegressionDetected ||
-                        readings.Count < 8 || windowSeconds < .5 ||
-                        averageRate < MinimumUsefulAverageSamplingRateHz ||
-                        largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
+        // An out-of-range WinMM sample invalidates an idle assessment even
+        // when all readings are identical. A flat but impossible trace must
+        // never be reported as "No variation resolved".
+        bool outsideReportedRange = readings.Any(x => x < axisMin || x > axisMax);
+        string status = outsideReportedRange ? "Invalid WinMM range"
+            : timestampRegressionDetected ||
+              readings.Count < 8 || windowSeconds < .5 ||
+              averageRate < MinimumUsefulAverageSamplingRateHz ||
+              largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
             ? "Insufficient samples"
             : span > .02 * scale ? "Pedal motion likely"
             : span > .003 * scale ? "Variation observed"
