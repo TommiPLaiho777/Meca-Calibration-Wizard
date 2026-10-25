@@ -20,6 +20,15 @@ internal static class SweepDiagnostics
             return new SweepAssessment(false, false, trace.Select(x => x.WinmmValue).Distinct().Count(),
                 0, 0, "Insufficient data", "Record an eight-second press, hold and release sweep.");
 
+        // A direct assessment may also receive cached/imported traces that
+        // did not pass the live InputSweepRun bounds check. Never clamp an
+        // impossible WinMM reading into a seemingly valid press/release.
+        if (trace.Any(point => point.WinmmValue < axisMin || point.WinmmValue > axisMax))
+            return new SweepAssessment(false, false,
+                trace.Select(point => point.WinmmValue).Distinct().Count(),
+                0, 0, "Invalid WinMM range",
+                "WinMM readings are outside the axis bounds used for this preview (reported or assumed). Discard this sweep and capture again.");
+
         double scale = (double)axisMax - axisMin;
         // Classify press/release in pedal direction, not raw WinMM axis direction.
         // Inverted mappings rest near the high endpoint and press toward the low endpoint.
