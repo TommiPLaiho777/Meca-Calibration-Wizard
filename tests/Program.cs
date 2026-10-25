@@ -316,6 +316,30 @@ static class Checks
         }
         Console.WriteLine("PASS: ordered WinMM sweep start/end regression checks");
 
+        // Imported/cached traces must not claim a completed physical sweep
+        // based on millisecond-fast movement or a large missing sample window.
+        // These are synthetic Windows WinMM samples, not actual pedal tests.
+        var timingValues = Enumerable.Range(0, 25)
+            .Select(i => (uint)Math.Round(65535.0 * (i <= 12 ? i : 24 - i) / 12))
+            .ToArray();
+        var tooFastTrace = timingValues.Select((v, i) => new SweepPoint(i * 5L, v)).ToArray();
+        var missingWindowTrace = timingValues.Select((v, i) =>
+            new SweepPoint(i * 100L + (i > 12 ? 800L : 0L), v)).ToArray();
+        var continuousTrace = timingValues.Select((v, i) => new SweepPoint(i * 320L, v)).ToArray();
+        var tooFastAssessment = SweepDiagnostics.Evaluate(tooFastTrace, 0, 65535);
+        var missingWindowAssessment = SweepDiagnostics.Evaluate(missingWindowTrace, 0, 65535);
+        var continuousAssessment = SweepDiagnostics.Evaluate(continuousTrace, 0, 65535);
+        Require(!tooFastAssessment.CompletePressAndRelease &&
+                tooFastAssessment.Status == "Insufficient sweep timing",
+            "millisecond-fast cached WinMM trace cannot be a completed sweep");
+        Require(!missingWindowAssessment.CompletePressAndRelease &&
+                missingWindowAssessment.Status == "Insufficient sweep timing",
+            "cached WinMM trace with a >500 ms gap cannot be a completed sweep");
+        Require(continuousAssessment.CompletePressAndRelease &&
+                continuousAssessment.Status == "Sweep captured",
+            "continuous eight-second WinMM synthetic trace remains accepted");
+        Console.WriteLine("PASS: cached WinMM sweep timing quality checks (synthetic C#)");
+
         // Inverted WinMM axes rest at the high endpoint and press toward low.
         // Evaluate the same synthetic trace in both polarities to avoid silently
         // classifying a correct inverted pedal stroke as an incomplete sweep.
