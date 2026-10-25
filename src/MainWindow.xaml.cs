@@ -719,6 +719,12 @@ public partial class MainWindow : Window
             return;
         }
         if (_raw.Length != 6) { SignalText.Text = "No input received"; return; }
+        // Without a captured pedal, a signal check would produce empty diagnostics.
+        if (_mappings.Count == 0)
+        {
+            SignalText.Text = "Capture at least one pedal before checking WinMM signal at rest.";
+            return;
+        }
         // An idle check cannot be interpreted while a pedal sweep or guided
         // press is active. Keep existing measurements and request a clean run.
         if (_capture is not null || _noise is not null || _sweep is not null)
@@ -761,8 +767,8 @@ public partial class MainWindow : Window
             return;
         }
         if (ReadOnlyHidReport.IsControllerOnlyExport(
-                _device is not null, _mappings.Count, _lastNoise is not null,
-                _lastSignalHealth is not null, _sweepResults.Count, _hidInventory) &&
+                _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
+                (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory) &&
             MessageBox.Show(this,
                 "No pedal measurements or HID scan are included. This report will contain only the selected WinMM controller details. Continue exporting?",
                 "Controller-only report", MessageBoxButton.YesNo,
