@@ -757,6 +757,30 @@ static class Checks
             "controller-only exports must show an opt-in warning before choosing a file");
         Console.WriteLine("PASS: controller-only report warning contract");
 
+        // WPF source-contract regression: two read-only WinMM captures must
+        // never run together. In particular, pedal motion during a sweep must
+        // not contaminate an at-rest noise measurement or erase saved results.
+        int beginSweepStart = windowSource.IndexOf("private void BeginSweep(", StringComparison.Ordinal);
+        int beginSweepEnd = windowSource.IndexOf("private void UpdateSweepDetails(", beginSweepStart, StringComparison.Ordinal);
+        int beginSignalStart = windowSource.IndexOf("private void BeginSignalCheck(", StringComparison.Ordinal);
+        int beginSignalEnd = windowSource.IndexOf("private string FormatNoise(", beginSignalStart, StringComparison.Ordinal);
+        Require(beginSweepStart >= 0 && beginSweepEnd > beginSweepStart &&
+                beginSignalStart >= 0 && beginSignalEnd > beginSignalStart,
+            "WinMM sweep and signal-check handlers must exist");
+        string beginSweepSource = windowSource[beginSweepStart..beginSweepEnd];
+        string beginSignalSource = windowSource[beginSignalStart..beginSignalEnd];
+        const string activeWinmmGuard = "if (_capture is not null || _noise is not null || _sweep is not null)";
+        Require(beginSweepSource.Contains(activeWinmmGuard) &&
+                beginSweepSource.IndexOf(activeWinmmGuard, StringComparison.Ordinal) <
+                    beginSweepSource.IndexOf("_sweepResults.Remove(kind)", StringComparison.Ordinal) &&
+                beginSweepSource.Contains("Finish or cancel it before starting a sweep.") &&
+                beginSignalSource.Contains(activeWinmmGuard) &&
+                beginSignalSource.IndexOf(activeWinmmGuard, StringComparison.Ordinal) <
+                    beginSignalSource.IndexOf("_noise = new NoiseRun(", StringComparison.Ordinal) &&
+                beginSignalSource.Contains("Finish or cancel it before checking signal at rest."),
+            "overlapping WinMM captures must be rejected before prior measurements are cleared");
+        Console.WriteLine("PASS: overlapping WinMM sweep/noise capture blocked (WPF source contract)");
+
         // An in-progress WinMM capture/noise/sweep cannot be mixed into an
         // apparently complete JSON export. Pure C# policy and WPF source contract.
         Require(!ReadOnlyHidReport.CanExport(true, null, false, true) &&
