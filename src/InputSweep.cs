@@ -72,11 +72,15 @@ internal sealed class InputSweepRun
             FailureReason = "WinMM sweep reading outside the reported axis range. Release the pedal and retry.";
             return;
         }
-        // In a real sweep, a clock rollback or a polling stall over 0.5s
-        // invalidates the timing evidence. Never export it as a complete trace.
+        // In a real sweep, a clock rollback, repeated millisecond timestamp,
+        // or polling stall over 0.5s invalidates timing evidence. A repeated
+        // timestamp is rejected only after the first sample: the initial
+        // sample may legitimately be at t=0. Never export an ambiguous trace.
         // Sparse synthetic endpoint-statistic checks can opt out explicitly.
         if (_requireContinuousSamples &&
-            (timeMs < previousMs || timeMs - previousMs > MaximumContinuousGapMs))
+            (timeMs < previousMs ||
+             (_trace.Count > 0 && timeMs == previousMs) ||
+             timeMs - previousMs > MaximumContinuousGapMs))
         {
             Failed = true;
             FailureReason = "WinMM sweep timing interrupted. Release the pedal and retry.";
