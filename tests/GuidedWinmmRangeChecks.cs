@@ -50,6 +50,23 @@ internal static class GuidedWinmmRangeChecks
         if (valid.Phase == GuidePhase.Failed || valid.Axis != 0)
             throw new Exception("FAILED: valid WinMM endpoint was rejected");
 
+        // The Advanced view must distinguish driver-reported axis limits from
+        // a protective 0..65535 fallback. No Windows joystick is accessed.
+        var fallbackDevice = new WinmmJoystick.Device(
+            0, "Synthetic WinMM controller", new uint[6],
+            Enumerable.Repeat(65535u, 6).ToArray(),
+            AssumedAxisRanges: new[] { true, false, false, true, false, false });
+        var fallbackSummary = fallbackDevice.WinmmIdsSummary;
+        if (!fallbackSummary.Contains("assumed WinMM axis range 0–65535") ||
+            !fallbackSummary.Contains(": X, R") ||
+            fallbackSummary.Contains(": X, Y"))
+            throw new Exception("FAILED: fallback WinMM capability ranges not disclosed");
+
+        var reportedDevice = fallbackDevice with { AssumedAxisRanges = new bool[6] };
+        if (reportedDevice.WinmmIdsSummary.Contains("assumed WinMM axis range"))
+            throw new Exception("FAILED: reported WinMM ranges mislabeled as fallback");
+        Console.WriteLine("PASS: WinMM capability fallback provenance shown (synthetic C#)");
+
         Console.WriteLine("PASS: guided WinMM out-of-range samples fail closed (synthetic C#)");
     }
 }
