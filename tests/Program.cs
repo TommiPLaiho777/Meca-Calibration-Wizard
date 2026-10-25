@@ -698,6 +698,13 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // The diagnostics step displays WinMM joystick values, not uncalibrated
+        // sensor ADC. Its heading and hint must not call the stream raw data.
+        Require(windowSource.Contains("StepLabel.Text = \"WINMM / HID DIAGNOSTICS\";") &&
+                windowSource.Contains("StepHint.Text = \"WinMM-reported values (not sensor ADC; may be calibrated by Windows)\";") &&
+                !windowSource.Contains("StepLabel.Text = \"RAW MONITOR\";"),
+            "advanced step must distinguish WinMM readings from native sensor ADC");
+        Console.WriteLine("PASS: Advanced step clearly labels WinMM/HID data provenance");
         // Source-level WPF regression: disabling the optional clutch while
         // a capture is active must cancel it before a later Poll can save it.
         // The Windows build compiles the handler; this is not a hardware test.
