@@ -40,13 +40,25 @@ internal static class WinmmJoystick
     private static extern uint joyGetDevCaps(uint joyId, ref JoyCaps caps, uint cbjc);
 
     internal sealed record Device(uint Id, string Name, uint[] Min, uint[] Max,
-        ushort? ManufacturerId = null, ushort? ProductId = null)
+        ushort? ManufacturerId = null, ushort? ProductId = null, bool[]? AssumedAxisRanges = null)
     {
         public override string ToString() => $"{Name}  (Joystick {Id})";
         // WinMM capability IDs are NOT proof of USB VID/PID or a specific HID interface.
-        public string WinmmIdsSummary => ManufacturerId is { } mid && ProductId is { } pid
-            ? $"WinMM manufacturer 0x{mid:X4}, product 0x{pid:X4} (not verified USB VID/PID)"
-            : "WinMM manufacturer/product IDs unavailable";
+        // A 0..65535 fallback range is not evidence that joyGetDevCaps reported it.
+        public string WinmmIdsSummary
+        {
+            get
+            {
+                var ids = ManufacturerId is { } mid && ProductId is { } pid
+                    ? $"WinMM manufacturer 0x{mid:X4}, product 0x{pid:X4} (not verified USB VID/PID)"
+                    : "WinMM manufacturer/product IDs unavailable";
+                var assumed = AssumedAxisRanges;
+                if (assumed is not { Length: 6 } || !assumed.Any(x => x)) return ids;
+                var axes = string.Join(", ", Enumerable.Range(0, 6)
+                    .Where(i => assumed[i]).Select(i => AxisNames[i]));
+                return $"{ids} · assumed WinMM axis range 0–65535 (capabilities unavailable/invalid): {axes}";
+            }
+        }
     }
 
     internal static IReadOnlyList<Device> FindDevices()
@@ -64,12 +76,20 @@ internal static class WinmmJoystick
                             : new uint[6];
             uint[] max = ok ? new[] { caps.XMax, caps.YMax, caps.ZMax, caps.RMax, caps.UMax, caps.VMax }
                             : Enumerable.Repeat(65535u, 6).ToArray();
+            var assumedRanges = new bool[6];
             for (int axis = 0; axis < 6; axis++)
             {
-                if (max[axis] <= min[axis]) { min[axis] = 0; max[axis] = 65535; }
+                if (!ok || max[axis] <= min[axis])
+                {
+                    // Record provenance; do not silently present fallback limits
+                    // as values actually reported by the WinMM driver.
+                    assumedRanges[axis] = true;
+                    min[axis] = 0;
+                    max[axis] = 65535;
+                }
             }
             found.Add(new Device(id, name, min, max,
-                ok ? caps.Mid : null, ok ? caps.Pid : null));
+                ok ? caps.Mid : null, ok ? caps.Pid : null, assumedRanges));
         }
         return found;
     }
