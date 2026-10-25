@@ -452,12 +452,14 @@ public partial class MainWindow : Window
         bool outsideWinmmRange = Enumerable.Range(0, 6)
             .Any(i => sample[i] < _device.Min[i] || sample[i] > _device.Max[i]);
         StatusText.Text = outsideWinmmRange
-            ? "WinMM reading outside reported axis range · measurement may be invalid"
+            ? "WinMM reading outside available WinMM axis range (reported or assumed) · measurement may be invalid"
             : "Input streaming · read-only";
         AdvancedAxesText.Text = string.Join("\n", Enumerable.Range(0, 6)
             .Select(i => $"{WinmmJoystick.AxisNames[i],-2}  {sample[i],7:N0}   (0x{sample[i]:X8})" +
                 (sample[i] < _device.Min[i] || sample[i] > _device.Max[i]
-                    ? "  OUTSIDE REPORTED RANGE" : "")));
+                    ? (_device.AssumedAxisRanges is { Length: 6 } assumed
+                        ? assumed[i] ? "  OUTSIDE ASSUMED RANGE" : "  OUTSIDE REPORTED RANGE"
+                        : "  OUTSIDE UNVERIFIED RANGE") : "")));
 
         if (_capture is not null)
         {
