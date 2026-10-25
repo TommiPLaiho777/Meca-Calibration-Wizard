@@ -63,6 +63,15 @@ internal sealed class InputSweepRun
         if (Complete || Failed || reading.Length <= _axis) return;
         long timeMs = (long)(utcNow - _startUtc).TotalMilliseconds;
         long previousMs = _trace.Count > 0 ? _trace[^1].TimeMs : 0;
+        // Values outside the controller's advertised WinMM axis range cannot
+        // support a valid endpoint assessment. Fail closed rather than counting
+        // an out-of-range value as a high- or low-limit sample.
+        if (reading[_axis] < _lower || reading[_axis] > _upper)
+        {
+            Failed = true;
+            FailureReason = "WinMM sweep reading outside the reported axis range. Release the pedal and retry.";
+            return;
+        }
         // In a real sweep, a clock rollback or a polling stall over 0.5s
         // invalidates the timing evidence. Never export it as a complete trace.
         // Sparse synthetic endpoint-statistic checks can opt out explicitly.
