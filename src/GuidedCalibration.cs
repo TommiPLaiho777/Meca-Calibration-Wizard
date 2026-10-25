@@ -108,6 +108,17 @@ internal sealed class GuidedCalibration
             return;
         }
         _lastSampleUtc = utcNow;
+        // A Windows joystick sample outside joyGetDevCaps' reported bounds
+        // cannot be used to identify a pedal axis or calculate its travel.
+        // Fail closed; this preview never changes Windows calibration.
+        for (int axis = 0; axis < 6; axis++)
+        {
+            if (reading[axis] < _deviceMin[axis] || reading[axis] > _deviceMax[axis])
+            {
+                Fail("WinMM reading outside the reported axis range. Release the pedal and retry capture.");
+                return;
+            }
+        }
         if (Phase == GuidePhase.MeasuringRest)
         {
             for (int i = 0; i < 6; i++)
