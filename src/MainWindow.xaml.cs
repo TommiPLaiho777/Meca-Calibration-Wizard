@@ -303,8 +303,8 @@ public partial class MainWindow : Window
         }
         else
         {
-            StepLabel.Text = "RAW MONITOR";
-            StepHint.Text = "WinMM-reported values (may already be calibrated by Windows)";
+            StepLabel.Text = "WINMM / HID DIAGNOSTICS";
+            StepHint.Text = "WinMM-reported values (not sensor ADC; may be calibrated by Windows)";
             NextButton.Content = "Return  →";
             NextButton.IsEnabled = true;
         }
