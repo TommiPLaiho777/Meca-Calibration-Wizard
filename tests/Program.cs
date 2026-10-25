@@ -866,6 +866,22 @@ static class Checks
                 windowSource.Contains("_sweepResults.Clear();"),
             "WPF export must respect session invalidation and explicit refresh must clear captures");
         Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
+        // A failed synchronous read from the Capture button occurs outside Poll.
+        // It must latch the same session-invalid flag before a user can export
+        // earlier WinMM measurements. This is a source contract, not a WPF test.
+        int captureStart = windowSource.IndexOf("private void Capture_Click(", StringComparison.Ordinal);
+        int captureEnd = windowSource.IndexOf("private void Poll(", captureStart, StringComparison.Ordinal);
+        Require(captureStart >= 0 && captureEnd > captureStart,
+            "guided WinMM capture handler must exist");
+        string captureSource = windowSource[captureStart..captureEnd];
+        int captureRead = captureSource.IndexOf("if (!WinmmJoystick.TryRead(", StringComparison.Ordinal);
+        int invalidateRead = captureSource.IndexOf("_winmmSessionInvalid = true;", StringComparison.Ordinal);
+        Require(captureRead >= 0 && invalidateRead > captureRead &&
+                captureSource.Contains("_raw = Array.Empty<uint>();") &&
+                captureSource.Contains("_capture = null;") &&
+                captureSource.Contains("click Refresh; capture pedals again."),
+            "failed guided-capture WinMM read must immediately invalidate the session");
+        Console.WriteLine("PASS: guided-capture read failure latches WinMM session invalid (WPF source contract)");
         Require(pollSource.Contains("if (_sweep.Failed)") &&
                 pollSource.Contains("if (_sweep.Failed || _sweep.Complete)") &&
                 pollSource.Contains("SweepStatusText.Text = $\"{sweepPedal}: {_sweep.FailureReason}\";") &&
