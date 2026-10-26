@@ -94,6 +94,20 @@ internal static class WinmmJoystick
         return found;
     }
 
+    // Validate every WinMM axis before the WPF preview consumes a sample.
+    // An impossible value on even an unmapped axis invalidates this session's
+    // provenance; it must not silently accompany a valid-looking pedal sweep.
+    internal static bool IsSampleWithinAxisBounds(Device device, IReadOnlyList<uint> reading)
+    {
+        if (reading.Count != AxisNames.Length ||
+            device.Min.Length != AxisNames.Length || device.Max.Length != AxisNames.Length)
+            return false;
+        for (int axis = 0; axis < AxisNames.Length; axis++)
+            if (reading[axis] < device.Min[axis] || reading[axis] > device.Max[axis])
+                return false;
+        return true;
+    }
+
     internal static bool TryRead(uint id, out uint[] raw)
     {
         var state = new JoyInfoEx { Size = (uint)Marshal.SizeOf<JoyInfoEx>(), Flags = JoyReturnAll };
