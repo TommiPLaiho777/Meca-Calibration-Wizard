@@ -703,6 +703,12 @@ static class Checks
                     ((string?)e.Attribute("Text"))?.Contains("Physical USB identity is not verified.") == true),
             "WinMM selection UI must not assert verified physical USB identity");
         Console.WriteLine("PASS: WinMM controller selection UI states USB identity is unverified");
+        // A live out-of-range WinMM sample is invalid, not merely suspect.
+        // The GUI must offer a safe recapture path without changing Windows settings.
+        Require(windowSource.Contains("WinMM reading outside the reported or assumed axis range · this sample is invalid.") &&
+                windowSource.Contains("Refresh the controller and re-capture before relying on measurements."),
+            "live WinMM out-of-range status must explain invalidity and safe retry");
+        Console.WriteLine("PASS: invalid live WinMM range has actionable English guidance (WPF source contract)");
         // The initial live capture readout must never imply native sensor ADC
         // access before the first WinMM sample updates its label.
         var liveReadout = xaml.Descendants().Single(e => e.Name.LocalName == "TextBlock" &&
