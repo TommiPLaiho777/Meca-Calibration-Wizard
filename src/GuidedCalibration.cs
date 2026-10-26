@@ -34,6 +34,7 @@ internal sealed class GuidedCalibration
     private readonly uint[] _range;
     private readonly uint[] _deviceMin;
     private readonly uint[] _deviceMax;
+    private readonly bool[] _assumedAxisRanges;
     private readonly HashSet<int> _reservedAxes;
     private readonly double[] _sum = new double[6];
     private readonly uint[] _restMin = Enumerable.Repeat(uint.MaxValue, 6).ToArray();
@@ -67,6 +68,8 @@ internal sealed class GuidedCalibration
         _reservedAxes = reservedAxes.ToHashSet();
         _deviceMin = (uint[])device.Min.Clone();
         _deviceMax = (uint[])device.Max.Clone();
+        _assumedAxisRanges = device.AssumedAxisRanges is { Length: 6 } assumed
+            ? (bool[])assumed.Clone() : new bool[6];
         _range = Enumerable.Range(0, 6)
             .Select(i => (uint)Math.Max(1.0, (double)device.Max[i] - device.Min[i]))
             .ToArray();
@@ -115,7 +118,9 @@ internal sealed class GuidedCalibration
         {
             if (reading[axis] < _deviceMin[axis] || reading[axis] > _deviceMax[axis])
             {
-                Fail("WinMM reading outside the reported axis range. Release the pedal and retry capture.");
+                Fail(_assumedAxisRanges[axis]
+                    ? "WinMM reading outside the assumed axis range (0–65535 fallback). Release the pedal and retry capture."
+                    : "WinMM reading outside the reported axis range. Release the pedal and retry capture.");
                 return;
             }
         }
