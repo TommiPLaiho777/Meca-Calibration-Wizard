@@ -210,6 +210,9 @@ internal sealed class GuidedCalibration
                 _pressAboveThresholdSamples = 0;
                 _firstPressAboveUtc = default;
                 _lastPressAboveUtc = default;
+                // The old high peak belonged to an interrupted streak. If a
+                // later valid press follows, it must not inherit that spike.
+                _currentPeak = 0;
             }
             if (displacement <= releaseThreshold)
             {
