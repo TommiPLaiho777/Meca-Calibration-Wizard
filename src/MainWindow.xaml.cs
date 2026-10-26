@@ -214,11 +214,17 @@ public partial class MainWindow : Window
     private void MarkLiveReadingsUnavailable()
     {
         LiveValue.Text = "—";
-        LiveRaw.Text = "WinMM input interrupted · no current reading.";
+        LiveRaw.Text = "WinMM input interrupted · no current reading. Return to Connect and click Refresh.";
         CaptureProgress.Value = 0;
         BrakeProgress.Value = 0;
         ThrottleProgress.Value = 0;
         ClutchProgress.Value = 0;
+        // Reset the visual instruments as well as the numeric readouts:
+        // a frozen needle or displaced clutch graphic is not a live sample.
+        NeedleRotation.Angle = -5;
+        ClutchDiscShift.X = 0;
+        ClutchHubShift.X = 0;
+        BrakeCaliper.Opacity = 1.0;
         BrakeValue.Text = "No live input";
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
