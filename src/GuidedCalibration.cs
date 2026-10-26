@@ -46,6 +46,10 @@ internal sealed class GuidedCalibration
     private DateTime _movementStartUtc;
     private double _currentPeak;
     private int _strokeSamples;
+    // Reject brief WinMM spikes as pedal presses; require sustained movement.
+    private int _pressAboveThresholdSamples;
+    private DateTime _firstPressAboveUtc;
+    private DateTime _lastPressAboveUtc;
     private int _direction;
     private int _restSamples;
     private int _axis = -1;
@@ -187,21 +191,34 @@ internal sealed class GuidedCalibration
         {
             _currentPeak = displacement;
             _strokeSamples = 1;
+            _pressAboveThresholdSamples = 1;
+            _firstPressAboveUtc = utcNow;
+            _lastPressAboveUtc = utcNow;
             Phase = GuidePhase.AwaitingRelease;
         }
         else if (Phase == GuidePhase.AwaitingRelease)
         {
             _strokeSamples++;
             _currentPeak = Math.Max(_currentPeak, displacement);
+            if (displacement >= pressThreshold)
+            {
+                _pressAboveThresholdSamples++;
+                _lastPressAboveUtc = utcNow;
+            }
             if (displacement <= releaseThreshold)
             {
-                if (_strokeSamples >= 2 && _currentPeak >= pressThreshold)
+                // A single high reading followed by release is not a valid stroke.
+                // Use actual above-threshold sample times, not time spent idle.
+                if (_pressAboveThresholdSamples >= 3 &&
+                    (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100 &&
+                    _currentPeak >= pressThreshold)
                 {
                     double absolutePeak = _rest[_axis] + _direction * _currentPeak;
                     _peaks.Add((uint)Math.Clamp(Math.Round(absolutePeak), 0d, (double)uint.MaxValue));
                 }
                 _currentPeak = 0;
                 _strokeSamples = 0;
+                _pressAboveThresholdSamples = 0;
                 Phase = GuidePhase.AwaitingPress;
                 if (_peaks.Count == RequiredPresses) Finish();
             }
