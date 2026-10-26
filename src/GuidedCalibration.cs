@@ -199,6 +199,10 @@ internal sealed class GuidedCalibration
             _currentPeak = Math.Max(_currentPeak, displacement);
             if (displacement >= pressThreshold)
             {
+                // Restart the time window after a middle-band interruption;
+                // a default DateTime would falsely satisfy the 100 ms hold.
+                if (_pressAboveThresholdSamples == 0)
+                    _firstPressAboveUtc = utcNow;
                 _pressAboveThresholdSamples++;
                 _lastPressAboveUtc = utcNow;
             }
