@@ -67,6 +67,28 @@ static class Checks
             "WinMM peak similarity labels must not claim physical-force repeatability");
         Console.WriteLine("PASS: three-press brake calibration");
 
+        // Synthetic-only regression: isolated one-sample WinMM spikes followed
+        // by release must not count as pedal presses or produce a mapping.
+        var spikeClock = new DateTime(2026, 10, 26, 10, 0, 0, DateTimeKind.Utc);
+        var spikeGuide = new GuidedCalibration(PedalKind.Brake, Device,
+            Array.Empty<int>(), spikeClock);
+        for (int i = 1; i <= 32; i++)
+            spikeGuide.Observe(Axes(0, 0), spikeClock.AddMilliseconds(i * 40));
+        Require(spikeGuide.Phase == GuidePhase.AwaitingPress,
+            "synthetic spike fixture must finish rest sampling");
+        spikeClock = spikeClock.AddMilliseconds(32 * 40);
+        for (int i = 0; i < 3; i++)
+        {
+            spikeClock = spikeClock.AddMilliseconds(40);
+            spikeGuide.Observe(Axes(0, 40000), spikeClock);
+            spikeClock = spikeClock.AddMilliseconds(40);
+            spikeGuide.Observe(Axes(0, 0), spikeClock);
+        }
+        Require(spikeGuide.Phase == GuidePhase.AwaitingPress &&
+                spikeGuide.PressesCompleted == 0 && spikeGuide.Result is null,
+            "three one-sample WinMM spikes must not become a valid calibration");
+        Console.WriteLine("PASS: transient WinMM spikes do not count as guided presses (synthetic C#)");
+
         var throttle = Session(PedalKind.Throttle, 3, false,
             new uint[] { 65535, 65500, 65490 }, new [] { 0 });
         Require(throttle.Phase == GuidePhase.Complete && throttle.Result!.Mapping.Axis == 3,
