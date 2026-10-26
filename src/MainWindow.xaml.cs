@@ -326,6 +326,16 @@ public partial class MainWindow : Window
     private void Next_Click(object sender, RoutedEventArgs e)
     {
         if (_step == 5) { ChangeStep(_returnStep); return; }
+        // Keep stored measurements visible for review after a failed WinMM read,
+        // but never let the guided wizard advance using stale pedal mappings.
+        // Advanced diagnostics can still be viewed; export remains blocked.
+        if (_winmmSessionInvalid && _step is >= 1 and <= 3)
+        {
+            MessageBox.Show(this,
+                "WinMM input was interrupted. Return to Connect and click Refresh before continuing; previous captures are stale.",
+                "Refresh required", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         if (_step == 0)
         {
             if (_winmmSessionInvalid)
