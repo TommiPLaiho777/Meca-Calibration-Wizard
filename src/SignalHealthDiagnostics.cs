@@ -24,7 +24,7 @@ internal sealed record SignalHealthStats(
         "Insufficient samples" =>
             "Too few or too widely spaced WinMM samples to assess rest stability. Keep pedals released and repeat.",
         "Invalid WinMM range" =>
-            "WinMM readings fell outside the controller's reported axis range. This idle check is invalid; refresh the controller and repeat without changing device settings.",
+            "WinMM readings fell outside the available axis bounds (reported or assumed). This idle check is invalid; refresh the controller and repeat without changing device settings.",
         _ => "WinMM variation alone cannot identify electrical interference."
     };
 }
