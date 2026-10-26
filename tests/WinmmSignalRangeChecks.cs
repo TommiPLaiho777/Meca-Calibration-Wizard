@@ -17,7 +17,8 @@ internal static class WinmmSignalRangeChecks
                 axisMin: 100, axisMax: 1000,
                 windowSeconds: 1.0, largestSamplingGapSeconds: 0.05);
             if (stats.Status != "Invalid WinMM range" ||
-                !stats.Guidance.Contains("refresh the controller"))
+                !stats.Guidance.Contains("refresh the controller") ||
+                !stats.Guidance.Contains("reported or assumed"))
                 throw new Exception("FAILED: impossible WinMM idle samples appeared valid");
         }
 
