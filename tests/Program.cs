@@ -89,6 +89,30 @@ static class Checks
             "three one-sample WinMM spikes must not become a valid calibration");
         Console.WriteLine("PASS: transient WinMM spikes do not count as guided presses (synthetic C#)");
 
+        // Three nonconsecutive high samples must not be accumulated into a
+        // sustained press when each is separated by a below-threshold reading
+        // that is still above the release threshold. Synthetic WinMM only.
+        var interruptedClock = new DateTime(2026, 10, 26, 11, 0, 0, DateTimeKind.Utc);
+        var interruptedGuide = new GuidedCalibration(PedalKind.Brake, Device,
+            Array.Empty<int>(), interruptedClock);
+        for (int i = 1; i <= 32; i++)
+            interruptedGuide.Observe(Axes(0, 0), interruptedClock.AddMilliseconds(i * 40));
+        Require(interruptedGuide.Phase == GuidePhase.AwaitingPress,
+            "interrupted-press fixture must finish rest sampling");
+        interruptedClock = interruptedClock.AddMilliseconds(32 * 40);
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            foreach (uint value in new uint[] { 40000, 1500, 40000, 1500, 40000, 0 })
+            {
+                interruptedClock = interruptedClock.AddMilliseconds(40);
+                interruptedGuide.Observe(Axes(0, value), interruptedClock);
+            }
+        }
+        Require(interruptedGuide.Phase == GuidePhase.AwaitingPress &&
+                interruptedGuide.PressesCompleted == 0 && interruptedGuide.Result is null,
+            "separated WinMM high samples must not count as sustained presses");
+        Console.WriteLine("PASS: interrupted WinMM press streaks rejected (synthetic C#)");
+
         var throttle = Session(PedalKind.Throttle, 3, false,
             new uint[] { 65535, 65500, 65490 }, new [] { 0 });
         Require(throttle.Phase == GuidePhase.Complete && throttle.Result!.Mapping.Axis == 3,
