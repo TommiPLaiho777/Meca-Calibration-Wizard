@@ -45,7 +45,6 @@ internal sealed class GuidedCalibration
     private DateTime _lastSampleUtc;
     private DateTime _movementStartUtc;
     private double _currentPeak;
-    private int _strokeSamples;
     // Reject brief WinMM spikes as pedal presses; require sustained movement.
     private int _pressAboveThresholdSamples;
     private DateTime _firstPressAboveUtc;
@@ -190,7 +189,6 @@ internal sealed class GuidedCalibration
         if (Phase == GuidePhase.AwaitingPress && displacement >= pressThreshold)
         {
             _currentPeak = displacement;
-            _strokeSamples = 1;
             _pressAboveThresholdSamples = 1;
             _firstPressAboveUtc = utcNow;
             _lastPressAboveUtc = utcNow;
@@ -198,7 +196,6 @@ internal sealed class GuidedCalibration
         }
         else if (Phase == GuidePhase.AwaitingRelease)
         {
-            _strokeSamples++;
             _currentPeak = Math.Max(_currentPeak, displacement);
             if (displacement >= pressThreshold)
             {
@@ -217,7 +214,6 @@ internal sealed class GuidedCalibration
                     _peaks.Add((uint)Math.Clamp(Math.Round(absolutePeak), 0d, (double)uint.MaxValue));
                 }
                 _currentPeak = 0;
-                _strokeSamples = 0;
                 _pressAboveThresholdSamples = 0;
                 Phase = GuidePhase.AwaitingPress;
                 if (_peaks.Count == RequiredPresses) Finish();
