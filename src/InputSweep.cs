@@ -36,6 +36,7 @@ internal sealed class InputSweepRun
     private readonly uint _upper;
     private readonly double _range;
     private readonly bool _requireContinuousSamples;
+    private readonly bool? _axisRangeAssumed;
     private const long MaximumContinuousGapMs = 500;
     private readonly DateTime _startUtc;
     private readonly List<SweepPoint> _trace = new();
@@ -46,7 +47,7 @@ internal sealed class InputSweepRun
     public double Progress(DateTime time) => Math.Clamp((time - _startUtc).TotalSeconds / DurationSeconds, 0, 1);
 
     public InputSweepRun(int axis, uint min, uint max, DateTime? startUtc = null,
-        bool requireContinuousSamples = true)
+        bool requireContinuousSamples = true, bool? axisRangeAssumed = null)
     {
         if (axis is < 0 or > 5) throw new ArgumentOutOfRangeException(nameof(axis));
         if (min >= max) throw new ArgumentException("Axis minimum must be lower than maximum.");
@@ -55,6 +56,7 @@ internal sealed class InputSweepRun
         _upper = max;
         _range = (double)max - min;
         _requireContinuousSamples = requireContinuousSamples;
+        _axisRangeAssumed = axisRangeAssumed;
         _startUtc = startUtc ?? DateTime.UtcNow;
     }
 
@@ -69,7 +71,13 @@ internal sealed class InputSweepRun
         if (reading[_axis] < _lower || reading[_axis] > _upper)
         {
             Failed = true;
-            FailureReason = "WinMM sweep reading outside the reported axis range. Release the pedal and retry.";
+            string provenance = _axisRangeAssumed switch
+            {
+                true => "assumed fallback",
+                false => "reported",
+                null => "unverified"
+            };
+            FailureReason = $"WinMM sweep reading outside the {provenance} axis range. Release the pedal and retry.";
             return;
         }
         // In a real sweep, a clock rollback, repeated millisecond timestamp,
