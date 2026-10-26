@@ -79,23 +79,35 @@ internal static class SweepDiagnostics
         // A two-level or similarly quantized WinMM signal can mimic a full stroke
         // without enough intermediate evidence to validate the capture.
         bool resolutionSufficient = distinct >= 5;
-        // A single high WinMM sample can be a transient spike, not a held
-        // pedal press. Require a contiguous high-pressure-direction interval
-        // lasting at least 100 ms. This is timing evidence only, not force.
-        long longestPressedRunMs = 0;
-        int pressedRunStart = -1;
+        // A brief spike or two sparse high readings do not establish a held
+        // press. Require three consecutive high-direction samples spanning
+        // at least 100 ms, with no more than 200 ms between samples.
+        // This is conservative WinMM timing evidence, not physical force.
+        const long MaximumHeldSampleGapMs = 200;
+        int pressedRunStart = -1, pressedRunSamples = 0;
+        bool pressedHoldSufficient = false;
         for (int i = 0; i < values.Length; i++)
         {
             if (values[i] < .80)
             {
                 pressedRunStart = -1;
+                pressedRunSamples = 0;
                 continue;
             }
-            if (pressedRunStart < 0) pressedRunStart = i;
-            longestPressedRunMs = Math.Max(longestPressedRunMs,
-                trace[i].TimeMs - trace[pressedRunStart].TimeMs);
+            if (pressedRunStart < 0 ||
+                (i > 0 && trace[i].TimeMs - trace[i - 1].TimeMs > MaximumHeldSampleGapMs))
+            {
+                pressedRunStart = i;
+                pressedRunSamples = 0;
+            }
+            pressedRunSamples++;
+            if (pressedRunSamples >= 3 &&
+                trace[i].TimeMs - trace[pressedRunStart].TimeMs >= 100)
+            {
+                pressedHoldSufficient = true;
+                break;
+            }
         }
-        bool pressedHoldSufficient = longestPressedRunMs >= 100;
         bool complete = strokeShapeComplete && timingEvidenceSufficient &&
             resolutionSufficient && pressedHoldSufficient;
 
