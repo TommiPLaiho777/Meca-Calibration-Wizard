@@ -107,9 +107,6 @@ internal static class SweepDiagnostics
                 break;
             }
         }
-        bool complete = strokeShapeComplete && timingEvidenceSufficient &&
-            resolutionSufficient && pressedHoldSufficient;
-
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
         int previousDirection = 0, reversals = 0;
@@ -123,6 +120,11 @@ internal static class SweepDiagnostics
             previousDirection = direction;
             anchor = current;
         }
+        // One guided sweep means one substantial press and one release.
+        // An otherwise plausible trace with a second press/release is not
+        // evidence of a single completed stroke.
+        bool complete = strokeShapeComplete && timingEvidenceSufficient &&
+            resolutionSufficient && pressedHoldSufficient && reversals == 1;
 
         string status;
         string explanation;
@@ -145,6 +147,12 @@ internal static class SweepDiagnostics
         {
             status = "Pressed hold not confirmed";
             explanation = "A brief WinMM peak does not confirm a held pedal press. Repeat the sweep, hold briefly, then release; physical pedal force remains unverified.";
+        }
+        else if (strokeShapeComplete && timingEvidenceSufficient &&
+                 resolutionSufficient && pressedHoldSufficient && reversals > 1)
+        {
+            status = "Multiple stroke reversals";
+            explanation = "More than one substantial WinMM direction reversal was observed. Record one slow press, hold, and release; this is not a physical-force assessment.";
         }
         else if (!complete)
         {
