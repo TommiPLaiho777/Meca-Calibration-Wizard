@@ -79,7 +79,25 @@ internal static class SweepDiagnostics
         // A two-level or similarly quantized WinMM signal can mimic a full stroke
         // without enough intermediate evidence to validate the capture.
         bool resolutionSufficient = distinct >= 5;
-        bool complete = strokeShapeComplete && timingEvidenceSufficient && resolutionSufficient;
+        // A single high WinMM sample can be a transient spike, not a held
+        // pedal press. Require a contiguous high-pressure-direction interval
+        // lasting at least 100 ms. This is timing evidence only, not force.
+        long longestPressedRunMs = 0;
+        int pressedRunStart = -1;
+        for (int i = 0; i < values.Length; i++)
+        {
+            if (values[i] < .80)
+            {
+                pressedRunStart = -1;
+                continue;
+            }
+            if (pressedRunStart < 0) pressedRunStart = i;
+            longestPressedRunMs = Math.Max(longestPressedRunMs,
+                trace[i].TimeMs - trace[pressedRunStart].TimeMs);
+        }
+        bool pressedHoldSufficient = longestPressedRunMs >= 100;
+        bool complete = strokeShapeComplete && timingEvidenceSufficient &&
+            resolutionSufficient && pressedHoldSufficient;
 
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
@@ -111,6 +129,11 @@ internal static class SweepDiagnostics
         {
             status = "Insufficient sweep timing";
             explanation = "The WinMM trace is too short or contains a sampling gap over 0.5 seconds. Record a continuous eight-second sweep.";
+        }
+        else if (strokeShapeComplete && !pressedHoldSufficient)
+        {
+            status = "Pressed hold not confirmed";
+            explanation = "A brief WinMM peak does not confirm a held pedal press. Repeat the sweep, hold briefly, then release; physical pedal force remains unverified.";
         }
         else if (!complete)
         {
