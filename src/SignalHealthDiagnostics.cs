@@ -11,7 +11,11 @@ internal sealed record SignalHealthStats(
 {
     // A reported WinMM change is not proof of an electrical fault.
     // This guidance is exported alongside Status and does not change device state.
-    public string Guidance => TimestampRegressionDetected
+    // When both the sample range and timestamps are invalid, explain both
+    // faults instead of hiding the impossible WinMM values behind timing advice.
+    public string Guidance => Status == "Invalid WinMM range" && TimestampRegressionDetected
+        ? "WinMM readings fell outside the available axis bounds (reported or assumed), and sample timestamps moved backwards. This idle check is invalid; refresh the controller and repeat without changing device settings."
+        : TimestampRegressionDetected
         ? "WinMM sample timestamps moved backwards. This check stopped early; repeat without changing device settings."
         : Status switch
     {
