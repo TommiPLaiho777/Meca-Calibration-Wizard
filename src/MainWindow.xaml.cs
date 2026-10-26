@@ -647,7 +647,9 @@ public partial class MainWindow : Window
         _sweepResults.Remove(kind);
         UpdateSweepDetails();
         _sweepStartUtc = DateTime.UtcNow;
-        _sweep = new InputSweepRun(mapping.Axis, _device.Min[mapping.Axis], _device.Max[mapping.Axis], _sweepStartUtc);
+        _sweep = new InputSweepRun(mapping.Axis, _device.Min[mapping.Axis], _device.Max[mapping.Axis],
+            _sweepStartUtc, axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed
+                ? assumed[mapping.Axis] : null);
         _sweepKind = kind;
         BrakeSweepButton.IsEnabled = false;
         ThrottleSweepButton.IsEnabled = false;
