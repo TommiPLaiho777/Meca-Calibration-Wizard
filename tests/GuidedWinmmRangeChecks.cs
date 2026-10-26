@@ -79,6 +79,36 @@ internal static class GuidedWinmmRangeChecks
             throw new Exception("FAILED: reported WinMM ranges mislabeled as fallback");
         Console.WriteLine("PASS: WinMM capability fallback provenance shown (synthetic C#)");
 
+        // A brief full-scale spike followed by a middle-band interruption
+        // must not contaminate the peak of a later sustained press.
+        // Synthetic-only: no physical pedal or WinMM device is accessed.
+        var interruptedPeakGuide = NewGuide();
+        void FeedInterruptedPeak(int ms, uint x) => interruptedPeakGuide.Observe(
+            new uint[] { x, 0, 0, 0, 0, 0 }, start.AddMilliseconds(ms));
+        for (int i = 1; i <= 30; i++) FeedInterruptedPeak(i * 40, 100);
+        if (interruptedPeakGuide.Phase != GuidePhase.AwaitingPress)
+            throw new Exception("FAILED: interrupted peak fixture rest phase");
+        FeedInterruptedPeak(1240, 1000); // transient Windows axis high endpoint
+        FeedInterruptedPeak(1280, 130);  // below press, above release threshold
+        FeedInterruptedPeak(1320, 200);
+        FeedInterruptedPeak(1380, 200);
+        FeedInterruptedPeak(1440, 200);
+        FeedInterruptedPeak(1480, 100);
+        FeedInterruptedPeak(1520, 200);
+        FeedInterruptedPeak(1580, 200);
+        FeedInterruptedPeak(1640, 200);
+        FeedInterruptedPeak(1680, 100);
+        FeedInterruptedPeak(1720, 200);
+        FeedInterruptedPeak(1780, 200);
+        FeedInterruptedPeak(1840, 200);
+        FeedInterruptedPeak(1880, 100);
+        if (interruptedPeakGuide.Phase != GuidePhase.Complete ||
+            interruptedPeakGuide.Result is not { PeakInputs.Length: 3 } peaks ||
+            peaks.PeakInputs[0] != 200 || peaks.PeakInputs[1] != 200 ||
+            peaks.PeakInputs[2] != 200 || peaks.AtAxisLimit)
+            throw new Exception("FAILED: interrupted WinMM spike polluted a valid press peak");
+        Console.WriteLine("PASS: interrupted WinMM peak cannot pollute a valid press (synthetic C#)");
+
         Console.WriteLine("PASS: guided WinMM out-of-range samples fail closed (synthetic C#)");
     }
 }
