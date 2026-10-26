@@ -136,8 +136,9 @@ internal static class SweepTimestampChecks
             invertedIsolatedAssessment.Status != "Pressed hold not confirmed")
             throw new Exception("FAILED: isolated inverted WinMM peak falsely accepted");
 
-        // Two high samples 200 ms apart can still be two transients;
-        // three high samples 300 ms apart are too sparse to prove a hold.
+        // Two high samples 200 ms apart can still be two transients.
+        // Preserve valid slow captures with three held samples at 300 ms
+        // intervals (within the existing 500 ms maximum trace gap).
         // All fixtures below are synthetic and never contact a pedal.
         var twoHighSamples = isolatedPeak.Select((p, i) =>
             i is 20 or 21 ? p with { WinmmValue = 65535u } : p).ToArray();
@@ -158,10 +159,10 @@ internal static class SweepTimestampChecks
             p.TimeMs + (i >= 21 ? 100L : 0L) + (i >= 22 ? 100L : 0L),
             i is >= 20 and <= 22 ? 65535u : p.WinmmValue)).ToArray();
         var sparseHighAssessment = SweepDiagnostics.Evaluate(sparseHighSamples, 0, 65535);
-        if (sparseHighAssessment.CompletePressAndRelease ||
-            sparseHighAssessment.Status != "Pressed hold not confirmed")
-            throw new Exception("FAILED: sparse high WinMM samples falsely proved a held press");
-        Console.WriteLine("PASS: two-sample and sparse WinMM peaks cannot prove a hold (synthetic C#)");
+        if (!sparseHighAssessment.CompletePressAndRelease ||
+            sparseHighAssessment.Status != "Limited intermediate steps")
+            throw new Exception("FAILED: valid slow WinMM held press was rejected");
+        Console.WriteLine("PASS: two-sample peaks rejected; slow three-sample holds preserved (synthetic C#)");
 
         var heldPeak = isolatedPeak.Select((p, i) =>
             i is >= 20 and <= 22 ? p with { WinmmValue = 65535u } : p).ToArray();
