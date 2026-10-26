@@ -447,13 +447,34 @@ public partial class MainWindow : Window
             return;
         }
         _raw = sample;
-        // Show WinMM capability inconsistencies in the read-only live monitor.
-        // This is not proof of sensor clipping or a HID-to-WinMM identity match.
-        bool outsideWinmmRange = Enumerable.Range(0, 6)
-            .Any(i => sample[i] < _device.Min[i] || sample[i] > _device.Max[i]);
-        StatusText.Text = outsideWinmmRange
-            ? "WinMM reading outside the reported or assumed axis range · this sample is invalid. Refresh the controller and re-capture before relying on measurements."
-            : "Input streaming · read-only";
+        // Fail closed for an impossible reading on ANY WinMM axis, including
+        // an unmapped one. Continuing could attach a valid-looking pedal sweep
+        // to a stream whose capability data is no longer trustworthy.
+        // Preserve previous captures for review, but block export until the
+        // user explicitly refreshes and captures again.
+        if (!WinmmJoystick.IsSampleWithinAxisBounds(_device, sample))
+        {
+            _winmmSessionInvalid = true;
+            _raw = Array.Empty<uint>();
+            MarkLiveReadingsUnavailable();
+            _capture = null;
+            _noise = null;
+            _sweep = null;
+            _sweepKind = null;
+            CaptureButton.IsEnabled = true;
+            CheckSignalButton.IsEnabled = true;
+            LongSignalButton.IsEnabled = true;
+            BrakeSweepButton.IsEnabled = true;
+            ThrottleSweepButton.IsEnabled = true;
+            ClutchSweepButton.IsEnabled = true;
+            StatusText.Text = "WinMM reading outside the reported or assumed axis range. Session invalid · return to Connect and click Refresh, then re-capture.";
+            AdvancedAxesText.Text = "WinMM sample invalid · live readings stopped. No sensor clipping or device identity inferred.";
+            CaptureFooter.Text = "Capture cancelled · refresh the controller and capture again.";
+            SignalText.Text = "Signal check cancelled · refresh the controller and repeat.";
+            SweepStatusText.Text = "Sweep cancelled · refresh the controller and repeat.";
+            return;
+        }
+        StatusText.Text = "Input streaming · read-only";
         AdvancedAxesText.Text = string.Join("\n", Enumerable.Range(0, 6)
             .Select(i => $"{WinmmJoystick.AxisNames[i],-2}  {sample[i],7:N0}   (0x{sample[i]:X8})" +
                 (sample[i] < _device.Min[i] || sample[i] > _device.Max[i]
