@@ -79,11 +79,11 @@ internal static class SweepDiagnostics
         // A two-level or similarly quantized WinMM signal can mimic a full stroke
         // without enough intermediate evidence to validate the capture.
         bool resolutionSufficient = distinct >= 5;
-        // A brief spike or two sparse high readings do not establish a held
-        // press. Require three consecutive high-direction samples spanning
-        // at least 100 ms, with no more than 200 ms between samples.
-        // This is conservative WinMM timing evidence, not physical force.
-        const long MaximumHeldSampleGapMs = 200;
+        // A brief spike or two high readings do not establish a held press.
+        // Require three consecutive high-direction samples spanning at least
+        // 100 ms. The existing 500 ms trace-gap check handles sparse captures;
+        // do not reject valid slow sweeps (e.g. 320 ms between readings).
+        // This is WinMM timing evidence, not physical pedal force.
         int pressedRunStart = -1, pressedRunSamples = 0;
         bool pressedHoldSufficient = false;
         for (int i = 0; i < values.Length; i++)
@@ -94,8 +94,7 @@ internal static class SweepDiagnostics
                 pressedRunSamples = 0;
                 continue;
             }
-            if (pressedRunStart < 0 ||
-                (i > 0 && trace[i].TimeMs - trace[i - 1].TimeMs > MaximumHeldSampleGapMs))
+            if (pressedRunStart < 0)
             {
                 pressedRunStart = i;
                 pressedRunSamples = 0;
