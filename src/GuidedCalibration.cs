@@ -202,10 +202,11 @@ internal sealed class GuidedCalibration
                 _pressAboveThresholdSamples++;
                 _lastPressAboveUtc = utcNow;
             }
-            else
+            else if (displacement > releaseThreshold)
             {
-                // A dip below the press threshold interrupts the high-reading
-                // streak. Separated WinMM spikes must not add up to a held press.
+                // A dip into the middle band interrupts the high-reading
+                // streak. Preserve the completed streak until the release
+                // sample has been evaluated below.
                 _pressAboveThresholdSamples = 0;
                 _firstPressAboveUtc = default;
                 _lastPressAboveUtc = default;
