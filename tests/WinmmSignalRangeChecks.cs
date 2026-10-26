@@ -33,6 +33,29 @@ internal static class WinmmSignalRangeChecks
                 throw new Exception("FAILED: legal WinMM endpoint rejected");
         }
 
+        // Both faults can occur in one read-only idle capture. The guidance
+        // must mention invalid axis bounds AND the timestamp rollback, while
+        // preserving the normal timestamp-only failure explanation.
+        var invalidWithRollback = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(1001u, 20).ToArray(),
+            axisMin: 100, axisMax: 1000, windowSeconds: 1.0,
+            largestSamplingGapSeconds: 0.05, timestampRegressionDetected: true);
+        if (invalidWithRollback.Status != "Invalid WinMM range" ||
+            !invalidWithRollback.Guidance.Contains("outside the available axis bounds") ||
+            !invalidWithRollback.Guidance.Contains("timestamps moved backwards") ||
+            !invalidWithRollback.Guidance.Contains("refresh the controller"))
+            throw new Exception("FAILED: simultaneous WinMM range/timing faults not both explained");
+
+        var rollbackOnly = SignalHealthDiagnostics.Evaluate(
+            Enumerable.Repeat(1000u, 20).ToArray(),
+            axisMin: 100, axisMax: 1000, windowSeconds: 1.0,
+            largestSamplingGapSeconds: 0.05, timestampRegressionDetected: true);
+        if (rollbackOnly.Status != "Insufficient samples" ||
+            !rollbackOnly.Guidance.Contains("timestamps moved backwards") ||
+            rollbackOnly.Guidance.Contains("outside the available axis bounds"))
+            throw new Exception("FAILED: timestamp-only WinMM fault guidance changed");
+
+        Console.WriteLine("PASS: combined WinMM range/timing faults both explained (synthetic C#)");
         Console.WriteLine("PASS: out-of-range WinMM idle traces flagged invalid (synthetic C#)");
     }
 }
