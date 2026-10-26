@@ -74,7 +74,10 @@ internal static class SweepDiagnostics
         bool timingEvidenceSufficient = trace[^1].TimeMs - trace[0].TimeMs >= 2000 &&
             !Enumerable.Range(1, trace.Count - 1)
                 .Any(i => trace[i].TimeMs - trace[i - 1].TimeMs > 500);
-        bool complete = strokeShapeComplete && timingEvidenceSufficient;
+        // A two-level or similarly quantized WinMM signal can mimic a full stroke
+        // without enough intermediate evidence to validate the capture.
+        bool resolutionSufficient = distinct >= 5;
+        bool complete = strokeShapeComplete && timingEvidenceSufficient && resolutionSufficient;
 
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
@@ -92,10 +95,15 @@ internal static class SweepDiagnostics
 
         string status;
         string explanation;
-        if (observedTravel < 20 || distinct < 5)
+        if (observedTravel < 20)
         {
             status = "Little movement";
             explanation = "The recorded axis did not move through a useful range. Repeat the sweep.";
+        }
+        else if (!resolutionSufficient)
+        {
+            status = "Insufficient signal steps";
+            explanation = "Too few distinct Windows WinMM values were observed to validate a press and release. Try a slower sweep; sensor resolution and pedal force remain unverified.";
         }
         else if (strokeShapeComplete && !timingEvidenceSufficient)
         {
