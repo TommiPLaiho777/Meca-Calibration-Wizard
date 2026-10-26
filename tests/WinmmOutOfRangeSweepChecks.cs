@@ -14,7 +14,7 @@ internal static class WinmmOutOfRangeSweepChecks
         // become a valid sweep or an apparent axis-limit observation.
         foreach (uint invalid in new[] { 99u, 1001u })
         {
-            var run = new InputSweepRun(0, 100, 1000, start);
+            var run = new InputSweepRun(0, 100, 1000, start, axisRangeAssumed: false);
             run.Observe(new uint[] { 100, 0, 0, 0, 0, 0 }, start);
             run.Observe(new uint[] { invalid, 0, 0, 0, 0, 0 },
                 start.AddMilliseconds(40));
@@ -22,6 +22,23 @@ internal static class WinmmOutOfRangeSweepChecks
                 !run.FailureReason.Contains("outside the reported axis range"))
                 throw new Exception("FAILED: out-of-range WinMM sweep was accepted");
         }
+
+        // A failed sweep must identify assumed, reported and unverified bounds
+        // accurately. These are synthetic ranges; no WinMM device is queried.
+        var assumed = new InputSweepRun(0, 0, 65535, start, axisRangeAssumed: true);
+        assumed.Observe(new uint[] { 65536, 0, 0, 0, 0, 0 }, start);
+        if (!assumed.Failed || assumed.Result is not null ||
+            !assumed.FailureReason.Contains("assumed fallback axis range") ||
+            assumed.FailureReason.Contains("reported axis range"))
+            throw new Exception("FAILED: assumed WinMM sweep bounds mislabeled as reported");
+
+        var unknown = new InputSweepRun(0, 0, 65535, start);
+        unknown.Observe(new uint[] { 65536, 0, 0, 0, 0, 0 }, start);
+        if (!unknown.Failed || unknown.Result is not null ||
+            !unknown.FailureReason.Contains("unverified axis range") ||
+            unknown.FailureReason.Contains("reported axis range"))
+            throw new Exception("FAILED: unknown WinMM sweep bounds mislabeled as reported");
+        Console.WriteLine("PASS: sweep axis-range provenance preserved (synthetic C#)");
 
         // Exact endpoints are valid. Sparse synthetic timing is permitted here
         // only to keep this hardware-free test small; live capture is strict.
