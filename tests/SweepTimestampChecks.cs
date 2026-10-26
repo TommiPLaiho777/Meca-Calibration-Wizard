@@ -136,6 +136,33 @@ internal static class SweepTimestampChecks
             invertedIsolatedAssessment.Status != "Pressed hold not confirmed")
             throw new Exception("FAILED: isolated inverted WinMM peak falsely accepted");
 
+        // Two high samples 200 ms apart can still be two transients;
+        // three high samples 300 ms apart are too sparse to prove a hold.
+        // All fixtures below are synthetic and never contact a pedal.
+        var twoHighSamples = isolatedPeak.Select((p, i) =>
+            i is 20 or 21 ? p with { WinmmValue = 65535u } : p).ToArray();
+        var twoHighAssessment = SweepDiagnostics.Evaluate(twoHighSamples, 0, 65535);
+        if (twoHighAssessment.CompletePressAndRelease ||
+            twoHighAssessment.Status != "Pressed hold not confirmed")
+            throw new Exception("FAILED: two high WinMM samples falsely proved a held press");
+
+        var invertedTwoHigh = twoHighSamples
+            .Select(p => p with { WinmmValue = 65535u - p.WinmmValue }).ToArray();
+        var invertedTwoHighAssessment = SweepDiagnostics.Evaluate(
+            invertedTwoHigh, 0, 65535, inverted: true);
+        if (invertedTwoHighAssessment.CompletePressAndRelease ||
+            invertedTwoHighAssessment.Status != "Pressed hold not confirmed")
+            throw new Exception("FAILED: two inverted high-direction samples falsely proved a hold");
+
+        var sparseHighSamples = isolatedPeak.Select((p, i) => new SweepPoint(
+            p.TimeMs + (i >= 21 ? 100L : 0L) + (i >= 22 ? 100L : 0L),
+            i is >= 20 and <= 22 ? 65535u : p.WinmmValue)).ToArray();
+        var sparseHighAssessment = SweepDiagnostics.Evaluate(sparseHighSamples, 0, 65535);
+        if (sparseHighAssessment.CompletePressAndRelease ||
+            sparseHighAssessment.Status != "Pressed hold not confirmed")
+            throw new Exception("FAILED: sparse high WinMM samples falsely proved a held press");
+        Console.WriteLine("PASS: two-sample and sparse WinMM peaks cannot prove a hold (synthetic C#)");
+
         var heldPeak = isolatedPeak.Select((p, i) =>
             i is >= 20 and <= 22 ? p with { WinmmValue = 65535u } : p).ToArray();
         var heldAssessment = SweepDiagnostics.Evaluate(heldPeak, 0, 65535);
