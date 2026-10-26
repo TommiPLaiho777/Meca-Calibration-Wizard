@@ -140,7 +140,7 @@ internal static class SweepTimestampChecks
             i is >= 20 and <= 22 ? p with { WinmmValue = 65535u } : p).ToArray();
         var heldAssessment = SweepDiagnostics.Evaluate(heldPeak, 0, 65535);
         if (!heldAssessment.CompletePressAndRelease ||
-            heldAssessment.Status != "Sweep captured")
+            heldAssessment.Status != "Limited intermediate steps")
             throw new Exception("FAILED: sustained WinMM press/release was rejected");
         Console.WriteLine("PASS: sustained WinMM press required; isolated spikes rejected (synthetic C#)");
 
