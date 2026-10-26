@@ -16,10 +16,6 @@ internal static class SweepDiagnostics
     public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax, bool inverted = false)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid Windows-reported axis range.");
-        if (trace.Count < 3)
-            return new SweepAssessment(false, false, trace.Select(x => x.WinmmValue).Distinct().Count(),
-                0, 0, "Insufficient data", "Record an eight-second press, hold and release sweep.");
-
         // A direct assessment may also receive cached/imported traces that
         // did not pass the live InputSweepRun bounds check. Never clamp an
         // impossible WinMM reading into a seemingly valid press/release.
@@ -42,6 +38,12 @@ internal static class SweepDiagnostics
                     0, 0, "Invalid sweep timing",
                     "Sweep timestamps are negative, repeated, or move backwards. Discard this trace and capture again.");
         }
+
+        // Even a short imported trace must disclose impossible axis values or
+        // ambiguous timestamps before falling back to insufficient data.
+        if (trace.Count < 3)
+            return new SweepAssessment(false, false, trace.Select(x => x.WinmmValue).Distinct().Count(),
+                0, 0, "Insufficient data", "Record an eight-second press, hold and release sweep.");
 
         double scale = (double)axisMax - axisMin;
         // Classify press/release in pedal direction, not raw WinMM axis direction.
