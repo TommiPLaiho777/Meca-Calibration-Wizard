@@ -47,6 +47,25 @@ static class Checks
 
     public static int Main()
     {
+        // Hardware-free C# regression: even an unmapped WinMM axis with an
+        // impossible value must invalidate the entire live preview sample.
+        // No Windows calibration, HID device, or pedal is accessed here.
+        var boundsDevice = new WinmmJoystick.Device(7, "Synthetic nonzero bounds",
+            new uint[] { 1000, 10, 0, 0, 0, 0 },
+            new uint[] { 2000, 20, 65535, 65535, 65535, 65535 });
+        Require(WinmmJoystick.IsSampleWithinAxisBounds(boundsDevice,
+                    new uint[] { 1500, 15, 0, 0, 0, 0 }) &&
+                !WinmmJoystick.IsSampleWithinAxisBounds(boundsDevice,
+                    new uint[] { 999, 15, 0, 0, 0, 0 }) &&
+                !WinmmJoystick.IsSampleWithinAxisBounds(boundsDevice,
+                    new uint[] { 2001, 15, 0, 0, 0, 0 }) &&
+                !WinmmJoystick.IsSampleWithinAxisBounds(boundsDevice,
+                    new uint[] { 1500, 21, 0, 0, 0, 0 }) &&
+                !WinmmJoystick.IsSampleWithinAxisBounds(boundsDevice,
+                    new uint[] { 1500, 15, 0 }),
+            "out-of-range WinMM readings on any axis, or malformed samples, must fail closed");
+        Console.WriteLine("PASS: all WinMM axes checked against capability bounds (synthetic C#)");
+
         var brake = Session(PedalKind.Brake, 0, false, new uint[] { 40000, 41000, 40500 });
         Require(brake.Phase == GuidePhase.Complete, "three brake strokes complete");
         Require(brake.Result is not null && brake.Result.Mapping.Axis == 0, "correct brake axis");
@@ -824,9 +843,9 @@ static class Checks
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         // A live out-of-range WinMM sample is invalid, not merely suspect.
         // The GUI must offer a safe recapture path without changing Windows settings.
-        Require(windowSource.Contains("WinMM reading outside the reported or assumed axis range · this sample is invalid.") &&
-                windowSource.Contains("Refresh the controller and re-capture before relying on measurements."),
-            "live WinMM out-of-range status must explain invalidity and safe retry");
+        Require(windowSource.Contains("WinMM reading outside the reported or assumed axis range. Session invalid") &&
+                windowSource.Contains("return to Connect and click Refresh, then re-capture."),
+            "live WinMM out-of-range status must invalidate the session and explain safe retry");
         Console.WriteLine("PASS: invalid live WinMM range has actionable English guidance (WPF source contract)");
         // The diagnostics step displays WinMM joystick values, not uncalibrated
         // sensor ADC. Its heading and hint must not call the stream raw data.
@@ -1037,6 +1056,29 @@ static class Checks
                 windowSource.Contains("_sweepResults.Clear();"),
             "WPF export must respect session invalidation and explicit refresh must clear captures");
         Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
+        // WPF source-path contract: a valid-looking mapped axis must not
+        // conceal an out-of-range reading on a different WinMM axis.
+        // The UI must stop all in-flight measurements and block JSON export.
+        int boundsGuardStart = pollSource.IndexOf(
+            "if (!WinmmJoystick.IsSampleWithinAxisBounds(_device, sample))",
+            StringComparison.Ordinal);
+        int boundsGuardEnd = pollSource.IndexOf(
+            "StatusText.Text = \"Input streaming · read-only\";", boundsGuardStart,
+            StringComparison.Ordinal);
+        Require(boundsGuardStart >= 0 && boundsGuardEnd > boundsGuardStart,
+            "live WinMM polling must guard the entire sample before consuming it");
+        string boundsGuard = pollSource[boundsGuardStart..boundsGuardEnd];
+        Require(boundsGuard.Contains("_winmmSessionInvalid = true;") &&
+                boundsGuard.Contains("_raw = Array.Empty<uint>();") &&
+                boundsGuard.Contains("_capture = null;") &&
+                boundsGuard.Contains("_noise = null;") &&
+                boundsGuard.Contains("_sweep = null;") &&
+                boundsGuard.Contains("MarkLiveReadingsUnavailable();") &&
+                boundsGuard.Contains("return;") &&
+                boundsGuardEnd < pollSource.IndexOf("guide.Observe(sample,", StringComparison.Ordinal),
+            "out-of-range WinMM sample must latch invalid session before guided capture");
+        Console.WriteLine("PASS: out-of-range WinMM sample blocks stale WPF exports (source contract)");
+
         // A failed synchronous read from the Capture button occurs outside Poll.
         // It must latch the same session-invalid flag before a user can export
         // earlier WinMM measurements. This is a source contract, not a WPF test.
