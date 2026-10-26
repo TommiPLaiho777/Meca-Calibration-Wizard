@@ -64,6 +64,29 @@ internal static class SweepTimestampChecks
         if (normal.Status == "Invalid sweep timing")
             throw new Exception("FAILED: valid increasing WinMM timestamps were rejected");
 
+        // A binary WinMM signal can show a full-range rest/press/release shape
+        // without enough intermediate samples to validate a sweep.
+        // Synthetic values only; no joystick or physical pedal access.
+        var twoLevelTrace = Enumerable.Range(0, 41)
+            .Select(i => new SweepPoint(i * 200L, i is >= 10 and <= 30 ? 65535u : 0u))
+            .ToArray();
+        var twoLevel = SweepDiagnostics.Evaluate(twoLevelTrace, 0, 65535);
+        if (twoLevel.CompletePressAndRelease ||
+            twoLevel.Status != "Insufficient signal steps" ||
+            !twoLevel.ReachesReportedMaximum ||
+            twoLevel.DistinctValues != 2)
+            throw new Exception("FAILED: binary WinMM sweep falsely marked complete");
+
+        var invertedTwoLevelTrace = twoLevelTrace
+            .Select(point => point with { WinmmValue = 65535u - point.WinmmValue })
+            .ToArray();
+        var invertedTwoLevel = SweepDiagnostics.Evaluate(invertedTwoLevelTrace, 0, 65535, inverted: true);
+        if (invertedTwoLevel.CompletePressAndRelease ||
+            invertedTwoLevel.Status != "Insufficient signal steps" ||
+            invertedTwoLevel.DistinctValues != 2)
+            throw new Exception("FAILED: binary inverted WinMM sweep falsely marked complete");
+        Console.WriteLine("PASS: binary WinMM sweep cannot claim completed capture (synthetic C#)");
+
         Console.WriteLine("PASS: imported WinMM sweep timing rejects rollback, duplicate, and negative timestamps (synthetic C#)");
     }
 }
