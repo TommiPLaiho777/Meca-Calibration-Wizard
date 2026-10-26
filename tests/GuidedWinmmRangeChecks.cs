@@ -90,18 +90,27 @@ internal static class GuidedWinmmRangeChecks
             throw new Exception("FAILED: interrupted peak fixture rest phase");
         FeedInterruptedPeak(1240, 1000); // transient Windows axis high endpoint
         FeedInterruptedPeak(1280, 130);  // below press, above release threshold
+        // Three readings spanning only 80 ms must not borrow the old
+        // spike's timestamp to satisfy the 100 ms sustained-press rule.
         FeedInterruptedPeak(1320, 200);
-        FeedInterruptedPeak(1380, 200);
-        FeedInterruptedPeak(1440, 200);
-        FeedInterruptedPeak(1480, 100);
-        FeedInterruptedPeak(1520, 200);
-        FeedInterruptedPeak(1580, 200);
-        FeedInterruptedPeak(1640, 200);
-        FeedInterruptedPeak(1680, 100);
-        FeedInterruptedPeak(1720, 200);
-        FeedInterruptedPeak(1780, 200);
-        FeedInterruptedPeak(1840, 200);
-        FeedInterruptedPeak(1880, 100);
+        FeedInterruptedPeak(1360, 200);
+        FeedInterruptedPeak(1400, 200);
+        FeedInterruptedPeak(1440, 100);
+        if (interruptedPeakGuide.PressesCompleted != 0)
+            throw new Exception("FAILED: interrupted WinMM hold inherited an old timestamp");
+        // Now capture three legitimate sustained strokes, all at 200.
+        FeedInterruptedPeak(1480, 200);
+        FeedInterruptedPeak(1540, 200);
+        FeedInterruptedPeak(1600, 200);
+        FeedInterruptedPeak(1640, 100);
+        FeedInterruptedPeak(1680, 200);
+        FeedInterruptedPeak(1740, 200);
+        FeedInterruptedPeak(1800, 200);
+        FeedInterruptedPeak(1840, 100);
+        FeedInterruptedPeak(1880, 200);
+        FeedInterruptedPeak(1940, 200);
+        FeedInterruptedPeak(2000, 200);
+        FeedInterruptedPeak(2040, 100);
         if (interruptedPeakGuide.Phase != GuidePhase.Complete ||
             interruptedPeakGuide.Result is not { PeakInputs.Length: 3 } peaks ||
             peaks.PeakInputs[0] != 200 || peaks.PeakInputs[1] != 200 ||
