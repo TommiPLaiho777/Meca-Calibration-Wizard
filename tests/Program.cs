@@ -175,6 +175,16 @@ static class Checks
                 nearHighSweep.Result.Summary.Contains("in high-end WinMM band") &&
                 !nearHighSweep.Result.Summary.Contains("at high axis limit"),
             "near-high WinMM band counts must not claim exact axis maximum");
+        // Inverted WinMM mappings reach the raw high band at release, not press.
+        // The exported interpretation must not imply high pedal force or ADC clipping.
+        Require(sweep.Result.HighLimitInterpretationFor(false) == sweep.Result.HighLimitInterpretation &&
+                sweep.Result.HighLimitInterpretationFor(true).Contains("released end of this inverted mapping") &&
+                sweep.Result.HighLimitInterpretationFor(true).Contains("does not verify sensor ADC clipping") &&
+                stationaryHighBandExplanation().Contains("released end of this inverted mapping"),
+            "inverted WinMM high band must be described as the released endpoint");
+        static string stationaryHighBandExplanation() => new InputSweepResult(
+            "WINMM_JOYGETPOSEX_NOT_SENSOR_ADC", 0, 0, 1, 1, 0, 0, 0, null, 0,
+            Array.Empty<SweepPoint>()).HighLimitInterpretationFor(true);
         var sweepJson = JsonSerializer.Serialize(sweep.Result);
         Require(sweepJson.Contains("\"HighLimitInterpretation\"") &&
                 sweepJson.Contains("does not verify sensor ADC clipping") &&
