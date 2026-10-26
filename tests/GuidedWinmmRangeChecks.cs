@@ -62,6 +62,18 @@ internal static class GuidedWinmmRangeChecks
             fallbackSummary.Contains(": X, Y"))
             throw new Exception("FAILED: fallback WinMM capability ranges not disclosed");
 
+        // A fallback limit is protective, not a driver-reported capability.
+        // The guided UI must name its provenance when rejecting a bad sample.
+        var fallbackGuide = new GuidedCalibration(PedalKind.Brake, fallbackDevice,
+            Array.Empty<int>(), start);
+        fallbackGuide.Observe(new uint[] { 65536, 0, 0, 0, 0, 0 },
+            start.AddMilliseconds(40));
+        if (fallbackGuide.Phase != GuidePhase.Failed || fallbackGuide.Result is not null ||
+            !fallbackGuide.FailureReason.Contains("assumed axis range") ||
+            fallbackGuide.FailureReason.Contains("reported axis range"))
+            throw new Exception("FAILED: assumed WinMM bounds were presented as reported");
+        Console.WriteLine("PASS: guided fallback bounds disclosed (synthetic C#)");
+
         var reportedDevice = fallbackDevice with { AssumedAxisRanges = new bool[6] };
         if (reportedDevice.WinmmIdsSummary.Contains("assumed WinMM axis range"))
             throw new Exception("FAILED: reported WinMM ranges mislabeled as fallback");
