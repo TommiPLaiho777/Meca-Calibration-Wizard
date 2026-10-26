@@ -372,6 +372,34 @@ static class Checks
         }
         Console.WriteLine("PASS: ordered WinMM sweep start/end regression checks");
 
+        // Two distinct press/release strokes in one imported WinMM trace must
+        // not be reported as one completed guided sweep. Check both polarities
+        // using synthetic C# data; no Windows controller or pedals are accessed.
+        var doubleStrokeTrace = Enumerable.Range(0, 49).Select(i =>
+        {
+            double fraction = i <= 12 ? i / 12.0
+                : i <= 24 ? (24 - i) / 12.0
+                : i <= 36 ? (i - 24) / 12.0
+                : (48 - i) / 12.0;
+            return new SweepPoint(i * 160L, (uint)Math.Round(65535.0 * fraction));
+        }).ToArray();
+        var doubleStrokeInverted = doubleStrokeTrace
+            .Select(p => new SweepPoint(p.TimeMs, 65535u - p.WinmmValue)).ToArray();
+        foreach (var assessment in new[]
+        {
+            SweepDiagnostics.Evaluate(doubleStrokeTrace, 0, 65535),
+            SweepDiagnostics.Evaluate(doubleStrokeInverted, 0, 65535, inverted: true)
+        })
+        {
+            Require(!assessment.CompletePressAndRelease &&
+                    assessment.Status == "Multiple stroke reversals" &&
+                    assessment.DirectionChanges >= 3 &&
+                    assessment.Explanation.Contains("one slow press"),
+                "two complete WinMM strokes must not be accepted as one guided sweep");
+        }
+        Console.WriteLine("PASS: repeated WinMM strokes rejected in both axis directions (synthetic C#)");
+
+
         // Imported/cached traces must not claim a completed physical sweep
         // based on millisecond-fast movement or a large missing sample window.
         // These are synthetic Windows WinMM samples, not actual pedal tests.
