@@ -108,6 +108,42 @@ internal static class SweepTimestampChecks
             throw new Exception("FAILED: valid short WinMM trace must remain insufficient data");
         Console.WriteLine("PASS: short imported WinMM traces prioritize range/timing faults (synthetic C#)");
 
+        // One isolated WinMM high sample can be a transient spike rather
+        // than a held pedal press. The trace still has enough distinct values,
+        // normal timestamps, and a released start/end. No hardware involved.
+        var isolatedPeak = Enumerable.Range(0, 41)
+            .Select(i => new SweepPoint(i * 200L, i switch
+            {
+                17 or 23 => 10000u,
+                18 or 22 => 30000u,
+                19 or 21 => 45000u,
+                20 => 65535u,
+                _ => 0u
+            }))
+            .ToArray();
+        var isolatedAssessment = SweepDiagnostics.Evaluate(isolatedPeak, 0, 65535);
+        if (isolatedAssessment.CompletePressAndRelease ||
+            isolatedAssessment.Status != "Pressed hold not confirmed" ||
+            !isolatedAssessment.Explanation.Contains("hold briefly"))
+            throw new Exception("FAILED: isolated WinMM peak falsely accepted as a held pedal press");
+
+        var invertedIsolatedPeak = isolatedPeak
+            .Select(p => p with { WinmmValue = 65535u - p.WinmmValue })
+            .ToArray();
+        var invertedIsolatedAssessment = SweepDiagnostics.Evaluate(
+            invertedIsolatedPeak, 0, 65535, inverted: true);
+        if (invertedIsolatedAssessment.CompletePressAndRelease ||
+            invertedIsolatedAssessment.Status != "Pressed hold not confirmed")
+            throw new Exception("FAILED: isolated inverted WinMM peak falsely accepted");
+
+        var heldPeak = isolatedPeak.Select((p, i) =>
+            i is >= 20 and <= 22 ? p with { WinmmValue = 65535u } : p).ToArray();
+        var heldAssessment = SweepDiagnostics.Evaluate(heldPeak, 0, 65535);
+        if (!heldAssessment.CompletePressAndRelease ||
+            heldAssessment.Status != "Sweep captured")
+            throw new Exception("FAILED: sustained WinMM press/release was rejected");
+        Console.WriteLine("PASS: sustained WinMM press required; isolated spikes rejected (synthetic C#)");
+
         Console.WriteLine("PASS: imported WinMM sweep timing rejects rollback, duplicate, and negative timestamps (synthetic C#)");
     }
 }
