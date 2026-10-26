@@ -87,6 +87,27 @@ internal static class SweepTimestampChecks
             throw new Exception("FAILED: binary inverted WinMM sweep falsely marked complete");
         Console.WriteLine("PASS: binary WinMM sweep cannot claim completed capture (synthetic C#)");
 
+        // A two-sample cached trace is insufficient for a physical sweep, but
+        // invalid values or ambiguous timestamps still take precedence.
+        // Synthetic-only: no WinMM, HID, or pedal device access.
+        var shortOutOfRange = SweepDiagnostics.Evaluate(
+            new[] { new SweepPoint(0, 0u), new SweepPoint(100, 1001u) }, 0, 1000);
+        if (shortOutOfRange.Status != "Invalid WinMM range" ||
+            shortOutOfRange.CompletePressAndRelease || shortOutOfRange.ReachesReportedMaximum)
+            throw new Exception("FAILED: short out-of-range WinMM trace masked as insufficient data");
+
+        var shortDuplicate = SweepDiagnostics.Evaluate(
+            new[] { new SweepPoint(0, 0u), new SweepPoint(0, 100u) }, 0, 1000);
+        if (shortDuplicate.Status != "Invalid sweep timing" ||
+            shortDuplicate.CompletePressAndRelease || shortDuplicate.ReachesReportedMaximum)
+            throw new Exception("FAILED: short duplicate-timestamp trace masked as insufficient data");
+
+        var shortValid = SweepDiagnostics.Evaluate(
+            new[] { new SweepPoint(0, 0u), new SweepPoint(100, 100u) }, 0, 1000);
+        if (shortValid.Status != "Insufficient data" || shortValid.CompletePressAndRelease)
+            throw new Exception("FAILED: valid short WinMM trace must remain insufficient data");
+        Console.WriteLine("PASS: short imported WinMM traces prioritize range/timing faults (synthetic C#)");
+
         Console.WriteLine("PASS: imported WinMM sweep timing rejects rollback, duplicate, and negative timestamps (synthetic C#)");
     }
 }
