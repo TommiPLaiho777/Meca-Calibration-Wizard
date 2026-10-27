@@ -220,7 +220,7 @@
                                                    Visibility="Collapsed" SnapsToDevicePixels="True"/>
                                     </Canvas>
                                 </Border>
-                                <TextBlock Text="At-limit counts cannot prove early clipping or consistent physical force."
+                                <TextBlock Text="Near-limit counts cannot prove early clipping or consistent physical force."
                                            TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource DimBrush}" Margin="0,7,0,0"/>
                             </StackPanel>
                         </Border>
