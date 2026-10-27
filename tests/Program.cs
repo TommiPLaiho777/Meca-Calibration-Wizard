@@ -33,7 +33,7 @@ static class Checks
         Require(guide.Phase == GuidePhase.AwaitingPress, "rest baseline step");
         foreach (var peak in peaks)
         {
-            foreach (var fraction in new [] { 0.12, 0.60, 1.0, 0.40, 0.0 })
+            foreach (var fraction in new [] { 0.12, 0.60, 1.0, 0.40, 0.0, 0.0, 0.0 })
             {
                 now = now.AddMilliseconds(40);
                 var input = inverted
@@ -102,6 +102,11 @@ static class Checks
             spikeGuide.Observe(Axes(0, 40000), spikeClock);
             spikeClock = spikeClock.AddMilliseconds(40);
             spikeGuide.Observe(Axes(0, 0), spikeClock);
+            for (int releaseSample = 0; releaseSample < 2; releaseSample++)
+            {
+                spikeClock = spikeClock.AddMilliseconds(40);
+                spikeGuide.Observe(Axes(0, 0), spikeClock);
+            }
         }
         Require(spikeGuide.Phase == GuidePhase.AwaitingPress &&
                 spikeGuide.PressesCompleted == 0 && spikeGuide.Result is null,
@@ -121,7 +126,7 @@ static class Checks
         interruptedClock = interruptedClock.AddMilliseconds(32 * 40);
         for (int attempt = 0; attempt < 3; attempt++)
         {
-            foreach (uint value in new uint[] { 40000, 1500, 40000, 1500, 40000, 0 })
+            foreach (uint value in new uint[] { 40000, 1500, 40000, 1500, 40000, 0, 0, 0 })
             {
                 interruptedClock = interruptedClock.AddMilliseconds(40);
                 interruptedGuide.Observe(Axes(0, value), interruptedClock);
