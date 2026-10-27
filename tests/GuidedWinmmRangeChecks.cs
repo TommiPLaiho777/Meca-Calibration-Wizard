@@ -98,25 +98,67 @@ internal static class GuidedWinmmRangeChecks
         FeedInterruptedPeak(1440, 100);
         if (interruptedPeakGuide.PressesCompleted != 0)
             throw new Exception("FAILED: interrupted WinMM hold inherited an old timestamp");
-        // Now capture three legitimate sustained strokes, all at 200.
-        FeedInterruptedPeak(1480, 200);
-        FeedInterruptedPeak(1540, 200);
-        FeedInterruptedPeak(1600, 200);
-        FeedInterruptedPeak(1640, 100);
-        FeedInterruptedPeak(1680, 200);
-        FeedInterruptedPeak(1740, 200);
-        FeedInterruptedPeak(1800, 200);
-        FeedInterruptedPeak(1840, 100);
-        FeedInterruptedPeak(1880, 200);
-        FeedInterruptedPeak(1940, 200);
-        FeedInterruptedPeak(2000, 200);
-        FeedInterruptedPeak(2040, 100);
+        // Three sustained strokes with three consecutive low samples each.
+        // One low sample at 1440 ms must not complete the earlier short streak.
+        int nextStrokeMs = 1480;
+        for (int stroke = 0; stroke < 3; stroke++)
+        {
+            FeedInterruptedPeak(nextStrokeMs, 200);
+            FeedInterruptedPeak(nextStrokeMs + 60, 200);
+            FeedInterruptedPeak(nextStrokeMs + 120, 200);
+            FeedInterruptedPeak(nextStrokeMs + 160, 100);
+            FeedInterruptedPeak(nextStrokeMs + 200, 100);
+            FeedInterruptedPeak(nextStrokeMs + 240, 100);
+            nextStrokeMs += 280;
+        }
         if (interruptedPeakGuide.Phase != GuidePhase.Complete ||
             interruptedPeakGuide.Result is not { PeakInputs.Length: 3 } peaks ||
             peaks.PeakInputs[0] != 200 || peaks.PeakInputs[1] != 200 ||
             peaks.PeakInputs[2] != 200 || peaks.AtAxisLimit)
             throw new Exception("FAILED: interrupted WinMM spike polluted a valid press peak");
         Console.WriteLine("PASS: interrupted WinMM peak cannot pollute a valid press (synthetic C#)");
+
+        // A one-sample low dropout after a valid high hold is not a physical
+        // release. It must not create two strokes. Check both axis directions.
+        foreach (bool inverted in new[] { false, true })
+        {
+            var releaseStart = new DateTime(2026, 10, 27, 12, 0, 0, DateTimeKind.Utc);
+            var releaseDevice = new WinmmJoystick.Device(
+                0, "Synthetic WinMM controller", new uint[6],
+                Enumerable.Repeat(65535u, 6).ToArray());
+            var releaseGuide = new GuidedCalibration(PedalKind.Brake, releaseDevice,
+                Array.Empty<int>(), releaseStart);
+            uint rest = inverted ? 65535u : 0u;
+            uint pressed = inverted ? 15000u : 50000u;
+            int elapsedMs = 0;
+            void FeedRelease(uint x)
+            {
+                elapsedMs += 40;
+                releaseGuide.Observe(new uint[] { x, 0, 0, 0, 0, 0 },
+                    releaseStart.AddMilliseconds(elapsedMs));
+            }
+            for (int i = 0; i < 32; i++) FeedRelease(rest);
+            if (releaseGuide.Phase != GuidePhase.AwaitingPress)
+                throw new Exception("FAILED: debounce fixture rest phase");
+            for (int stroke = 0; stroke < 3; stroke++)
+            {
+                for (int i = 0; i < 4; i++) FeedRelease(pressed);
+                FeedRelease(rest); // single 40ms low dropout
+                if (releaseGuide.PressesCompleted != stroke ||
+                    releaseGuide.Phase != GuidePhase.AwaitingRelease)
+                    throw new Exception("FAILED: one low WinMM sample counted as release");
+                for (int i = 0; i < 4; i++) FeedRelease(pressed);
+                for (int i = 0; i < 3; i++) FeedRelease(rest);
+                if (releaseGuide.PressesCompleted != stroke + 1)
+                    throw new Exception("FAILED: stable WinMM release not accepted");
+            }
+            if (releaseGuide.Phase != GuidePhase.Complete ||
+                releaseGuide.Result is not { PeakInputs.Length: 3 } result ||
+                result.PeakInputs.Any(p => p != pressed) ||
+                (result.Mapping.Full < result.Mapping.Rest) != inverted)
+                throw new Exception("FAILED: stable release/inverted mapping regression");
+        }
+        Console.WriteLine("PASS: one-sample release dropouts ignored; stable releases accepted in both directions (synthetic C#)");
 
         Console.WriteLine("PASS: guided WinMM out-of-range samples fail closed (synthetic C#)");
     }
