@@ -520,7 +520,7 @@ public partial class MainWindow : Window
                     _lastSignalHealth = null;
                     UpdateMappingLabels();
                     CaptureQualityText.Text = result.PeakSpreadSummary;
-                    CaptureFooter.Text = $"WinMM {WinmmJoystick.AxisNames[result.Mapping.Axis]} · Preview measured. No changes saved.";
+                    CaptureFooter.Text = $"WinMM {WinmmJoystick.AxisNames[result.Mapping.Axis]} · Pedal measurement captured for this session. No Windows settings changed.";
                     NextButton.IsEnabled = true;
                     NextButton.Content = "Continue  →";
                 }
