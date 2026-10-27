@@ -71,7 +71,7 @@ internal static class WinmmJoystick
             var caps = new JoyCaps();
             var ok = joyGetDevCaps(id, ref caps, (uint)Marshal.SizeOf<JoyCaps>()) == 0;
             var name = ok && !string.IsNullOrWhiteSpace(caps.ProductName)
-                ? caps.ProductName : $"USB joystick {id}";
+                ? caps.ProductName : $"WinMM controller {id} (name unavailable)";
             uint[] min = ok ? new[] { caps.XMin, caps.YMin, caps.ZMin, caps.RMin, caps.UMin, caps.VMin }
                             : new uint[6];
             uint[] max = ok ? new[] { caps.XMax, caps.YMax, caps.ZMax, caps.RMax, caps.UMax, caps.VMax }
