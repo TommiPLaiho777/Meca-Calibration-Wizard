@@ -140,7 +140,9 @@ static class Checks
         Require(throttle.Result.AtAxisLimit, "clipped throttle limit is flagged");
         Require(throttle.Result.RepeatabilityLabel == "WinMM limit (force unverified)",
             "WinMM endpoint must not imply physical-force repeatability");
-        Require(throttle.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
+        Require(throttle.Result.PeakSpreadSummary.Contains("near-limit band") &&
+                throttle.Result.PeakSpreadSummary.Contains("repeatability unknown") &&
+                !throttle.Result.PeakSpreadSummary.Contains("axis limit reached") &&
                 !throttle.Result.PeakSpreadSummary.Contains("%"),
             "saturated WinMM peaks must not display a misleading percentage");
         var observedBrake = Session(PedalKind.Brake, 0, false, new uint[] { 45842, 65535, 65535 });
