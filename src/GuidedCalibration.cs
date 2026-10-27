@@ -31,6 +31,9 @@ internal sealed record PedalCalibrationResult(
 internal sealed class GuidedCalibration
 {
     private const int RequiredPresses = 3;
+    // Ignore a single low WinMM sample as a release; require a stable return to rest.
+    private const int RequiredReleaseSamples = 3;
+    private const double RequiredReleaseMilliseconds = 80;
     private readonly uint[] _range;
     private readonly uint[] _deviceMin;
     private readonly uint[] _deviceMax;
@@ -49,6 +52,8 @@ internal sealed class GuidedCalibration
     private int _pressAboveThresholdSamples;
     private DateTime _firstPressAboveUtc;
     private DateTime _lastPressAboveUtc;
+    private int _releaseBelowThresholdSamples;
+    private DateTime _firstReleaseBelowUtc;
     private int _direction;
     private int _restSamples;
     private int _axis = -1;
@@ -196,11 +201,20 @@ internal sealed class GuidedCalibration
         }
         else if (Phase == GuidePhase.AwaitingRelease)
         {
+            // An isolated low sample can be a WinMM dropout, not a completed
+            // pedal release. If high readings resume, start a fresh hold streak
+            // instead of borrowing timing or a peak from before the dropout.
+            if (_releaseBelowThresholdSamples > 0 && displacement > releaseThreshold)
+            {
+                _releaseBelowThresholdSamples = 0;
+                _pressAboveThresholdSamples = 0;
+                _firstPressAboveUtc = default;
+                _lastPressAboveUtc = default;
+                _currentPeak = 0;
+            }
             _currentPeak = Math.Max(_currentPeak, displacement);
             if (displacement >= pressThreshold)
             {
-                // Restart the time window after a middle-band interruption;
-                // a default DateTime would falsely satisfy the 100 ms hold.
                 if (_pressAboveThresholdSamples == 0)
                     _firstPressAboveUtc = utcNow;
                 _pressAboveThresholdSamples++;
@@ -208,20 +222,23 @@ internal sealed class GuidedCalibration
             }
             else if (displacement > releaseThreshold)
             {
-                // A dip into the middle band interrupts the high-reading
-                // streak. Preserve the completed streak until the release
-                // sample has been evaluated below.
+                // A middle-band interruption cannot extend a sustained hold.
                 _pressAboveThresholdSamples = 0;
                 _firstPressAboveUtc = default;
                 _lastPressAboveUtc = default;
-                // The old high peak belonged to an interrupted streak. If a
-                // later valid press follows, it must not inherit that spike.
                 _currentPeak = 0;
             }
-            if (displacement <= releaseThreshold)
+            else
             {
-                // A single high reading followed by release is not a valid stroke.
-                // Use actual above-threshold sample times, not time spent idle.
+                if (_releaseBelowThresholdSamples == 0)
+                    _firstReleaseBelowUtc = utcNow;
+                _releaseBelowThresholdSamples++;
+                if (_releaseBelowThresholdSamples < RequiredReleaseSamples ||
+                    (utcNow - _firstReleaseBelowUtc).TotalMilliseconds < RequiredReleaseMilliseconds)
+                    return;
+
+                // Only a continuous high streak followed by a stable low
+                // streak counts. No sensor force or Windows settings inferred.
                 if (_pressAboveThresholdSamples >= 3 &&
                     (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100 &&
                     _currentPeak >= pressThreshold)
@@ -231,6 +248,7 @@ internal sealed class GuidedCalibration
                 }
                 _currentPeak = 0;
                 _pressAboveThresholdSamples = 0;
+                _releaseBelowThresholdSamples = 0;
                 Phase = GuidePhase.AwaitingPress;
                 if (_peaks.Count == RequiredPresses) Finish();
             }
