@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -12,6 +13,11 @@ namespace MecaCalibrationWizard;
 public partial class MainWindow : Window
 {
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(40) };
+    // All WinMM capture durations use elapsed monotonic time, not the adjustable
+    // Windows wall clock. UTC remains appropriate for JSON export timestamps.
+    private readonly DateTime _measurementEpochUtc = DateTime.UtcNow;
+    private readonly Stopwatch _measurementStopwatch = Stopwatch.StartNew();
+    private DateTime MeasurementNow => _measurementEpochUtc + _measurementStopwatch.Elapsed;
     private readonly Dictionary<PedalKind, PedalMapping> _mappings = new();
     private WinmmJoystick.Device? _device;
     // A read failure may indicate device replacement even if WinMM reuses the ID.
@@ -423,7 +429,7 @@ public partial class MainWindow : Window
         _raw = sample;
         var kind = StepKind();
         var reserved = _mappings.Where(p => p.Key != kind).Select(p => p.Value.Axis);
-        _capture = new GuidedCalibration(kind, _device, reserved);
+        _capture = new GuidedCalibration(kind, _device, reserved, MeasurementNow);
         CaptureButton.IsEnabled = false;
         NextButton.IsEnabled = false;
         CaptureCounter.Text = "0 / 3 presses";
@@ -502,9 +508,10 @@ public partial class MainWindow : Window
         if (_capture is not null)
         {
             var guide = _capture;
-            guide.Observe(sample, DateTime.UtcNow);
+            var measurementNow = MeasurementNow;
+            guide.Observe(sample, measurementNow);
             CaptureCounter.Text = $"{guide.PressesCompleted} / 3 presses";
-            CaptureFooter.Text = guide.Instruction(DateTime.UtcNow);
+            CaptureFooter.Text = guide.Instruction(measurementNow);
             if (guide.Phase is GuidePhase.Complete or GuidePhase.Failed)
             {
                 _capture = null;
@@ -536,7 +543,7 @@ public partial class MainWindow : Window
 
         if (_noise is not null)
         {
-            var now = DateTime.UtcNow;
+            var now = MeasurementNow;
             _noise.Observe(sample, now);
             if (_noise.Complete)
             {
@@ -560,7 +567,7 @@ public partial class MainWindow : Window
 
         if (_sweep is not null && _sweepKind is { } sweepPedal)
         {
-            var now = DateTime.UtcNow;
+            var now = MeasurementNow;
             _sweep.Observe(sample, now);
             if (_sweep.Failed)
             {
@@ -684,7 +691,7 @@ public partial class MainWindow : Window
         }
         _sweepResults.Remove(kind);
         UpdateSweepDetails();
-        _sweepStartUtc = DateTime.UtcNow;
+        _sweepStartUtc = MeasurementNow;
         _sweep = new InputSweepRun(mapping.Axis, _device.Min[mapping.Axis], _device.Max[mapping.Axis],
             _sweepStartUtc, axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed
                 ? assumed[mapping.Axis] : null);
@@ -794,7 +801,7 @@ public partial class MainWindow : Window
             SignalText.Text = "Another WinMM measurement is in progress. Finish or cancel it before checking signal at rest.";
             return;
         }
-        _noise = new NoiseRun(durationSeconds: seconds);
+        _noise = new NoiseRun(startedUtc: MeasurementNow, durationSeconds: seconds);
         _lastNoise = null;
         _lastSignalHealth = null;
         CheckSignalButton.IsEnabled = false;
