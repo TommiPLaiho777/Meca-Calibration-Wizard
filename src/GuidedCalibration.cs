@@ -108,7 +108,14 @@ internal sealed class GuidedCalibration
 
     public void Observe(uint[] reading, DateTime utcNow)
     {
-        if (Phase is GuidePhase.Complete or GuidePhase.Failed || reading.Length != 6) return;
+        if (Phase is GuidePhase.Complete or GuidePhase.Failed) return;
+        // A malformed WinMM sample must invalidate guided capture, not be
+        // silently skipped and followed by an apparently complete pedal result.
+        if (reading is null || reading.Length != WinmmJoystick.AxisNames.Length)
+        {
+            Fail("WinMM guided sample has an invalid axis count. Release the pedal and retry capture.");
+            return;
+        }
         // Wall-clock adjustments and long WinMM polling stalls must not make a
         // short rest baseline or a pedal press appear to have elapsed normally.
         // Fail conservatively; no calibration is written to Windows or the device.
