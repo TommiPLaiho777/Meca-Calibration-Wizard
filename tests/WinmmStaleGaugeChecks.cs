@@ -58,5 +58,22 @@ internal static class WinmmStaleGaugeChecks
             if (!postDialog.Contains(expectedGate, StringComparison.Ordinal))
                 throw new Exception($"FAILED: post-dialog WinMM export gate missing: {expectedGate}");
         Console.WriteLine("PASS: report export rechecks WinMM session after save dialog (WPF source contract)");
+        
+        // Capture_Click makes a direct WinMM read outside Poll. A single
+        // impossible axis value must invalidate the session before any new
+        // GuidedCalibration is constructed, not wait for a later timer tick.
+        int captureStart = source.IndexOf("private void Capture_Click(", StringComparison.Ordinal);
+        int captureEnd = source.IndexOf("private void Poll(", captureStart, StringComparison.Ordinal);
+        if (captureStart < 0 || captureEnd <= captureStart)
+            throw new Exception("FAILED: direct WinMM capture handler not found");
+        string captureBody = source[captureStart..captureEnd];
+        int readIndex = captureBody.IndexOf("WinmmJoystick.TryRead(", StringComparison.Ordinal);
+        int boundsIndex = captureBody.IndexOf("WinmmJoystick.IsSampleWithinAxisBounds(", StringComparison.Ordinal);
+        int invalidIndex = captureBody.IndexOf("_winmmSessionInvalid = true;", StringComparison.Ordinal);
+        int beginIndex = captureBody.IndexOf("new GuidedCalibration(", StringComparison.Ordinal);
+        if (readIndex < 0 || boundsIndex <= readIndex ||
+            invalidIndex <= boundsIndex || beginIndex <= invalidIndex)
+            throw new Exception("FAILED: direct capture must reject out-of-range WinMM samples before starting calibration");
+        Console.WriteLine("PASS: direct capture invalidates out-of-range WinMM session (WPF source contract)");
     }
 }
