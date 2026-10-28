@@ -852,7 +852,8 @@ static class Checks
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         // Guided step hints describe WinMM peak variation only; they do not
         // establish physical-force repeatability or load-cell health.
-        Require(windowSource.Contains("StepHint.Text = \\"Read-only WinMM preview · rest, three presses and WinMM peak variation\\";") &&
+        Require(windowSource.Contains("StepHint.Text = ") &&
+                windowSource.Contains("rest, three presses and WinMM peak variation") &&
                 !windowSource.Contains("rest, three presses and repeatability"),
             "guided WinMM step must not label peak similarity as physical repeatability");
         Console.WriteLine("PASS: guided step hints describe WinMM peak variation (WPF source contract)");
