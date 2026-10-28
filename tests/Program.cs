@@ -848,6 +848,15 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // JSON compatibility: the legacy AtAxisLimit flag is a near-endpoint
+        // heuristic, not proof that an exact WinMM endpoint or sensor limit was hit.
+        // WPF source contract is checked here; Windows CI compiles the exporter.
+        Require(windowSource.Contains("NearWinmmLimitBandObserved = c.AtAxisLimit") &&
+                windowSource.Contains("WinmmLimitBandInterpretation =") &&
+                windowSource.Contains("within 0.2% of a reported or assumed WinMM axis endpoint") &&
+                windowSource.Contains("exact endpoint, sensor ADC clipping and physical force remain unverified"),
+            "WinMM JSON export must disclose near-limit heuristic without claiming sensor clipping");
+        Console.WriteLine("PASS: WinMM JSON near-limit provenance (WPF source contract)");
         // A live out-of-range WinMM sample is invalid, not merely suspect.
         // The GUI must offer a safe recapture path without changing Windows settings.
         Require(windowSource.Contains("WinMM reading outside the reported or assumed axis range. Session invalid") &&
