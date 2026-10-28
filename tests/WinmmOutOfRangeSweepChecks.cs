@@ -51,6 +51,27 @@ internal static class WinmmOutOfRangeSweepChecks
             valid.Result is not { AtLowLimitSamples: 1, AtHighLimitSamples: 1 })
             throw new Exception("FAILED: valid WinMM sweep endpoints were rejected");
 
+        // Malformed joyGetPosEx samples must fail immediately, not disappear
+        // from the live trace and permit a later apparently complete sweep.
+        foreach (uint[] malformed in new[]
+        {
+            Array.Empty<uint>(),
+            new uint[] { 100 },
+            new uint[] { 100, 0, 0, 0, 0, 0, 0 }
+        })
+        {
+            var partial = new InputSweepRun(0, 100, 1000, start);
+            partial.Observe(new uint[] { 100, 0, 0, 0, 0, 0 }, start);
+            partial.Observe(malformed, start.AddMilliseconds(40));
+            if (!partial.Failed || partial.Complete || partial.Result is not null ||
+                !partial.FailureReason.Contains("invalid axis count"))
+                throw new Exception("FAILED: malformed WinMM sweep sample was silently ignored");
+            partial.Observe(new uint[] { 1000, 0, 0, 0, 0, 0 }, start.AddSeconds(8));
+            if (!partial.Failed || partial.Result is not null)
+                throw new Exception("FAILED: invalid WinMM sweep recovered after malformed sample");
+        }
+        Console.WriteLine("PASS: malformed WinMM sweep samples fail closed (synthetic C#)");
+
         Console.WriteLine("PASS: WinMM out-of-range sweep samples fail closed (synthetic C#)");
     }
 }
