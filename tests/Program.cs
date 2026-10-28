@@ -850,6 +850,13 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // Guided step hints describe WinMM peak variation only; they do not
+        // establish physical-force repeatability or load-cell health.
+        Require(windowSource.Contains("StepHint.Text = \\"Read-only WinMM preview · rest, three presses and WinMM peak variation\\";") &&
+                !windowSource.Contains("rest, three presses and repeatability"),
+            "guided WinMM step must not label peak similarity as physical repeatability");
+        Console.WriteLine("PASS: guided step hints describe WinMM peak variation (WPF source contract)");
+
         // JSON compatibility: the legacy AtAxisLimit flag is a near-endpoint
         // heuristic, not proof that an exact WinMM endpoint or sensor limit was hit.
         // WPF source contract is checked here; Windows CI compiles the exporter.
