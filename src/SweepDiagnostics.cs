@@ -68,7 +68,17 @@ internal static class SweepDiagnostics
         int pressIndex = Array.FindIndex(values, x => x >= .80);
         bool startedNearRest = values[0] <= .03;
         bool endedNearRest = values[^1] <= .03;
-        bool strokeShapeComplete = startedNearRest && pressIndex > 0 && endedNearRest;
+        // A single final low WinMM sample may be a transient drop rather than
+        // evidence of a completed release. Require a descending three-sample
+        // return toward rest, including two near-rest samples spanning >=80 ms.
+        // This checks Windows signal shape, not physical pedal force.
+        bool releaseTailConfirmed = values.Length >= 3 &&
+            values[^3] <= .20 && values[^2] <= .10 && endedNearRest &&
+            values[^3] >= values[^2] - .025 &&
+            values[^2] >= values[^1] - .025 &&
+            trace[^1].TimeMs - trace[^3].TimeMs >= 80;
+        bool strokeShapeComplete = startedNearRest && pressIndex > 0 &&
+            endedNearRest && releaseTailConfirmed;
         // Imported/cached traces bypass the live eight-second capture gate.
         // A few milliseconds of plausible-looking values, or a large missing
         // interval, must not be reported as a complete physical pedal sweep.
@@ -153,6 +163,13 @@ internal static class SweepDiagnostics
         {
             status = "Multiple stroke reversals";
             explanation = "More than one substantial WinMM direction reversal was observed. Record one slow press, hold, and release; this is not a physical-force assessment.";
+        }
+        else if (startedNearRest && pressIndex > 0 && endedNearRest &&
+                 timingEvidenceSufficient && resolutionSufficient &&
+                 pressedHoldSufficient && !releaseTailConfirmed)
+        {
+            status = "Release not confirmed";
+            explanation = "A single final low WinMM reading cannot confirm release. Return toward rest earlier and hold briefly before the timer ends; physical pedal force remains unverified.";
         }
         else if (!complete)
         {
