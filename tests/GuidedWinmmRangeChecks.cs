@@ -202,6 +202,31 @@ internal static class GuidedWinmmRangeChecks
         }
         Console.WriteLine("PASS: verified WinMM press survives gradual release in both directions (synthetic C#)");
 
+        // A truncated or oversized WinMM reading must invalidate the entire
+        // guided capture, rather than silently dropping a sample and allowing
+        // later readings to complete a misleading pedal mapping.
+        foreach (int count in new[] { 0, 5, 7 })
+        {
+            var malformed = NewGuide();
+            malformed.Observe(new uint[count], start.AddMilliseconds(40));
+            malformed.Observe(new uint[] { 100, 0, 0, 0, 0, 0 },
+                start.AddMilliseconds(80));
+            if (malformed.Phase != GuidePhase.Failed || malformed.Result is not null ||
+                !malformed.FailureReason.Contains("invalid axis count"))
+                throw new Exception("FAILED: malformed guided WinMM sample was ignored");
+        }
+        var malformedAfterRest = NewGuide();
+        for (int i = 0; i <= 30; i++)
+            malformedAfterRest.Observe(new uint[] { 100, 0, 0, 0, 0, 0 },
+                start.AddMilliseconds(i * 40));
+        if (malformedAfterRest.Phase != GuidePhase.AwaitingPress)
+            throw new Exception("FAILED: malformed guided sample fixture rest phase");
+        malformedAfterRest.Observe(new uint[5], start.AddMilliseconds(1240));
+        if (malformedAfterRest.Phase != GuidePhase.Failed ||
+            malformedAfterRest.Result is not null)
+            throw new Exception("FAILED: truncated guided WinMM sample after rest was ignored");
+        Console.WriteLine("PASS: malformed guided WinMM axis counts fail closed (synthetic C#)");
+
         Console.WriteLine("PASS: guided WinMM out-of-range samples fail closed (synthetic C#)");
     }
 }
