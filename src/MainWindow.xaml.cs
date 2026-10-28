@@ -843,6 +843,19 @@ public partial class MainWindow : Window
             Title = "Export read-only diagnostics report"
         };
         if (save.ShowDialog(this) != true) return;
+        // A modal save dialog can pump WPF dispatcher messages. A WinMM poll
+        // may invalidate the capture session while the user chooses a path.
+        // Recheck immediately before creating/writing any report; never export
+        // measurements that became stale after the initial export gate.
+        if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory,
+                _winmmSessionInvalid,
+                _capture is not null || _noise is not null || _sweep is not null))
+        {
+            MessageBox.Show(this,
+                "Input changed while the save dialog was open. No report saved. If WinMM was interrupted, click Refresh and capture pedals again.",
+                "Export cancelled", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         try
         {
             // Validate optional HID metadata on both export paths, including
