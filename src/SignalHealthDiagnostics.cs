@@ -27,6 +27,8 @@ internal sealed record SignalHealthStats(
             "No WinMM samples received. Check the controller connection and repeat.",
         "Insufficient samples" =>
             "Too few or too widely spaced WinMM samples to assess rest stability. Keep pedals released and repeat.",
+        "Invalid WinMM sample" =>
+            "An incomplete or malformed six-axis WinMM sample interrupted this idle check. Discard the result and repeat; no device settings were changed.",
         "Invalid WinMM range" =>
             "WinMM readings fell outside the available axis bounds (reported or assumed). This idle check is invalid; refresh the controller and repeat without changing device settings.",
         _ => "WinMM variation alone cannot identify electrical interference."
