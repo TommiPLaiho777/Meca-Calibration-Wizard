@@ -222,11 +222,19 @@ internal sealed class GuidedCalibration
             }
             else if (displacement > releaseThreshold)
             {
-                // A middle-band interruption cannot extend a sustained hold.
-                _pressAboveThresholdSamples = 0;
-                _firstPressAboveUtc = default;
-                _lastPressAboveUtc = default;
-                _currentPeak = 0;
+                // A gradual, legitimate release crosses the band between the
+                // press and release thresholds. Keep an already verified hold
+                // through this band, but never let interrupted short high
+                // samples accumulate into a false press.
+                bool sustainedPress = _pressAboveThresholdSamples >= 3 &&
+                    (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100;
+                if (!sustainedPress)
+                {
+                    _pressAboveThresholdSamples = 0;
+                    _firstPressAboveUtc = default;
+                    _lastPressAboveUtc = default;
+                    _currentPeak = 0;
+                }
             }
             else
             {
