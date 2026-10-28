@@ -417,7 +417,7 @@ public partial class MainWindow : Window
             CaptureButton.IsEnabled = true;
             AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
             StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
-            CaptureFooter.Text = "WinMM read failed or an axis was out of range. Return to Connect, click Refresh, and capture pedals again.";
+            CaptureFooter.Text = "WinMM read failed or an axis was out of range. Return to Connect and click Refresh; capture pedals again.";
             return;
         }
         _raw = sample;
