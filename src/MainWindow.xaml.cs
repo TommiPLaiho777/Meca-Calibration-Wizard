@@ -889,7 +889,9 @@ public partial class MainWindow : Window
                         RestSampleCount = c.RestSamples,
                         RepeatabilityPeakSpreadPercent = c.RepeatabilitySpreadPercent,
                         Repeatability = c.RepeatabilityLabel,
-                        AtAxisLimit = c.AtAxisLimit,
+                        AtAxisLimit = c.AtAxisLimit, // legacy field: near-limit band, not necessarily an exact endpoint
+                        NearWinmmLimitBandObserved = c.AtAxisLimit,
+                        WinmmLimitBandInterpretation = "Two or more guided peaks within 0.2% of a reported or assumed WinMM axis endpoint; exact endpoint, sensor ADC clipping and physical force remain unverified.",
                         PeakSpreadInterpretation = c.PeakSpreadSummary,
                         PeakSpreadAffectedByWinmmLimit = c.AtAxisLimit
                     } : null
