@@ -60,8 +60,8 @@
                         </StackPanel>
                     </Grid>
                     <Border Background="{StaticResource BorderBrush}" Height="1" Margin="0,25,0,19"/>
-                    <TextBlock Text="SYSTEM SAFE" Foreground="#52D2AC" FontSize="12" FontWeight="Bold"/>
-                    <TextBlock Text="No driver or Windows calibration changes." Foreground="{StaticResource DimBrush}"
+                    <TextBlock Text="READ-ONLY PREVIEW" Foreground="#52D2AC" FontSize="12" FontWeight="Bold"/>
+                    <TextBlock Text="WinMM readings may reflect Windows calibration. This preview does not change drivers or Windows calibration settings." Foreground="{StaticResource DimBrush}"
                                FontSize="12" TextWrapping="Wrap" Margin="0,7,0,0"/>
                 </StackPanel>
             </Border>
