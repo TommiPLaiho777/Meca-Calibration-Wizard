@@ -58,6 +58,21 @@ internal static class WinmmStaleGaugeChecks
             if (!postDialog.Contains(expectedGate, StringComparison.Ordinal))
                 throw new Exception($"FAILED: post-dialog WinMM export gate missing: {expectedGate}");
         Console.WriteLine("PASS: report export rechecks WinMM session after save dialog (WPF source contract)");
+
+        // The timer might not have polled after the save dialog closed. A
+        // final direct read must precede serialization and invalidate the
+        // session if WinMM fails or any reported/assumed axis is out of range.
+        // This is a source contract, not a physical WinMM or WPF dialog test.
+        int freshRead = postDialog.IndexOf("WinmmJoystick.TryRead(exportDevice.Id", StringComparison.Ordinal);
+        int freshBounds = postDialog.IndexOf("WinmmJoystick.IsSampleWithinAxisBounds(exportDevice, exportSample)", StringComparison.Ordinal);
+        int invalidate = postDialog.IndexOf("_winmmSessionInvalid = true;", StringComparison.Ordinal);
+        int staleGauges = postDialog.IndexOf("MarkLiveReadingsUnavailable();", StringComparison.Ordinal);
+        if (!postDialog.Contains("if (_device is { } exportDevice &&", StringComparison.Ordinal) ||
+            freshRead < 0 || freshBounds <= freshRead ||
+            invalidate <= freshBounds || staleGauges <= invalidate ||
+            !postDialog.Contains("No report saved. Click Refresh and capture pedals again.", StringComparison.Ordinal))
+            throw new Exception("FAILED: JSON export must reject a failed fresh WinMM read before writing");
+        Console.WriteLine("PASS: JSON export requires fresh WinMM read and valid axis bounds (WPF source contract)");
         
         // Capture_Click makes a direct WinMM read outside Poll. A single
         // impossible axis value must invalidate the session before any new
