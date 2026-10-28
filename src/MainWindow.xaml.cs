@@ -396,9 +396,10 @@ public partial class MainWindow : Window
             CaptureFooter.Text = "Another WinMM measurement is in progress. Finish or cancel it before capturing a pedal.";
             return;
         }
-        if (!WinmmJoystick.TryRead(_device.Id, out var sample))
+        if (!WinmmJoystick.TryRead(_device.Id, out var sample) ||
+            !WinmmJoystick.IsSampleWithinAxisBounds(_device, sample))
         {
-            // A failed direct capture read must invalidate the session immediately,
+            // A failed or out-of-range direct capture read must invalidate the session immediately,
             // even before the next timer Poll. Never export earlier measurements
             // under a potentially replaced controller with the same WinMM ID.
             _winmmSessionInvalid = true;
@@ -416,7 +417,7 @@ public partial class MainWindow : Window
             CaptureButton.IsEnabled = true;
             AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
             StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
-            CaptureFooter.Text = "WinMM read failed. Return to Connect and click Refresh; capture pedals again.";
+            CaptureFooter.Text = "WinMM read failed or an axis was out of range. Return to Connect, click Refresh, and capture pedals again.";
             return;
         }
         _raw = sample;
