@@ -148,7 +148,10 @@ internal static class SweepDiagnostics
             status = "Insufficient signal steps";
             explanation = "Too few distinct Windows WinMM values were observed to validate a press and release. Try a slower sweep; sensor resolution and pedal force remain unverified.";
         }
-        else if (strokeShapeComplete && !timingEvidenceSufficient)
+        // Timing failures take precedence even when the final release tail
+        // is too short to confirm; a millisecond-fast trace is not a valid sweep.
+        else if (startedNearRest && pressIndex > 0 && endedNearRest &&
+                 !timingEvidenceSufficient)
         {
             status = "Insufficient sweep timing";
             explanation = "The WinMM trace is too short or contains a sampling gap over 0.5 seconds. Record a continuous eight-second sweep.";
