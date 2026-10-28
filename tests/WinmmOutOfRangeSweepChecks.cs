@@ -53,8 +53,9 @@ internal static class WinmmOutOfRangeSweepChecks
 
         // Malformed joyGetPosEx samples must fail immediately, not disappear
         // from the live trace and permit a later apparently complete sweep.
-        foreach (uint[] malformed in new[]
+        foreach (uint[]? malformed in new uint[]?[]
         {
+            null,
             Array.Empty<uint>(),
             new uint[] { 100 },
             new uint[] { 100, 0, 0, 0, 0, 0, 0 }
@@ -70,7 +71,7 @@ internal static class WinmmOutOfRangeSweepChecks
             if (!partial.Failed || partial.Result is not null)
                 throw new Exception("FAILED: invalid WinMM sweep recovered after malformed sample");
         }
-        Console.WriteLine("PASS: malformed WinMM sweep samples fail closed (synthetic C#)");
+        Console.WriteLine("PASS: null and malformed WinMM sweep samples fail closed (synthetic C#)");
 
         Console.WriteLine("PASS: WinMM out-of-range sweep samples fail closed (synthetic C#)");
     }
