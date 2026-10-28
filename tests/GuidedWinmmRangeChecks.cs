@@ -160,6 +160,48 @@ internal static class GuidedWinmmRangeChecks
         }
         Console.WriteLine("PASS: one-sample release dropouts ignored; stable releases accepted in both directions (synthetic C#)");
 
+        // A normal gradual release passes through the middle band between
+        // 5% press and 1.5% release thresholds. Once a sustained press has
+        // been verified, this transition must not discard its peak.
+        // Check both WinMM polarities without opening a physical controller.
+        foreach (bool inverted in new[] { false, true })
+        {
+            var gradualStart = new DateTime(2026, 10, 28, 8, 0, 0, DateTimeKind.Utc);
+            var gradualDevice = new WinmmJoystick.Device(
+                0, "Synthetic gradual-release controller", new uint[6],
+                Enumerable.Repeat(65535u, 6).ToArray());
+            var gradualGuide = new GuidedCalibration(PedalKind.Brake, gradualDevice,
+                Array.Empty<int>(), gradualStart);
+            uint rest = inverted ? 65535u : 0u;
+            uint pressed = inverted ? 15535u : 50000u;
+            uint middle = inverted ? 63535u : 2000u;
+            int elapsedMs = 0;
+            void FeedGradual(uint x)
+            {
+                elapsedMs += 40;
+                gradualGuide.Observe(new uint[] { x, 0, 0, 0, 0, 0 },
+                    gradualStart.AddMilliseconds(elapsedMs));
+            }
+            for (int i = 0; i < 32; i++) FeedGradual(rest);
+            if (gradualGuide.Phase != GuidePhase.AwaitingPress)
+                throw new Exception("FAILED: gradual release fixture rest phase");
+            for (int stroke = 0; stroke < 3; stroke++)
+            {
+                for (int i = 0; i < 4; i++) FeedGradual(pressed);
+                FeedGradual(middle);
+                FeedGradual(middle);
+                for (int i = 0; i < 3; i++) FeedGradual(rest);
+                if (gradualGuide.PressesCompleted != stroke + 1)
+                    throw new Exception("FAILED: verified WinMM hold lost during gradual release");
+            }
+            if (gradualGuide.Phase != GuidePhase.Complete ||
+                gradualGuide.Result is not { PeakInputs.Length: 3 } gradualResult ||
+                gradualResult.PeakInputs.Any(p => p != pressed) ||
+                (gradualResult.Mapping.Full < gradualResult.Mapping.Rest) != inverted)
+                throw new Exception("FAILED: gradual WinMM release changed peak or axis polarity");
+        }
+        Console.WriteLine("PASS: verified WinMM press survives gradual release in both directions (synthetic C#)");
+
         Console.WriteLine("PASS: guided WinMM out-of-range samples fail closed (synthetic C#)");
     }
 }
