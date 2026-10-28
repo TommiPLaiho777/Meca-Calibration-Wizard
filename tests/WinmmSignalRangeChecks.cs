@@ -55,6 +55,31 @@ internal static class WinmmSignalRangeChecks
             rollbackOnly.Guidance.Contains("outside the available axis bounds"))
             throw new Exception("FAILED: timestamp-only WinMM fault guidance changed");
 
+        // The central read-only WinMM boundary must fail closed even when
+        // a future caller passes a missing sample or malformed capabilities.
+        // No WinMM API or hardware is invoked by these synthetic checks.
+        var min = Enumerable.Repeat(100u, 6).ToArray();
+        var max = Enumerable.Repeat(1000u, 6).ToArray();
+        var normalDevice = new WinmmJoystick.Device(0, "synthetic", min, max);
+        var normalSample = Enumerable.Repeat(500u, 6).ToArray();
+        if (!WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, normalSample) ||
+            !WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, Enumerable.Repeat(100u, 6).ToArray()) ||
+            !WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, Enumerable.Repeat(1000u, 6).ToArray()))
+            throw new Exception("FAILED: legal WinMM samples rejected");
+
+        if (WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, null) ||
+            WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, new uint[5]) ||
+            WinmmJoystick.IsSampleWithinAxisBounds(normalDevice, new uint[7]))
+            throw new Exception("FAILED: missing or malformed WinMM sample accepted");
+
+        var flatMin = (uint[])min.Clone();
+        var flatMax = (uint[])max.Clone();
+        flatMin[3] = flatMax[3] = 500;
+        var flatDevice = new WinmmJoystick.Device(0, "synthetic-flat-axis", flatMin, flatMax);
+        if (WinmmJoystick.IsSampleWithinAxisBounds(flatDevice, normalSample))
+            throw new Exception("FAILED: zero-width WinMM capability range accepted");
+
+        Console.WriteLine("PASS: WinMM sample/capability boundary rejects malformed inputs (synthetic C#)");
         Console.WriteLine("PASS: combined WinMM range/timing faults both explained (synthetic C#)");
         Console.WriteLine("PASS: out-of-range WinMM idle traces flagged invalid (synthetic C#)");
     }
