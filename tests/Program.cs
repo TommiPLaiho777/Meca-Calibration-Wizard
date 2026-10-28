@@ -824,8 +824,10 @@ static class Checks
         // Setup copy must not imply that WinMM peak similarity measures
         // native load-cell force or physically verified repeatability.
         Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
-                    ((string?)e.Attribute("Text"))?.Contains("compares reported pedal peaks") == true &&
-                    ((string?)e.Attribute("Text"))?.Contains("Physical force is not measured") == true) &&
+                    ((string?)e.Attribute("Text"))?.Contains("compares Windows-reported pedal peaks") == true &&
+                    ((string?)e.Attribute("Text"))?.Contains("Physical force is not measured") == true &&
+                    ((string?)e.Attribute("Text"))?.Contains("No controller or Windows calibration settings are changed") == true &&
+                    ((string?)e.Attribute("Text"))?.Contains("JSON export is optional") == true) &&
                 !xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
                     ((string?)e.Attribute("Text"))?.Contains("measures repeatability") == true),
             "setup must label WinMM peak comparisons without claiming physical force repeatability");
