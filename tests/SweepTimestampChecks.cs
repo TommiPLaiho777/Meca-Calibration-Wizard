@@ -170,6 +170,46 @@ internal static class SweepTimestampChecks
         if (!heldAssessment.CompletePressAndRelease ||
             heldAssessment.Status != "Limited intermediate steps")
             throw new Exception("FAILED: sustained WinMM press/release was rejected");
+        // A plausible eight-second press with a single final low sample is
+        // not a confirmed release. Verify both WinMM axis polarities without
+        // accessing any joystick, HID device, or physical pedal.
+        var finalDrop = Enumerable.Range(0, 41)
+            .Select(i => new SweepPoint(i * 200L,
+                i < 8 ? (uint)(i * 8192) : i == 40 ? 0u : 65535u))
+            .ToArray();
+        var finalDropInverted = finalDrop
+            .Select(p => p with { WinmmValue = 65535u - p.WinmmValue })
+            .ToArray();
+        foreach (var candidate in new[]
+        {
+            SweepDiagnostics.Evaluate(finalDrop, 0, 65535),
+            SweepDiagnostics.Evaluate(finalDropInverted, 0, 65535, inverted: true)
+        })
+        {
+            if (candidate.CompletePressAndRelease ||
+                candidate.Status != "Release not confirmed" ||
+                !candidate.Explanation.Contains("single final low WinMM reading"))
+                throw new Exception("FAILED: one-sample WinMM release drop was accepted");
+        }
+        var settledTail = finalDrop.Select((p, i) => i switch
+        {
+            38 => p with { WinmmValue = 11000u },
+            39 => p with { WinmmValue = 5000u },
+            _ => p
+        }).ToArray();
+        foreach (var candidate in new[]
+        {
+            SweepDiagnostics.Evaluate(settledTail, 0, 65535),
+            SweepDiagnostics.Evaluate(settledTail.Select(p =>
+                p with { WinmmValue = 65535u - p.WinmmValue }).ToArray(),
+                0, 65535, inverted: true)
+        })
+        {
+            if (!candidate.CompletePressAndRelease)
+                throw new Exception("FAILED: valid three-sample WinMM release tail was rejected");
+        }
+        Console.WriteLine("PASS: final WinMM release tail needs multiple samples in both polarities (synthetic C#)");
+
         Console.WriteLine("PASS: sustained WinMM press required; isolated spikes rejected (synthetic C#)");
 
         Console.WriteLine("PASS: imported WinMM sweep timing rejects rollback, duplicate, and negative timestamps (synthetic C#)");
