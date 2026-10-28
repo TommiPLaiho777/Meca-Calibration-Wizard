@@ -288,7 +288,7 @@ public partial class MainWindow : Window
             ThrottleIcon.Visibility = kind == PedalKind.Throttle ? Visibility.Visible : Visibility.Collapsed;
             ClutchIcon.Visibility = kind == PedalKind.Clutch ? Visibility.Visible : Visibility.Collapsed;
             StepLabel.Text = info.Item1;
-            StepHint.Text = "Read-only WinMM preview · rest, three presses and repeatability";
+            StepHint.Text = "Read-only WinMM preview · rest, three presses and WinMM peak variation";
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
                 ? "3 / 3 presses" : "0 / 3 presses";
             CaptureQualityText.Text = current is null ? "" :
