@@ -34,5 +34,29 @@ internal static class WinmmStaleGaugeChecks
                 throw new Exception($"FAILED: stale WinMM gauge not reset: {expected}");
 
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
+
+        // WPF SaveFileDialog is modal but may pump dispatcher messages. A failed
+        // WinMM poll while it is open must block the report, even though the
+        // initial export gate was satisfied. No WPF dialog or pedal is opened here.
+        int exportStart = source.IndexOf("private void Export_Click(", StringComparison.Ordinal);
+        int dialogIndex = source.IndexOf("if (save.ShowDialog(this) != true) return;",
+            exportStart, StringComparison.Ordinal);
+        int secondGate = source.IndexOf("if (!ReadOnlyHidReport.CanExport(",
+            dialogIndex, StringComparison.Ordinal);
+        int fileWrite = source.IndexOf("File.WriteAllText(save.FileName",
+            dialogIndex, StringComparison.Ordinal);
+        if (exportStart < 0 || dialogIndex < 0 || secondGate <= dialogIndex ||
+            fileWrite <= secondGate)
+            throw new Exception("FAILED: missing post-dialog WinMM export gate");
+        string postDialog = source[secondGate..fileWrite];
+        foreach (string expectedGate in new[]
+        {
+            "_winmmSessionInvalid",
+            "_capture is not null || _noise is not null || _sweep is not null",
+            "No report saved."
+        })
+            if (!postDialog.Contains(expectedGate, StringComparison.Ordinal))
+                throw new Exception($"FAILED: post-dialog WinMM export gate missing: {expectedGate}");
+        Console.WriteLine("PASS: report export rechecks WinMM session after save dialog (WPF source contract)");
     }
 }
