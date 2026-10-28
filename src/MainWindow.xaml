@@ -92,7 +92,7 @@
                                 <TextBlock Text="HOW IT WORKS" Foreground="#85E4CF" FontSize="11" FontWeight="Bold"/>
                                 <TextBlock Text="1. Release  →  2. Press ×3  →  3. Test" Margin="0,8,0,0"
                                            FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
-                                <TextBlock Text="The wizard identifies a WinMM axis and compares reported pedal peaks. Physical force is not measured; no settings are saved."
+                                <TextBlock Text="The wizard maps WinMM axes and compares Windows-reported pedal peaks. Physical force is not measured. No controller or Windows calibration settings are changed; JSON export is optional."
                                            Foreground="{StaticResource DimBrush}" Margin="0,7,0,0" FontSize="12" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
