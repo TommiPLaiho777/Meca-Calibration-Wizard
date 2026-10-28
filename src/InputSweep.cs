@@ -68,13 +68,13 @@ internal sealed class InputSweepRun
         _startUtc = startUtc ?? DateTime.UtcNow;
     }
 
-    public void Observe(uint[] reading, DateTime utcNow)
+    public void Observe(uint[]? reading, DateTime utcNow)
     {
         if (Complete || Failed) return;
         // A WinMM joyGetPosEx sample must contain exactly six axes. Silently
         // ignoring a truncated sample would leave a live sweep in progress and
         // could let later readings complete a misleading partial trace.
-        if (reading.Length != WinmmJoystick.AxisNames.Length)
+        if (reading is null || reading.Length != WinmmJoystick.AxisNames.Length)
         {
             Failed = true;
             FailureReason = "WinMM sweep sample has an invalid axis count. Release the pedal and retry.";
