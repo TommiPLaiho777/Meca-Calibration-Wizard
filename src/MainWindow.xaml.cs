@@ -857,6 +857,24 @@ public partial class MainWindow : Window
                 "Export cancelled", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        // The dispatcher timer may not have polled since the save dialog
+        // closed. Re-read the selected WinMM controller before serializing:
+        // a cached valid session flag alone is not fresh input evidence.
+        // This is a read-only check; it cannot establish physical USB identity.
+        if (_device is { } exportDevice &&
+            (!WinmmJoystick.TryRead(exportDevice.Id, out var exportSample) ||
+             !WinmmJoystick.IsSampleWithinAxisBounds(exportDevice, exportSample)))
+        {
+            _winmmSessionInvalid = true;
+            _raw = Array.Empty<uint>();
+            MarkLiveReadingsUnavailable();
+            AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
+            StatusText.Text = "WinMM export check failed · return to Connect and click Refresh";
+            MessageBox.Show(this,
+                "WinMM input failed its final read-only check. No report saved. Click Refresh and capture pedals again.",
+                "Export cancelled", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         try
         {
             // Validate optional HID metadata on both export paths, including
