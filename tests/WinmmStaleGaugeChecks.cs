@@ -35,6 +35,36 @@ internal static class WinmmStaleGaugeChecks
 
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
 
+        // After a failed WinMM poll, a refresh must not silently reselect a
+        // reused joystick ID. This checks the WPF source contract only; no
+        // controller, WPF window, or physical pedal is exercised here.
+        int refreshStart = source.IndexOf(
+            "private void RefreshDevices(bool requireExplicitSelection = false)",
+            StringComparison.Ordinal);
+        int refreshClick = source.IndexOf("private void Refresh_Click(",
+            StringComparison.Ordinal);
+        int selectionChanged = source.IndexOf("private void DeviceCombo_SelectionChanged(",
+            StringComparison.Ordinal);
+        if (refreshStart < 0 || refreshClick <= refreshStart ||
+            selectionChanged <= refreshClick)
+            throw new Exception("FAILED: explicit WinMM refresh handlers not found");
+        string refreshBody = source[refreshStart..refreshClick];
+        string refreshClickBody = source[refreshClick..selectionChanged];
+        if (!refreshBody.Contains(
+                "requireExplicitSelection\n            ? null : WinmmJoystick.SelectSuggestedDevice(devices, previousId);",
+                StringComparison.Ordinal) ||
+            !refreshClickBody.Contains(
+                "bool requireExplicitSelection = _winmmSessionInvalid;",
+                StringComparison.Ordinal) ||
+            !refreshClickBody.Contains(
+                "RefreshDevices(requireExplicitSelection);",
+                StringComparison.Ordinal) ||
+            !refreshClickBody.Contains(
+                "select controller explicitly, then capture pedals again",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: interrupted WinMM session must require explicit controller reselection");
+        Console.WriteLine("PASS: interrupted WinMM session requires manual controller reselection (WPF source contract)");
+
         // WPF SaveFileDialog is modal but may pump dispatcher messages. A failed
         // WinMM poll while it is open must block the report, even though the
         // initial export gate was satisfied. No WPF dialog or pedal is opened here.
