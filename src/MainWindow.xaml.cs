@@ -847,15 +847,6 @@ public partial class MainWindow : Window
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        if (ReadOnlyHidReport.IsControllerOnlyExport(
-                _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
-                (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory) &&
-            MessageBox.Show(this,
-                "No pedal measurements or successful HID inventory are included. This report contains WinMM controller details and may include a failed HID scan status. Continue exporting?",
-                "Controller-only report", MessageBoxButton.YesNo,
-                MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
-            return;
-
         var save = new SaveFileDialog
         {
             Filter = "JSON report (*.json)|*.json",
@@ -875,6 +866,31 @@ public partial class MainWindow : Window
                 "Input changed while the save dialog was open. No report saved. If WinMM was interrupted, click Refresh and capture pedals again.",
                 "Export cancelled", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
+        }
+        // Re-evaluate controller-only consent AFTER the modal save dialog:
+        // Refresh or a device change can clear captured pedal data while the
+        // dialog pumps WPF events. Never silently export an unconfirmed
+        // controller-only report just because the initial state had measurements.
+        if (ReadOnlyHidReport.IsControllerOnlyExport(
+                _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
+                (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory))
+        {
+            if (MessageBox.Show(this,
+                    "No pedal measurements or successful HID inventory are included. This report contains WinMM controller details and may include a failed HID scan status. Continue exporting?",
+                    "Controller-only report", MessageBoxButton.YesNo,
+                    MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
+                return;
+            // The confirmation dialog can also pump dispatcher messages.
+            // Check session validity again before the final direct WinMM read.
+            if (!ReadOnlyHidReport.CanExport(_device is not null, _hidInventory,
+                    _winmmSessionInvalid,
+                    _capture is not null || _noise is not null || _sweep is not null))
+            {
+                MessageBox.Show(this,
+                    "Input changed during confirmation. No report saved.",
+                    "Export cancelled", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
         }
         // The dispatcher timer may not have polled since the save dialog
         // closed. Re-read the selected WinMM controller before serializing:
