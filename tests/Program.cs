@@ -817,6 +817,12 @@ static class Checks
         // Inspect UI markup without requiring a Windows desktop or physical pedals.
         // The Windows CI job also compiles the real WPF application.
         var xaml = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        // Read-only WinMM display is quantized/processed: the live bar cannot diagnose sensor faults.
+        Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
+                ((string?)e.Attribute("Text"))?.Contains(
+                    "Visible steps or deadzones may reflect Windows input processing, not a sensor fault.") == true),
+            "live WinMM test guidance must not equate displayed steps with physical sensor faults");
+        Console.WriteLine("PASS: WinMM live-bar guidance avoids unsupported sensor fault claims (XAML source contract)");
         var advanced = xaml.Descendants().Single(e => e.Name.LocalName == "StackPanel" &&
             e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "AdvancedView"));
         var exportButton = advanced.Descendants().Single(e => e.Name.LocalName == "Button" &&
