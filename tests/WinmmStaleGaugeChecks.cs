@@ -65,6 +65,18 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: interrupted WinMM session must require explicit controller reselection");
         Console.WriteLine("PASS: interrupted WinMM session requires manual controller reselection (WPF source contract)");
 
+        // Selecting another controller from the old combo-box list does not
+        // prove a new scan took place. The interruption flag must survive that
+        // event until Refresh_Click starts a new read-only session.
+        int selectionEnd = source.IndexOf("private void ClutchCheck_Changed(", selectionChanged,
+            StringComparison.Ordinal);
+        if (selectionEnd <= selectionChanged ||
+            source[selectionChanged..selectionEnd].Contains(
+                "_winmmSessionInvalid = false;", StringComparison.Ordinal) ||
+            !refreshClickBody.Contains("_winmmSessionInvalid = false;", StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM selection must not bypass required refresh");
+        Console.WriteLine("PASS: stale combo-box selection cannot bypass WinMM refresh (WPF source contract)");
+
         // WPF SaveFileDialog is modal but may pump dispatcher messages. A failed
         // WinMM poll while it is open must block the report, even though the
         // initial export gate was satisfied. No WPF dialog or pedal is opened here.
