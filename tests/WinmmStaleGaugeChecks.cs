@@ -90,5 +90,31 @@ internal static class WinmmStaleGaugeChecks
             invalidIndex <= boundsIndex || beginIndex <= invalidIndex)
             throw new Exception("FAILED: direct capture must reject out-of-range WinMM samples before starting calibration");
         Console.WriteLine("PASS: direct capture invalidates out-of-range WinMM session (WPF source contract)");
+
+        // Changing the optional clutch selection while an idle WinMM check
+        // is active must cancel it before Poll can publish a mixed-session
+        // result. This is a source-level regression, not a WPF/pedal test.
+        int clutchStart = source.IndexOf("private void ClutchCheck_Changed(", StringComparison.Ordinal);
+        int clutchEnd = source.IndexOf("private void UpdateMappingLabels(", clutchStart, StringComparison.Ordinal);
+        if (clutchStart < 0 || clutchEnd <= clutchStart)
+            throw new Exception("FAILED: optional clutch handler not found");
+        string clutchBody = source[clutchStart..clutchEnd];
+        int cancelStart = clutchBody.IndexOf("if (_noise is not null)", StringComparison.Ordinal);
+        int disabledBranch = clutchBody.IndexOf("if (ClutchCheck.IsChecked != true)", StringComparison.Ordinal);
+        if (cancelStart < 0 || disabledBranch <= cancelStart)
+            throw new Exception("FAILED: clutch selection must cancel an active idle check on enable or disable");
+        string cancellation = clutchBody[cancelStart..disabledBranch];
+        foreach (string expected in new[]
+        {
+            "_noise = null;",
+            "CheckSignalButton.IsEnabled = true;",
+            "LongSignalButton.IsEnabled = true;",
+            "_lastNoise = null;",
+            "_lastSignalHealth = null;",
+            "signal check cancelled"
+        })
+            if (!cancellation.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: optional clutch idle-check cancellation missing: {expected}");
+        Console.WriteLine("PASS: clutch selection cancels in-flight WinMM idle check (WPF source contract)");
     }
 }
