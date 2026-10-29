@@ -701,6 +701,19 @@ static class Checks
         Require(Device.ManufacturerId is null && Device.ProductId is null &&
                 Device.WinmmIdsSummary.Contains("unavailable"),
             "missing WinMM capabilities must not invent hardware identifiers");
+        // Capability fallback limits must remain visibly distinguishable from
+        // actual WinMM driver-reported ranges. Neither proves sensor ADC limits.
+        var fallbackCaps = new WinmmJoystick.Device(4, "Synthetic fallback",
+            new uint[6], Enumerable.Repeat(65535u, 6).ToArray(),
+            0x1234, 0x5678, new[] { false, true, false, false, false, true });
+        Require(fallbackCaps.WinmmIdsSummary.Contains("not verified USB VID/PID") &&
+                fallbackCaps.WinmmIdsSummary.Contains("assumed WinMM axis range 0–65535") &&
+                fallbackCaps.WinmmIdsSummary.EndsWith(": Y, V"),
+            "only fallback WinMM axes must be named as assumed, not driver-reported");
+        var reportedCaps = fallbackCaps with { AssumedAxisRanges = new bool[6] };
+        Require(!reportedCaps.WinmmIdsSummary.Contains("assumed WinMM axis range"),
+            "fully reported WinMM capability ranges must not be labelled fallback");
+        Console.WriteLine("PASS: WinMM capability fallback provenance (synthetic C#)");
         Console.WriteLine("PASS: WinMM capability ID provenance");
 
         // Real Windows HID paths can include private instance/serial information.
