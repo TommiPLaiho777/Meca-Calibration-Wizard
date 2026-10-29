@@ -170,5 +170,23 @@ internal static class WinmmStaleGaugeChecks
             if (!cancellation.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: optional clutch idle-check cancellation missing: {expected}");
         Console.WriteLine("PASS: clutch selection cancels in-flight WinMM idle check (WPF source contract)");
+
+        // A failed guided recapture leaves the earlier WinMM preview in the
+        // same session. Tell the user explicitly that the old result was NOT
+        // replaced; this source contract does not exercise WPF or a pedal.
+        int failedRecapture = source.IndexOf(
+            "CaptureQualityText.Text = \"Measurement not saved · Retry\";",
+            StringComparison.Ordinal);
+        int retainedWarning = source.IndexOf(
+            "Previous WinMM preview retained (not remeasured); retry to replace it.",
+            failedRecapture, StringComparison.Ordinal);
+        int nextHandler = source.IndexOf(
+            "private double GetPercent(", failedRecapture, StringComparison.Ordinal);
+        if (failedRecapture < 0 || retainedWarning <= failedRecapture ||
+            nextHandler <= retainedWarning ||
+            !source[failedRecapture..retainedWarning].Contains(
+                "_mappings.ContainsKey(guide.Kind)", StringComparison.Ordinal))
+            throw new Exception("FAILED: failed guided recapture must disclose retained prior WinMM preview");
+        Console.WriteLine("PASS: failed guided recapture discloses retained prior WinMM preview (WPF source contract)");
     }
 }
