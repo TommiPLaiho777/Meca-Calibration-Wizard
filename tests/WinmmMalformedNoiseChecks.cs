@@ -34,6 +34,20 @@ internal static class WinmmMalformedNoiseChecks
                 throw new Exception("FAILED: rejected idle check resumed after malformed sample");
         }
 
+        // A missing very first WinMM sample must also fail closed. There is
+        // no baseline to preserve, and a later valid reading must not turn
+        // this interrupted capture into an exportable idle check.
+        var missingFirst = new NoiseRun(start);
+        missingFirst.Observe(null, start);
+        var missingFirstStats = missingFirst.Analyze(0, 0, 65535);
+        if (!missingFirst.Complete || missingFirstStats.SampleCount != 0 ||
+            missingFirstStats.Status != "Invalid WinMM sample" ||
+            !missingFirstStats.Guidance.Contains("malformed", StringComparison.OrdinalIgnoreCase))
+            throw new Exception("FAILED: missing first WinMM idle sample was not rejected");
+        missingFirst.Observe(new uint[6], start.AddSeconds(3));
+        if (missingFirst.Analyze(0, 0, 65535).SampleCount != 0)
+            throw new Exception("FAILED: missing-first-sample idle check resumed");
+
         var valid = new NoiseRun(start);
         for (int i = 0; i <= 75; i++)
             valid.Observe(new uint[6], start.AddMilliseconds(i * 40));
