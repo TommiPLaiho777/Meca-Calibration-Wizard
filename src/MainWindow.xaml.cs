@@ -851,7 +851,7 @@ public partial class MainWindow : Window
                 _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
                 (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory) &&
             MessageBox.Show(this,
-                "No pedal measurements or HID scan are included. This report will contain only the selected WinMM controller details. Continue exporting?",
+                "No pedal measurements or successful HID inventory are included. This report contains WinMM controller details and may include a failed HID scan status. Continue exporting?",
                 "Controller-only report", MessageBoxButton.YesNo,
                 MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
             return;
