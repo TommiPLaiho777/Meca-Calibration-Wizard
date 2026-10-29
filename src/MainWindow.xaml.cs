@@ -851,7 +851,7 @@ public partial class MainWindow : Window
         // contain only controller details. Re-check after the modal dialog too:
         // captured data can be cleared while it pumps WPF dispatcher events.
         bool controllerOnlyConsentGiven = false;
-        if (!controllerOnlyConsentGiven && ReadOnlyHidReport.IsControllerOnlyExport(
+        if (ReadOnlyHidReport.IsControllerOnlyExport(
                 _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
                 (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory))
         {
@@ -887,7 +887,7 @@ public partial class MainWindow : Window
         // Refresh or a device change can clear captured pedal data while the
         // dialog pumps WPF events. Never silently export an unconfirmed
         // controller-only report just because the initial state had measurements.
-        if (ReadOnlyHidReport.IsControllerOnlyExport(
+        if (!controllerOnlyConsentGiven && ReadOnlyHidReport.IsControllerOnlyExport(
                 _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
                 (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory))
         {
