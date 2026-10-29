@@ -63,13 +63,17 @@ internal static class WinmmStaleGaugeChecks
         // controller-only (e.g. Refresh clears the captured mappings). Consent
         // must therefore be requested AFTER choosing the file path, not based
         // only on the pre-dialog snapshot. This is a source-order contract.
-        int controllerOnlyConsent = source.IndexOf(
+        int earlyConsent = source.IndexOf(
             "if (ReadOnlyHidReport.IsControllerOnlyExport(", exportStart, StringComparison.Ordinal);
+        int controllerOnlyConsent = source.IndexOf(
+            "if (!controllerOnlyConsentGiven && ReadOnlyHidReport.IsControllerOnlyExport(",
+            dialogIndex, StringComparison.Ordinal);
         int finalDirectRead = source.IndexOf(
             "WinmmJoystick.TryRead(exportDevice.Id", dialogIndex, StringComparison.Ordinal);
         int postConsentGate = source.IndexOf(
             "if (!ReadOnlyHidReport.CanExport(", controllerOnlyConsent, StringComparison.Ordinal);
-        if (controllerOnlyConsent <= dialogIndex ||
+        if (earlyConsent <= exportStart || earlyConsent >= dialogIndex ||
+            controllerOnlyConsent <= dialogIndex ||
             finalDirectRead <= controllerOnlyConsent ||
             postConsentGate <= controllerOnlyConsent || postConsentGate >= finalDirectRead ||
             !source[controllerOnlyConsent..postConsentGate].Contains(
@@ -77,7 +81,7 @@ internal static class WinmmStaleGaugeChecks
             !source[postConsentGate..finalDirectRead].Contains(
                 "Input changed during confirmation. No report saved.", StringComparison.Ordinal))
             throw new Exception("FAILED: controller-only consent must be fresh after SaveFileDialog and session rechecked");
-        Console.WriteLine("PASS: controller-only export consent follows save dialog with post-consent gate (WPF source contract)");
+        Console.WriteLine("PASS: early controller-only consent and post-dialog recheck (WPF source contract)");
 
         // The timer might not have polled after the save dialog closed. A
         // final direct read must precede serialization and invalidate the
