@@ -893,6 +893,19 @@ static class Checks
                 !windowSource.Contains("devices.FirstOrDefault(x => x.Name.Contains(\"MECA\""),
             "WPF refresh must use ambiguity-safe WinMM controller suggestion");
         Console.WriteLine("PASS: WPF refresh uses ambiguity-safe WinMM suggestion (source contract)");
+        // WinMM idle diagnostics must expose sample count, median and largest
+        // Windows-reported step in the GUI; these are not raw ADC or EMI proof.
+        int formatNoiseStart = windowSource.IndexOf("private string FormatNoise(", StringComparison.Ordinal);
+        int formatNoiseEnd = windowSource.IndexOf("private void Export_Click(", formatNoiseStart, StringComparison.Ordinal);
+        Require(formatNoiseStart >= 0 && formatNoiseEnd > formatNoiseStart,
+            "WinMM idle diagnostics formatter must exist");
+        string formatNoiseSource = windowSource[formatNoiseStart..formatNoiseEnd];
+        Require(formatNoiseSource.Contains("n={x.Value.SampleCount}") &&
+                formatNoiseSource.Contains("median {x.Value.MedianWinmm:0.#}") &&
+                formatNoiseSource.Contains("max step {x.Value.LargestStepWinmm}") &&
+                formatNoiseSource.Contains("x.Value.SamplingRateHz:0.0"),
+            "idle WinMM GUI must show count, median, largest step and polling rate");
+        Console.WriteLine("PASS: WinMM idle signal statistics visible in GUI (WPF source contract)");
         // Guided step hints describe WinMM peak variation only; they do not
         // establish physical-force repeatability or load-cell health.
         Require(windowSource.Contains("StepHint.Text = ") &&
