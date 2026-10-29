@@ -134,7 +134,8 @@ public partial class MainWindow : Window
         var next = DeviceCombo.SelectedItem as WinmmJoystick.Device;
         if (next?.Id != _device?.Id)
         {
-            _winmmSessionInvalid = false; // deliberate selection begins a fresh session
+            // Selecting an item from the pre-refresh list is not a fresh device scan.
+            // Only Refresh_Click may clear an interrupted WinMM session.
             _device = next;
             _raw = Array.Empty<uint>();
             _capture = null;
