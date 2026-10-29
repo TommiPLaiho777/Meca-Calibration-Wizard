@@ -164,6 +164,16 @@ public partial class MainWindow : Window
             _lastSignalHealth = null;
             SignalText.Text = "Pedal selection changed · signal check cancelled. Repeat with pedals released.";
         }
+        // The optional pedal configuration has changed in either direction.
+        // A completed WinMM signal check belongs to the previous channel set;
+        // invalidate it even when the clutch is being ENABLED, not just removed.
+        if (_lastNoise is not null || _lastSignalHealth is not null)
+        {
+            _lastNoise = null;
+            _lastSignalHealth = null;
+            if (SignalText is not null)
+                SignalText.Text = "Pedal selection changed · run signal check again.";
+        }
         if (ClutchCheck.IsChecked != true)
         {
             // Disabling an optional clutch while its guided capture is running
@@ -196,16 +206,6 @@ public partial class MainWindow : Window
             // A removed pedal must not leave an orphan sweep: JSON export
             // resolves each saved sweep through the active pedal mapping.
             _sweepResults.Remove(PedalKind.Clutch);
-            // An earlier signal check may contain a now-disabled clutch.
-            // Discard the cached WinMM snapshots instead of exporting stale
-            // clutch data under the current pedal selection.
-            if (_lastNoise is not null || _lastSignalHealth is not null)
-            {
-                _lastNoise = null;
-                _lastSignalHealth = null;
-                if (SignalText is not null)
-                    SignalText.Text = "Pedal selection changed · run signal check again.";
-            }
         }
         UpdateMappingLabels();
         if (_step == 4)
