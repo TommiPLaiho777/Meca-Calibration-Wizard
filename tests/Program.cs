@@ -1037,6 +1037,19 @@ static class Checks
                 clutchHandler.Contains("_lastSignalHealth = null;") &&
                 clutchHandler.Contains("run signal check again."),
             "disabling clutch must invalidate prior signal snapshots and explain the next step");
+        // Enabling the optional clutch also changes the expected channel set.
+        // The completed WinMM noise/health cache must be cleared before the
+        // disabled-only cleanup branch, so both checkbox directions are safe.
+        int completedSignalReset = clutchHandler.IndexOf(
+            "if (_lastNoise is not null || _lastSignalHealth is not null)", StringComparison.Ordinal);
+        int disabledClutchBranch = clutchHandler.IndexOf(
+            "if (ClutchCheck.IsChecked != true)", StringComparison.Ordinal);
+        Require(completedSignalReset >= 0 && disabledClutchBranch > completedSignalReset &&
+                clutchHandler[completedSignalReset..disabledClutchBranch].Contains("_lastNoise = null;") &&
+                clutchHandler[completedSignalReset..disabledClutchBranch].Contains("_lastSignalHealth = null;") &&
+                clutchHandler[completedSignalReset..disabledClutchBranch].Contains("run signal check again."),
+            "enabling or disabling optional clutch must invalidate completed WinMM signal snapshots");
+        Console.WriteLine("PASS: both optional clutch selection directions invalidate completed WinMM signal snapshots (WPF source contract)");
         // WPF is source-checked here; the runtime event path still needs physical
         // GUI validation. An orphan clutch sweep would cause JSON export to
         // index a missing pedal mapping and fail instead of saving the report.
