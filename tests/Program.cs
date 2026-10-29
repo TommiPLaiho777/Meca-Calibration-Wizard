@@ -1178,7 +1178,10 @@ static class Checks
             "WinMM poll must latch read failure and refuse silent same-ID recovery");
         Require(windowSource.Contains("ReadOnlyHidReport.CanExport(_device is not null, _hidInventory, _winmmSessionInvalid,") &&
                 windowSource.Contains("private void Refresh_Click(") &&
-                windowSource.Contains("StepHint.Text = \"Controller refreshed") &&
+                windowSource.Contains("StepHint.Text = requireExplicitSelection") &&
+                windowSource.Contains("Controller refreshed · capture pedals again") &&
+                windowSource.Contains("select controller explicitly, then capture pedals again") &&
+                windowSource.Contains("RefreshDevices(requireExplicitSelection);") &&
                 windowSource.Contains("_mappings.Clear();") &&
                 windowSource.Contains("_calibrationResults.Clear();") &&
                 windowSource.Contains("_sweepResults.Clear();"),
