@@ -161,7 +161,7 @@
                     <StackPanel x:Name="TestView" Visibility="Collapsed">
                         <TextBlock Text="05  /  TEST" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" FontSize="12"/>
                         <TextBlock Text="Live pedal test" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
-                        <TextBlock Text="Check every pedal moves smoothly through its captured range." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
+                        <TextBlock Text="Move each pedal slowly and watch the WinMM bar. Visible steps or deadzones may reflect Windows input processing, not a sensor fault." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <StackPanel Margin="0,27,0,0">
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="BRAKE" FontWeight="Bold" FontSize="12" Foreground="#F4A09B"/>
