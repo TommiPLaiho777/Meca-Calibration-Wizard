@@ -40,6 +40,28 @@ internal static class HidInventoryProvenanceChecks
                 json.Contains("instance_c") || json.Contains("DevicePath"))
                 throw new Exception("FAILED: HID metadata exported a private interface path");
 
+        // Source-level contract for the WinMM+optional-HID export branch.
+        // HID metadata cannot verify a WinMM/USB match or native sensor ADC.
+        // This is a hardware-free C# check, not a WPF or pedal execution.
+        string wpfSource = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        int reportStart = wpfSource.IndexOf("report = new", StringComparison.Ordinal);
+        int sweepsStart = wpfSource.IndexOf("Sweeps = _sweepResults",
+            reportStart, StringComparison.Ordinal);
+        if (reportStart < 0 || sweepsStart <= reportStart)
+            throw new Exception("FAILED: WinMM JSON report branch not found");
+        string winmmReport = wpfSource[reportStart..sweepsStart];
+        foreach (string required in new[]
+        {
+            "InputSource = \"WINMM_JOYGETPOSEX_NOT_SENSOR_ADC\"",
+            "WinmmIdsSource = \"WINMM_JOYGETDEVCAPSW_NOT_VERIFIED_USB_VID_PID\"",
+            "WinmmAssociationVerified = false",
+            "UncalibratedSensorInputVerified = false"
+        })
+            if (!winmmReport.Contains(required, StringComparison.Ordinal))
+                throw new Exception("FAILED: WinMM report missing explicit unverified provenance: " + required);
+        Console.WriteLine("PASS: WinMM+HID JSON preserves unverified device and sensor provenance (WPF source contract)");
+
         Console.WriteLine("PASS: explicit HID provenance and path privacy");
     }
 }
