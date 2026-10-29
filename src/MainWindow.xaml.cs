@@ -847,6 +847,22 @@ public partial class MainWindow : Window
                 "Export unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        // Avoid asking for a save path when the report is already known to
+        // contain only controller details. Re-check after the modal dialog too:
+        // captured data can be cleared while it pumps WPF dispatcher events.
+        bool controllerOnlyConsentGiven = false;
+        if (!controllerOnlyConsentGiven && ReadOnlyHidReport.IsControllerOnlyExport(
+                _device is not null, _mappings.Count, (_lastNoise?.Count ?? 0) > 0,
+                (_lastSignalHealth?.Count ?? 0) > 0, _sweepResults.Count, _hidInventory))
+        {
+            if (MessageBox.Show(this,
+                    "No pedal measurements or successful HID inventory are included. This report contains WinMM controller details and may include a failed HID scan status. Continue exporting?",
+                    "Controller-only report", MessageBoxButton.YesNo,
+                    MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
+                return;
+            controllerOnlyConsentGiven = true;
+        }
+
         var save = new SaveFileDialog
         {
             Filter = "JSON report (*.json)|*.json",
