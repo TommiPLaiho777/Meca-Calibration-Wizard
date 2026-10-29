@@ -79,6 +79,30 @@ internal static class WinmmSignalRangeChecks
         if (WinmmJoystick.IsSampleWithinAxisBounds(flatDevice, normalSample))
             throw new Exception("FAILED: zero-width WinMM capability range accepted");
 
+        // The live Advanced view must distinguish driver-reported ranges from
+        // assumed fallbacks on EVERY valid sample, not only on an error.
+        // Pure C# synthetic inputs; no WinMM API, WPF window or pedal access.
+        var provenance = new[] { false, true, false, false, false, false };
+        var previewDevice = new WinmmJoystick.Device(
+            0, "synthetic-preview", min, max, AssumedAxisRanges: provenance);
+        string reportedPreview = WinmmJoystick.FormatAxisPreview(
+            previewDevice, normalSample, 0);
+        string assumedPreview = WinmmJoystick.FormatAxisPreview(
+            previewDevice, normalSample, 1);
+        string unknownPreview = WinmmJoystick.FormatAxisPreview(
+            normalDevice, normalSample, 0);
+        if (!reportedPreview.Contains("driver-reported WinMM range 100–1000", StringComparison.Ordinal) ||
+            !assumedPreview.Contains("assumed fallback WinMM range 100–1000", StringComparison.Ordinal) ||
+            !unknownPreview.Contains("unverified WinMM range 100–1000", StringComparison.Ordinal) ||
+            !assumedPreview.Contains("not sensor ADC", StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM preview provenance must disclose reported/assumed bounds");
+        var windowSource = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        if (!windowSource.Contains(
+                "WinmmJoystick.FormatAxisPreview(_device, sample, i)", StringComparison.Ordinal))
+            throw new Exception("FAILED: Advanced WinMM UI bypasses axis provenance formatter");
+        Console.WriteLine("PASS: WinMM axis provenance visible in Advanced preview (synthetic C# + WPF source contract)");
+
         Console.WriteLine("PASS: WinMM sample/capability boundary rejects malformed inputs (synthetic C#)");
         Console.WriteLine("PASS: combined WinMM range/timing faults both explained (synthetic C#)");
         Console.WriteLine("PASS: out-of-range WinMM idle traces flagged invalid (synthetic C#)");
