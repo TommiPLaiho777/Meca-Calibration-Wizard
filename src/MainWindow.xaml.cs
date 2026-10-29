@@ -563,7 +563,9 @@ public partial class MainWindow : Window
                 {
                     CaptureQualityText.Text = "Measurement not saved · Retry";
                     NextButton.IsEnabled = _mappings.ContainsKey(guide.Kind) || guide.Kind == PedalKind.Clutch;
-                    CaptureFooter.Text = guide.FailureReason;
+                    CaptureFooter.Text = _mappings.ContainsKey(guide.Kind)
+                        ? $"{guide.FailureReason} Previous WinMM preview retained (not remeasured); retry to replace it."
+                        : guide.FailureReason;
                 }
             }
         }
