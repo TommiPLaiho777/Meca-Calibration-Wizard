@@ -130,6 +130,23 @@ internal static class WinmmJoystick
         return true;
     }
 
+    // Read-only diagnostic text: expose the provenance of each WinMM axis
+    // range even when the current sample is inside its bounds. A fallback
+    // range is not driver-reported and none of these values is sensor ADC.
+    internal static string FormatAxisPreview(Device device, IReadOnlyList<uint> sample, int axis)
+    {
+        if (axis < 0 || axis >= AxisNames.Length ||
+            sample.Count != AxisNames.Length ||
+            device.Min.Length != AxisNames.Length || device.Max.Length != AxisNames.Length)
+            throw new ArgumentException("Invalid WinMM axis preview inputs.");
+
+        string source = device.AssumedAxisRanges is { Length: 6 } assumed
+            ? assumed[axis] ? "assumed fallback" : "driver-reported"
+            : "unverified";
+        return $"{AxisNames[axis],-2}  {sample[axis],7:N0} (0x{sample[axis]:X8})" +
+            $" · {source} WinMM range {device.Min[axis]}–{device.Max[axis]} (not sensor ADC)";
+    }
+
     internal static bool TryRead(uint id, out uint[] raw)
     {
         var state = new JoyInfoEx { Size = (uint)Marshal.SizeOf<JoyInfoEx>(), Flags = JoyReturnAll };
