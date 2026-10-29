@@ -21,13 +21,15 @@ internal sealed class NoiseRun
     private DateTime _lastUtc;
     private double _largestSamplingGapSeconds;
     private bool _timestampRegressionDetected;
+    private bool _repeatedTimestampDetected;
     private bool _invalidSampleDetected;
     private readonly List<uint>[] _samples =
         Enumerable.Range(0, 6).Select(_ => new List<uint>()).ToArray();
     public bool HasSamples => _samples[0].Count > 0;
     // End an invalid capture immediately rather than waiting indefinitely for a
     // wall clock that may have been moved backwards during the measurement.
-    public bool Complete => _timestampRegressionDetected || _invalidSampleDetected ||
+    public bool Complete => _timestampRegressionDetected || _repeatedTimestampDetected ||
+        _invalidSampleDetected ||
         (_lastUtc - StartedUtc).TotalSeconds >= RequestedDurationSeconds;
 
     public NoiseRun(DateTime? startedUtc = null, double durationSeconds = DurationSeconds)
@@ -57,6 +59,14 @@ internal sealed class NoiseRun
             _timestampRegressionDetected = true;
             return;
         }
+        // The first sample may occur exactly at capture start, but two actual
+        // samples at the same timestamp cannot establish a valid polling rate.
+        // Stop rather than allowing duplicate timestamps to inflate sample count.
+        if (now == _lastUtc && HasSamples)
+        {
+            _repeatedTimestampDetected = true;
+            return;
+        }
         // Include the delay before the first sample; a high average rate
         // can otherwise hide a long interval without any WinMM readings.
         _largestSamplingGapSeconds = Math.Max(_largestSamplingGapSeconds,
@@ -71,6 +81,8 @@ internal sealed class NoiseRun
             Math.Max(0, (_lastUtc - StartedUtc).TotalSeconds),
             _largestSamplingGapSeconds, _timestampRegressionDetected);
         // Preserve numeric evidence but explicitly reject the interrupted check.
-        return _invalidSampleDetected ? stats with { Status = "Invalid WinMM sample" } : stats;
+        return _invalidSampleDetected ? stats with { Status = "Invalid WinMM sample" }
+            : _repeatedTimestampDetected ? stats with { Status = "Repeated WinMM timestamps" }
+            : stats;
     }
 }
