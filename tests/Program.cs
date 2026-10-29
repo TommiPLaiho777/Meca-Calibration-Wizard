@@ -66,6 +66,22 @@ static class Checks
             "out-of-range WinMM readings on any axis, or malformed samples, must fail closed");
         Console.WriteLine("PASS: all WinMM axes checked against capability bounds (synthetic C#)");
 
+        // Synthetic controller selection: a shared product name cannot identify
+        // which physical device is present. Do not pick the first MECA label
+        // when two are available; retain a deliberate previous WinMM ID only
+        // as a selection hint, never as verified USB identity.
+        var mecaOne = Device with { Id = 3, Name = "MECA CUP1" };
+        var mecaTwo = Device with { Id = 4, Name = "meca pedals" };
+        var generic = Device with { Id = 5, Name = "Other joystick" };
+        Require(WinmmJoystick.SelectSuggestedDevice(new[] { mecaOne, generic }, null) == mecaOne &&
+                WinmmJoystick.SelectSuggestedDevice(new[] { mecaOne, mecaTwo, generic }, null) is null &&
+                WinmmJoystick.SelectSuggestedDevice(new[] { mecaOne, mecaTwo, generic }, 4) == mecaTwo &&
+                WinmmJoystick.SelectSuggestedDevice(new[] { mecaOne, mecaTwo, generic }, 5) == generic &&
+                WinmmJoystick.SelectSuggestedDevice(new[] { generic }, null) == generic &&
+                WinmmJoystick.SelectSuggestedDevice(new[] { generic, Device with { Id = 6, Name = "Other gamepad" } }, null) is null,
+            "ambiguous WinMM product names must require explicit controller selection");
+        Console.WriteLine("PASS: ambiguous MECA WinMM controller names never auto-select (synthetic C#)");
+
         var brake = Session(PedalKind.Brake, 0, false, new uint[] { 40000, 41000, 40500 });
         Require(brake.Phase == GuidePhase.Complete, "three brake strokes complete");
         Require(brake.Result is not null && brake.Result.Mapping.Axis == 0, "correct brake axis");
@@ -867,6 +883,10 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        Require(windowSource.Contains("WinmmJoystick.SelectSuggestedDevice(devices, previousId)") &&
+                !windowSource.Contains("devices.FirstOrDefault(x => x.Name.Contains(\"MECA\""),
+            "WPF refresh must use ambiguity-safe WinMM controller suggestion");
+        Console.WriteLine("PASS: WPF refresh uses ambiguity-safe WinMM suggestion (source contract)");
         // Guided step hints describe WinMM peak variation only; they do not
         // establish physical-force repeatability or load-cell health.
         Require(windowSource.Contains("StepHint.Text = ") &&
