@@ -848,9 +848,13 @@ static class Checks
 
 
         // A controller-only export is permitted but must ask for confirmation.
+        // A failed HID scan is error metadata, not a successful inventory.
         // Completed HID scans and any WinMM measurements are meaningful exports.
-        Require(ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, null),
-            "empty WinMM controller-only report requires confirmation");
+        var failedHidScan = new HidInventorySnapshot(false, "HID scan unavailable", 0, 0,
+            Array.Empty<HidInterfaceGroup>());
+        Require(ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, null) &&
+                ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, failedHidScan),
+            "controller-only report must require confirmation after no HID scan or a failed scan");
         Require(!ReadOnlyHidReport.IsControllerOnlyExport(false, 0, false, false, 0, null) &&
                 !ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, hid) &&
                 !ReadOnlyHidReport.IsControllerOnlyExport(true, 1, false, false, 0, null) &&
@@ -939,6 +943,8 @@ static class Checks
             "read-only JSON export handler and save dialog must exist");
         string exportPreamble = windowSource[exportStart..saveDialogStart];
         Require(exportPreamble.Contains("ReadOnlyHidReport.IsControllerOnlyExport(") &&
+                exportPreamble.Contains("No pedal measurements or successful HID inventory are included.") &&
+                exportPreamble.Contains("may include a failed HID scan status.") &&
                 exportPreamble.Contains("MessageBoxButton.YesNo") &&
                 exportPreamble.Contains("MessageBoxResult.No") &&
                 exportPreamble.Contains("MessageBoxResult.Yes"),
