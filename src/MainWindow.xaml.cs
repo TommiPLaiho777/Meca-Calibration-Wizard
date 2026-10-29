@@ -962,8 +962,10 @@ public partial class MainWindow : Window
                 Pedals = _mappings.ToDictionary(p => p.Key.ToString(), p => new
                 {
                     Axis = WinmmJoystick.AxisNames[p.Value.Axis],
-                    RestRaw = p.Value.Rest,
-                    FullRaw = p.Value.Full,
+                    RestRaw = p.Value.Rest, // legacy key: Windows WinMM, not sensor ADC
+                    FullRaw = p.Value.Full, // legacy key: Windows WinMM, not sensor ADC
+                    RestWinmm = p.Value.Rest,
+                    FullWinmm = p.Value.Full,
                     MovementFraction = Math.Round(p.Value.Confidence, 4),
                     Calibration = _calibrationResults.TryGetValue(p.Key, out var c) ? new
                     {
