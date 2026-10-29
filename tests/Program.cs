@@ -889,6 +889,37 @@ static class Checks
         // recapture, old WinMM noise/health statistics must not be exported
         // under a potentially different axis mapping.
         var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        // Read-only WinMM safety regression: a failed poll retains historical
+        // measurements for review, but no results panel may display them as live.
+        // This inspects WPF source; the Windows CI job compiles the real UI.
+        int staleHelperStart = windowSource.IndexOf("private string MarkStaleForReview(", StringComparison.Ordinal);
+        int staleHelperEnd = windowSource.IndexOf("private void ChangeStep(", staleHelperStart, StringComparison.Ordinal);
+        int staleChangeStepEnd = windowSource.IndexOf("private PedalKind StepKind(", staleHelperEnd, StringComparison.Ordinal);
+        int staleUnavailableStart = windowSource.IndexOf("private void MarkLiveReadingsUnavailable(", StringComparison.Ordinal);
+        int staleUnavailableEnd = windowSource.IndexOf("private void UpdateDeviceInfo(", staleUnavailableStart, StringComparison.Ordinal);
+        int staleSweepDetailsStart = windowSource.IndexOf("private void UpdateSweepDetails(", StringComparison.Ordinal);
+        int staleSweepDetailsEnd = windowSource.IndexOf("private void DrawTrace(", staleSweepDetailsStart, StringComparison.Ordinal);
+        Require(staleHelperStart >= 0 && staleHelperEnd > staleHelperStart &&
+                staleChangeStepEnd > staleHelperEnd && staleUnavailableStart >= 0 &&
+                staleUnavailableEnd > staleUnavailableStart &&
+                staleSweepDetailsStart >= 0 && staleSweepDetailsEnd > staleSweepDetailsStart,
+            "WPF must define the stale WinMM review marker and results handlers");
+        string staleHelper = windowSource[staleHelperStart..staleHelperEnd];
+        string staleStep = windowSource[staleHelperEnd..staleChangeStepEnd];
+        string staleUnavailable = windowSource[staleUnavailableStart..staleUnavailableEnd];
+        string staleSweepDetails = windowSource[staleSweepDetailsStart..staleSweepDetailsEnd];
+        Require(staleHelper.Contains("_winmmSessionInvalid") &&
+                staleHelper.Contains("STALE — WinMM session interrupted.") &&
+                staleHelper.Contains("click Refresh and capture pedals again.") &&
+                staleStep.Contains("SignalText.Text = MarkStaleForReview(") &&
+                staleStep.Contains("SweepStatusText.Text = MarkStaleForReview(") &&
+                staleStep.Contains("SummaryText.Text = MarkStaleForReview(") &&
+                staleUnavailable.Contains("SummaryText.Text = MarkStaleForReview(") &&
+                staleUnavailable.Contains("SweepAnalysisText.Text = MarkStaleForReview(") &&
+                staleSweepDetails.Contains("SweepAnalysisText.Text = MarkStaleForReview("),
+            "retained WinMM noise, sweep and guided results must be visibly stale after interruption");
+        Console.WriteLine("PASS: stale WinMM review results labelled on interruption and view re-entry (WPF source contract)");
+
         Require(windowSource.Contains("WinmmJoystick.SelectSuggestedDevice(devices, previousId)") &&
                 !windowSource.Contains("devices.FirstOrDefault(x => x.Name.Contains(\"MECA\""),
             "WPF refresh must use ambiguity-safe WinMM controller suggestion");
