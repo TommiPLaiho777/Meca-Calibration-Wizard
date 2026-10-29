@@ -767,7 +767,7 @@ public partial class MainWindow : Window
                     ? _hidInventoryComparison is null
                         ? "\nScan again to compare grouped counts."
                         : "\n\nCHANGES SINCE PREVIOUS SCAN\n" + _hidInventoryComparison.Summary
-                    : "\nComparison unavailable; scan again when enumeration works.");
+                    : "\nComparison reset after an unsuccessful scan. Two successful scans are needed to compare counts.");
             HidScanButton.Content = current.Available ? "Rescan & compare" : "Scan HID identifiers";
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
