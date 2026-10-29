@@ -61,9 +61,9 @@ public partial class MainWindow : Window
         var previousId = _device?.Id;
         var devices = WinmmJoystick.FindDevices().ToList();
         DeviceCombo.ItemsSource = devices;
-        WinmmJoystick.Device? next = devices.FirstOrDefault(x => previousId.HasValue && x.Id == previousId.Value);
-        next ??= devices.FirstOrDefault(x => x.Name.Contains("MECA", StringComparison.OrdinalIgnoreCase))
-             ?? (devices.Count == 1 ? devices[0] : null);
+        // Never auto-select an arbitrary first match when multiple controllers
+        // advertise MECA in their WinMM names. Selection remains user-controlled.
+        WinmmJoystick.Device? next = WinmmJoystick.SelectSuggestedDevice(devices, previousId);
         DeviceCombo.SelectedItem = next;
         // WinMM IDs can be reused. SelectionChanged compares IDs, so an
         // unchanged ID must still receive this scan's fresh capabilities.
