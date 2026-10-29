@@ -61,6 +61,24 @@ internal static class WinmmJoystick
         }
     }
 
+    // A product name or WinMM ID is not proof of physical USB identity.
+    // Avoid silently choosing the first of multiple MECA-labelled controllers:
+    // the user must explicitly choose one before any pedal capture.
+    // An explicit prior selection may be retained by WinMM ID only as a UI hint;
+    // Refresh still invalidates all measurements and requires fresh capture.
+    internal static Device? SelectSuggestedDevice(IReadOnlyList<Device> devices, uint? previousId)
+    {
+        if (previousId.HasValue)
+        {
+            var previous = devices.FirstOrDefault(d => d.Id == previousId.Value);
+            if (previous is not null) return previous;
+        }
+        var matches = devices.Where(d =>
+            d.Name.Contains("MECA", StringComparison.OrdinalIgnoreCase)).Take(2).ToArray();
+        if (matches.Length == 1) return matches[0];
+        return devices.Count == 1 ? devices[0] : null;
+    }
+
     internal static IReadOnlyList<Device> FindDevices()
     {
         var found = new List<Device>();
