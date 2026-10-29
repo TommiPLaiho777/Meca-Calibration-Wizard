@@ -16,13 +16,13 @@ internal static class ReadOnlyHidReport
          (!hasWinmmController && inventory is { Available: true }));
 
     // Controller-only exports remain permitted, but the user should explicitly
-    // acknowledge when no pedal measurement or HID inventory is present.
-    // A HID inventory (even a failed scan) is diagnostic metadata, not a blank report.
+    // acknowledge when no pedal measurement or successful HID scan is present.
+    // A failed scan can be reported as error metadata; it is not a completed inventory.
     internal static bool IsControllerOnlyExport(
         bool hasWinmmController, int pedalCount, bool hasNoiseCheck,
         bool hasSignalHealth, int sweepCount, HidInventorySnapshot? inventory) =>
         hasWinmmController && pedalCount == 0 && !hasNoiseCheck &&
-        !hasSignalHealth && sweepCount == 0 && inventory is null;
+        !hasSignalHealth && sweepCount == 0 && inventory is not { Available: true };
 
     // Use this for both WinMM+HID and HID-only exports. A failed optional
     // scan can be reported with WinMM data, but never with a comparison.
