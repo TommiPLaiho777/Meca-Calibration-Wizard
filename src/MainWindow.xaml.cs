@@ -247,6 +247,11 @@ public partial class MainWindow : Window
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
         SweepProgress.Value = 0;
+        if (_step == 4)
+        {
+            SummaryText.Text = MarkStaleForReview(SummaryText.Text);
+            SweepAnalysisText.Text = MarkStaleForReview(SweepAnalysisText.Text);
+        }
         UpdateMappingLabels();
     }
 
@@ -257,6 +262,13 @@ public partial class MainWindow : Window
         StatusText.Text = _device is null ? "Select a WinMM controller to preview inputs"
             : "WinMM controller selected · physical USB identity not verified";
     }
+
+    // A disconnected WinMM stream leaves prior captures available for review,
+    // not as current measurements. Every re-entered results view must say so.
+    private string MarkStaleForReview(string text) =>
+        _winmmSessionInvalid && !text.StartsWith("STALE —", StringComparison.Ordinal)
+            ? "STALE — WinMM session interrupted. Review only; click Refresh and capture pedals again.\n" + text
+            : text;
 
     private void ChangeStep(int step)
     {
@@ -317,13 +329,13 @@ public partial class MainWindow : Window
             NextButton.Content = "Start over  ↻";
             NextButton.IsEnabled = true;
             ClutchTestArea.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            SignalText.Text = _lastNoise is null ? "Not measured" : FormatNoise();
-            SweepStatusText.Text = _sweepResults.Count == 0
-                ? "Not measured" : string.Join(" | ", _sweepResults.Select(p => $"{p.Key}: {p.Value.Summary}"));
+            SignalText.Text = MarkStaleForReview(_lastNoise is null ? "Not measured" : FormatNoise());
+            SweepStatusText.Text = MarkStaleForReview(_sweepResults.Count == 0
+                ? "Not measured" : string.Join(" | ", _sweepResults.Select(p => $"{p.Key}: {p.Value.Summary}")));
             SweepProgress.Value = 0;
             UpdateSweepDetails();
-            SummaryText.Text = string.Join("   |   ", _calibrationResults.Select(p =>
-                $"{p.Key}: {p.Value.PeakSpreadSummary}"));
+            SummaryText.Text = MarkStaleForReview(string.Join("   |   ", _calibrationResults.Select(p =>
+                $"{p.Key}: {p.Value.PeakSpreadSummary}")));
         }
         else
         {
@@ -722,9 +734,9 @@ public partial class MainWindow : Window
                 mapping.Full < mapping.Rest);
             descriptions.Add($"{pair.Key}: {a.Status} — {a.Explanation}");
         }
-        SweepAnalysisText.Text = descriptions.Count == 0
+        SweepAnalysisText.Text = MarkStaleForReview(descriptions.Count == 0
             ? "Complete a sweep to review its signal shape."
-            : string.Join("\n", descriptions);
+            : string.Join("\n", descriptions));
         DrawTrace(PedalKind.Brake, BrakeSweepLine);
         DrawTrace(PedalKind.Throttle, ThrottleSweepLine);
         DrawTrace(PedalKind.Clutch, ClutchSweepLine);
