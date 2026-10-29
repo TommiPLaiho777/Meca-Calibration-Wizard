@@ -59,6 +59,26 @@ internal static class WinmmStaleGaugeChecks
                 throw new Exception($"FAILED: post-dialog WinMM export gate missing: {expectedGate}");
         Console.WriteLine("PASS: report export rechecks WinMM session after save dialog (WPF source contract)");
 
+        // A modal SaveFileDialog can also change a report from measured to
+        // controller-only (e.g. Refresh clears the captured mappings). Consent
+        // must therefore be requested AFTER choosing the file path, not based
+        // only on the pre-dialog snapshot. This is a source-order contract.
+        int controllerOnlyConsent = source.IndexOf(
+            "if (ReadOnlyHidReport.IsControllerOnlyExport(", exportStart, StringComparison.Ordinal);
+        int finalDirectRead = source.IndexOf(
+            "WinmmJoystick.TryRead(exportDevice.Id", dialogIndex, StringComparison.Ordinal);
+        int postConsentGate = source.IndexOf(
+            "if (!ReadOnlyHidReport.CanExport(", controllerOnlyConsent, StringComparison.Ordinal);
+        if (controllerOnlyConsent <= dialogIndex ||
+            finalDirectRead <= controllerOnlyConsent ||
+            postConsentGate <= controllerOnlyConsent || postConsentGate >= finalDirectRead ||
+            !source[controllerOnlyConsent..postConsentGate].Contains(
+                "Controller-only report", StringComparison.Ordinal) ||
+            !source[postConsentGate..finalDirectRead].Contains(
+                "Input changed during confirmation. No report saved.", StringComparison.Ordinal))
+            throw new Exception("FAILED: controller-only consent must be fresh after SaveFileDialog and session rechecked");
+        Console.WriteLine("PASS: controller-only export consent follows save dialog with post-consent gate (WPF source contract)");
+
         // The timer might not have polled after the save dialog closed. A
         // final direct read must precede serialization and invalidate the
         // session if WinMM fails or any reported/assumed axis is out of range.
