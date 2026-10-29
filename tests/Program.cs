@@ -1254,7 +1254,7 @@ static class Checks
             Require(refreshSource.Contains(cancelled),
                 $"WinMM refresh must cancel old-session activity: {cancelled}");
         Require(refreshSource.IndexOf("_sweep = null;", StringComparison.Ordinal) <
-                refreshSource.IndexOf("RefreshDevices();", StringComparison.Ordinal) &&
+                refreshSource.IndexOf("RefreshDevices(requireExplicitSelection);", StringComparison.Ordinal) &&
                 refreshSource.Contains("CheckSignalButton.IsEnabled = true;") &&
                 refreshSource.Contains("LongSignalButton.IsEnabled = true;") &&
                 refreshSource.Contains("BrakeSweepButton.IsEnabled = true;") &&
