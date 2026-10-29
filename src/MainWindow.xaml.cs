@@ -152,6 +152,18 @@ public partial class MainWindow : Window
             ClutchSweepButton.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         if (ClutchSweepLine is not null)
             ClutchSweepLine.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        // An optional pedal selection change during a WinMM rest check
+        // invalidates that in-flight measurement. Do not let a timer tick
+        // finish it under a different pedal configuration.
+        if (_noise is not null)
+        {
+            _noise = null;
+            CheckSignalButton.IsEnabled = true;
+            LongSignalButton.IsEnabled = true;
+            _lastNoise = null;
+            _lastSignalHealth = null;
+            SignalText.Text = "Pedal selection changed · signal check cancelled. Repeat with pedals released.";
+        }
         if (ClutchCheck.IsChecked != true)
         {
             // Disabling an optional clutch while its guided capture is running
