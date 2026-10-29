@@ -51,7 +51,7 @@ public partial class MainWindow : Window
         Closed += (_, _) => _timer.Stop();
     }
 
-    private void RefreshDevices()
+    private void RefreshDevices(bool requireExplicitSelection = false)
     {
         _hidInventory = null; // Refresh starts a new explicit comparison sequence.
         _hidInventoryComparison = null;
@@ -63,7 +63,8 @@ public partial class MainWindow : Window
         DeviceCombo.ItemsSource = devices;
         // Never auto-select an arbitrary first match when multiple controllers
         // advertise MECA in their WinMM names. Selection remains user-controlled.
-        WinmmJoystick.Device? next = WinmmJoystick.SelectSuggestedDevice(devices, previousId);
+        WinmmJoystick.Device? next = requireExplicitSelection
+            ? null : WinmmJoystick.SelectSuggestedDevice(devices, previousId);
         DeviceCombo.SelectedItem = next;
         // WinMM IDs can be reused. SelectionChanged compares IDs, so an
         // unchanged ID must still receive this scan's fresh capabilities.
@@ -94,6 +95,10 @@ public partial class MainWindow : Window
 
     private void Refresh_Click(object sender, RoutedEventArgs e)
     {
+        // A failed stream cannot prove that a reused WinMM ID belongs to
+        // the same physical controller. Require deliberate reselection after
+        // an interrupted session, not just an automatic name/ID hint.
+        bool requireExplicitSelection = _winmmSessionInvalid;
         // A reused WinMM ID/name is not proof of the same physical controller.
         // Explicit refresh starts a fresh read-only capture session.
         _winmmSessionInvalid = false;
@@ -117,9 +122,11 @@ public partial class MainWindow : Window
         ClutchSweepButton.IsEnabled = true;
         SignalText.Text = "Controller refreshed · run signal check again.";
         SweepStatusText.Text = "Controller refreshed · record a new sweep.";
-        RefreshDevices();
+        RefreshDevices(requireExplicitSelection);
         ChangeStep(0);
-        StepHint.Text = "Controller refreshed · capture pedals again before exporting measurements";
+        StepHint.Text = requireExplicitSelection
+            ? "WinMM session interrupted · select controller explicitly, then capture pedals again"
+            : "Controller refreshed · capture pedals again before exporting measurements";
     }
 
     private void DeviceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
