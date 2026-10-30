@@ -138,6 +138,25 @@ public partial class MainWindow : Window
             // Only Refresh_Click may clear an interrupted WinMM session.
             _device = next;
             _raw = Array.Empty<uint>();
+            // A deliberate controller change is not a live WinMM reading. Poll
+            // returns without updating gauges when no device is selected, so
+            // clear every visual instrument immediately instead of freezing
+            // the previous controller's last displayed pedal position.
+            LiveValue.Text = "—";
+            LiveRaw.Text = "Controller selection changed · no current WinMM reading.";
+            CaptureProgress.Value = 0;
+            BrakeProgress.Value = 0;
+            ThrottleProgress.Value = 0;
+            ClutchProgress.Value = 0;
+            NeedleRotation.Angle = -5;
+            ClutchDiscShift.X = 0;
+            ClutchHubShift.X = 0;
+            BrakeCaliper.Opacity = 1.0;
+            BrakeValue.Text = "No live input";
+            ThrottleValue.Text = "No live input";
+            ClutchValue.Text = "No live input";
+            SweepProgress.Value = 0;
+            AdvancedAxesText.Text = "No current WinMM reading · select a controller.";
             _capture = null;
             _noise = null;
             _sweep = null;
