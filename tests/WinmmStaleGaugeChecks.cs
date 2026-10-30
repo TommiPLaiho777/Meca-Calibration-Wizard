@@ -186,6 +186,25 @@ internal static class WinmmStaleGaugeChecks
 
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
 
+        // An interrupted WinMM session must never leave Begin enabled on
+        // the Connect screen, including after navigating away and back.
+        // This is a WPF source contract; it does not launch a UI or read pedals.
+        int connectStart = stepBody.IndexOf("if (step == 0)", StringComparison.Ordinal);
+        int connectEnd = stepBody.IndexOf("else if (step is >= 1 and <= 3)",
+            connectStart, StringComparison.Ordinal);
+        if (connectStart < 0 || connectEnd <= connectStart)
+            throw new Exception("FAILED: Connect navigation block missing");
+        string connectBody = stepBody[connectStart..connectEnd];
+        if (!connectBody.Contains("NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;",
+                StringComparison.Ordinal) ||
+            !connectBody.Contains("StepHint.Text = _winmmSessionInvalid", StringComparison.Ordinal) ||
+            !body.Contains("if (_step == 0)", StringComparison.Ordinal) ||
+            !body.Contains("NextButton.IsEnabled = false;", StringComparison.Ordinal) ||
+            !body.Contains("click Refresh and select controller before continuing",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: invalid WinMM Connect session still offers Begin");
+        Console.WriteLine("PASS: interrupted WinMM Connect view blocks Begin and explains Refresh (WPF source contract)");
+
         // After a failed WinMM poll, a refresh must not silently reselect a
         // reused joystick ID. This checks the WPF source contract only; no
         // controller, WPF window, or physical pedal is exercised here.
