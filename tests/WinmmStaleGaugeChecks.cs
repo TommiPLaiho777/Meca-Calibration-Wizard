@@ -47,7 +47,7 @@ internal static class WinmmStaleGaugeChecks
         // actual WPF navigation and physical pedals are not exercised here.
         if (!body.Contains("if (_step is >= 1 and <= 3)", StringComparison.Ordinal) ||
             !body.Contains("CaptureFooter.Text = ", StringComparison.Ordinal) ||
-                StringComparison.Ordinal) ||
+            !body.Contains("STALE — WinMM session interrupted.", StringComparison.Ordinal) ||
             !body.Contains("CaptureQualityText.Text = MarkStaleForReview(CaptureQualityText.Text);",
                 StringComparison.Ordinal))
             throw new Exception("FAILED: interrupted guided capture must mark visible footer and quality stale");
