@@ -48,6 +48,44 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: completed WinMM sweep status must be marked stale on disconnect");
         Console.WriteLine("PASS: completed WinMM sweep status marked stale after disconnect (WPF source contract)");
 
+        // Source-level regression: after MarkLiveReadingsUnavailable labels completed
+        // measurements STALE, Poll must not overwrite their status with "cancelled".
+        // Cancellation text applies only to a measurement that was still active.
+        // This does not execute WPF or a real WinMM device.
+        int pollStart = source.IndexOf("private void Poll(", StringComparison.Ordinal);
+        int readFailureStart = source.IndexOf(
+            "if (_device is null || !WinmmJoystick.TryRead(_device.Id, out var sample))",
+            pollStart, StringComparison.Ordinal);
+        int outOfRangeStart = source.IndexOf(
+            "if (!WinmmJoystick.IsSampleWithinAxisBounds(_device, sample))",
+            readFailureStart, StringComparison.Ordinal);
+        int streamingStart = source.IndexOf(
+            "StatusText.Text = \"Input streaming · read-only\";",
+            outOfRangeStart, StringComparison.Ordinal);
+        if (pollStart < 0 || readFailureStart <= pollStart ||
+            outOfRangeStart <= readFailureStart || streamingStart <= outOfRangeStart)
+            throw new Exception("FAILED: WinMM Poll interruption branches not found");
+        foreach (var (section, reason) in new[]
+        {
+            (source[readFailureStart..outOfRangeStart], "read failure"),
+            (source[outOfRangeStart..streamingStart], "out-of-range reading")
+        })
+        {
+            int stale = section.IndexOf("MarkLiveReadingsUnavailable();", StringComparison.Ordinal);
+            int signalGuard = section.IndexOf("if (signalWasActive)", StringComparison.Ordinal);
+            int signalCancel = section.IndexOf("SignalText.Text = \"Signal check cancelled", StringComparison.Ordinal);
+            int sweepGuard = section.IndexOf("if (sweepWasActive)", StringComparison.Ordinal);
+            int sweepCancel = section.IndexOf("SweepStatusText.Text = \"Sweep cancelled", StringComparison.Ordinal);
+            if (stale < 0 ||
+                !section.Contains("bool signalWasActive = _noise is not null;", StringComparison.Ordinal) ||
+                !section.Contains("bool sweepWasActive = _sweep is not null;", StringComparison.Ordinal) ||
+                signalGuard <= stale || signalCancel <= signalGuard ||
+                sweepGuard <= stale || sweepCancel <= sweepGuard)
+                throw new Exception($"FAILED: completed WinMM diagnostics overwritten on {reason}");
+        }
+        Console.WriteLine("PASS: Poll retains completed STALE signal/sweep status (WPF source contract)");
+
+
         // An interrupted guided-capture view must not keep its earlier
         // "Preview captured" footer or an unmarked quality result. Navigating
         // away and back must preserve the stale warning. Source-only contract:
