@@ -257,6 +257,9 @@ public partial class MainWindow : Window
         SweepProgress.Value = 0;
         if (_step == 4)
         {
+            // A completed idle check must not appear current after a failed WinMM read.
+            // Preserve the earlier metrics for review, visibly marked stale.
+            SignalText.Text = MarkStaleForReview(SignalText.Text);
             SummaryText.Text = MarkStaleForReview(SummaryText.Text);
             SweepAnalysisText.Text = MarkStaleForReview(SweepAnalysisText.Text);
         }
