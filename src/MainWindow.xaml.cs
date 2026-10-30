@@ -269,6 +269,7 @@ public partial class MainWindow : Window
             SignalText.Text = MarkStaleForReview(SignalText.Text);
             SummaryText.Text = MarkStaleForReview(SummaryText.Text);
             SweepAnalysisText.Text = MarkStaleForReview(SweepAnalysisText.Text);
+            SweepStatusText.Text = MarkStaleForReview(SweepStatusText.Text);
         }
         UpdateMappingLabels();
     }
