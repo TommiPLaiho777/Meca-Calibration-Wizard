@@ -186,6 +186,18 @@ public partial class MainWindow : Window
             UpdateMappingLabels();
             UpdateDeviceInfo();
             UpdateWinmmIds();
+            // Manual controller selection on Connect must update Begin immediately.
+            // Poll updates the live values, not the wizard navigation button.
+            // An interrupted WinMM session remains blocked until explicit Refresh.
+            if (_step == 0)
+            {
+                NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
+                StepHint.Text = _winmmSessionInvalid
+                    ? "WinMM session interrupted · click Refresh and select controller before continuing"
+                    : _device is null
+                        ? "Select a WinMM controller · physical identity not verified"
+                        : "Controller selected · capture pedals to establish WinMM axis mapping";
+            }
         }
     }
 
