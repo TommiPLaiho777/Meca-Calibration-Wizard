@@ -529,6 +529,7 @@ public partial class MainWindow : Window
             _winmmSessionInvalid = true;
             _raw = Array.Empty<uint>();
             // Preserve finished measurements as STALE; only interrupt active runs.
+            bool captureWasActive = _capture is not null;
             bool signalWasActive = _noise is not null;
             bool sweepWasActive = _sweep is not null;
             MarkLiveReadingsUnavailable();
@@ -544,7 +545,10 @@ public partial class MainWindow : Window
             ClutchSweepButton.IsEnabled = true;
             StatusText.Text = "WinMM reading outside the reported or assumed axis range. Session invalid · return to Connect and click Refresh, then re-capture.";
             AdvancedAxesText.Text = "WinMM sample invalid · live readings stopped. No sensor clipping or device identity inferred.";
-            CaptureFooter.Text = "Capture cancelled · refresh the controller and capture again.";
+            // Do not overwrite a completed capture's STALE footer with a generic
+            // cancellation message. Only an active guided capture was cancelled.
+            if (captureWasActive && _step is >= 1 and <= 3)
+                CaptureFooter.Text = "STALE — WinMM session interrupted. Active capture cancelled; refresh and capture again.";
             if (signalWasActive)
                 SignalText.Text = "Signal check cancelled · refresh the controller and repeat.";
             if (sweepWasActive)
