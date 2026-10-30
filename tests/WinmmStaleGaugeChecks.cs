@@ -163,7 +163,7 @@ internal static class WinmmStaleGaugeChecks
         Console.WriteLine("PASS: interrupted guided capture and re-entry keep quality/footer stale (WPF source contract)");
 
         // A missing signal check or sweep is NOT an old successful result.
-        // Keep "Not measured" and empty summaries distinct from genuinely
+        // Keep "Not measured", unrecorded sweep guidance and empty summaries distinct from genuinely
         // stale WinMM measurements after disconnect. This is a WPF source
         // contract; it does not execute the WPF view or physical pedals.
         int staleHelperStart = source.IndexOf(
@@ -177,6 +177,7 @@ internal static class WinmmStaleGaugeChecks
         {
             "!string.IsNullOrWhiteSpace(text)",
             "!string.Equals(text, \"Not measured\", StringComparison.Ordinal)",
+            "!string.Equals(text, \"Complete a sweep to review its signal shape.\", StringComparison.Ordinal)",
             "!text.StartsWith(\"STALE —\", StringComparison.Ordinal)"
         })
             if (!staleHelper.Contains(expected, StringComparison.Ordinal))
