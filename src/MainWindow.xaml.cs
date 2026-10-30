@@ -274,6 +274,13 @@ public partial class MainWindow : Window
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
         SweepProgress.Value = 0;
+        if (_step == 0)
+        {
+            // The Connect view must not offer Begin for an invalid WinMM session.
+            // The user must refresh and explicitly reselect after an interruption.
+            NextButton.IsEnabled = false;
+            StepHint.Text = "WinMM session interrupted · click Refresh and select controller before continuing";
+        }
         if (_step is >= 1 and <= 3)
         {
             // An interrupted capture view must not keep a previous success
@@ -337,9 +344,11 @@ public partial class MainWindow : Window
         if (step == 0)
         {
             StepLabel.Text = "STEP 1 / CONNECT";
-            StepHint.Text = "Select a WinMM controller · physical identity not verified";
+            StepHint.Text = _winmmSessionInvalid
+                ? "WinMM session interrupted · click Refresh and select controller before continuing"
+                : "Select a WinMM controller · physical identity not verified";
             NextButton.Content = "Begin  →";
-            NextButton.IsEnabled = _device is not null;
+            NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
         }
         else if (step is >= 1 and <= 3)
         {
