@@ -498,8 +498,11 @@ public partial class MainWindow : Window
                 MarkLiveReadingsUnavailable();
                 AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
                 StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
+                // Completed checks remain visible as STALE; only active checks are cancelled.
+                bool signalWasActive = _noise is not null;
+                bool sweepWasActive = _sweep is not null;
                 _capture = null;
-                if (_noise is not null)
+                if (signalWasActive)
                     SignalText.Text = "Signal check cancelled: controller disconnected.";
                 _noise = null;
                 CheckSignalButton.IsEnabled = true;
@@ -509,7 +512,8 @@ public partial class MainWindow : Window
                 BrakeSweepButton.IsEnabled = true;
                 ThrottleSweepButton.IsEnabled = true;
                 ClutchSweepButton.IsEnabled = true;
-                SweepStatusText.Text = "Sweep cancelled: controller disconnected.";
+                if (sweepWasActive)
+                    SweepStatusText.Text = "Sweep cancelled: controller disconnected.";
                 CaptureButton.IsEnabled = true;
             }
             return;
@@ -524,6 +528,9 @@ public partial class MainWindow : Window
         {
             _winmmSessionInvalid = true;
             _raw = Array.Empty<uint>();
+            // Preserve finished measurements as STALE; only interrupt active runs.
+            bool signalWasActive = _noise is not null;
+            bool sweepWasActive = _sweep is not null;
             MarkLiveReadingsUnavailable();
             _capture = null;
             _noise = null;
@@ -538,8 +545,10 @@ public partial class MainWindow : Window
             StatusText.Text = "WinMM reading outside the reported or assumed axis range. Session invalid · return to Connect and click Refresh, then re-capture.";
             AdvancedAxesText.Text = "WinMM sample invalid · live readings stopped. No sensor clipping or device identity inferred.";
             CaptureFooter.Text = "Capture cancelled · refresh the controller and capture again.";
-            SignalText.Text = "Signal check cancelled · refresh the controller and repeat.";
-            SweepStatusText.Text = "Sweep cancelled · refresh the controller and repeat.";
+            if (signalWasActive)
+                SignalText.Text = "Signal check cancelled · refresh the controller and repeat.";
+            if (sweepWasActive)
+                SweepStatusText.Text = "Sweep cancelled · refresh the controller and repeat.";
             return;
         }
         StatusText.Text = "Input streaming · read-only";
