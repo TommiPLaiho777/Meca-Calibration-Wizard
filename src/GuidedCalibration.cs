@@ -120,7 +120,11 @@ internal sealed class GuidedCalibration
         // short rest baseline or a pedal press appear to have elapsed normally.
         // Fail conservatively; no calibration is written to Windows or the device.
         double sampleGapSeconds = (utcNow - _lastSampleUtc).TotalSeconds;
-        if (sampleGapSeconds < 0 || sampleGapSeconds > 0.5)
+        // The first sample may be stamped at capture start, but subsequent
+        // equal timestamps cannot count as independent rest/press/release samples.
+        // RestSamples is nonzero after the first accepted sample in every phase.
+        if (sampleGapSeconds < 0 || sampleGapSeconds > 0.5 ||
+            (sampleGapSeconds == 0 && _restSamples > 0))
         {
             Fail("WinMM sample timing interrupted. Release the pedal and retry capture.");
             return;
