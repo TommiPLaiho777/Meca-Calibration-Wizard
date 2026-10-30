@@ -303,8 +303,13 @@ public partial class MainWindow : Window
 
     // A disconnected WinMM stream leaves prior captures available for review,
     // not as current measurements. Every re-entered results view must say so.
+    // An empty or never-recorded result is not a stale measurement: do not
+    // prepend STALE to "Not measured" or an empty summary.
     private string MarkStaleForReview(string text) =>
-        _winmmSessionInvalid && !text.StartsWith("STALE —", StringComparison.Ordinal)
+        _winmmSessionInvalid &&
+        !string.IsNullOrWhiteSpace(text) &&
+        !string.Equals(text, "Not measured", StringComparison.Ordinal) &&
+        !text.StartsWith("STALE —", StringComparison.Ordinal)
             ? "STALE — WinMM session interrupted. Review only; click Refresh and capture pedals again.\n" + text
             : text;
 
