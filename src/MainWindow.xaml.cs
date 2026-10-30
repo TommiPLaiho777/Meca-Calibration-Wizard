@@ -309,6 +309,8 @@ public partial class MainWindow : Window
         _winmmSessionInvalid &&
         !string.IsNullOrWhiteSpace(text) &&
         !string.Equals(text, "Not measured", StringComparison.Ordinal) &&
+        // An empty sweep view contains guidance, not a previously captured result.
+        !string.Equals(text, "Complete a sweep to review its signal shape.", StringComparison.Ordinal) &&
         !text.StartsWith("STALE —", StringComparison.Ordinal)
             ? "STALE — WinMM session interrupted. Review only; click Refresh and capture pedals again.\n" + text
             : text;
