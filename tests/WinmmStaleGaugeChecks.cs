@@ -249,7 +249,7 @@ internal static class WinmmStaleGaugeChecks
         if (!guidedBody.Contains(
                 "NextButton.IsEnabled = !_winmmSessionInvalid && (kind == PedalKind.Clutch || _mappings.ContainsKey(kind));",
                 StringComparison.Ordinal) ||
-            !body.Contains("if (_step is >= 1 and <= 3)\\n            NextButton.IsEnabled = false;",
+            !body.Contains("if (_step is >= 1 and <= 3)\n            NextButton.IsEnabled = false;",
                 StringComparison.Ordinal))
             throw new Exception("FAILED: stale guided WinMM capture still offers Continue or Skip");
         Console.WriteLine("PASS: interrupted guided capture disables Continue and Skip (WPF source contract)");
