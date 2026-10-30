@@ -71,12 +71,12 @@ internal static class WinmmStaleGaugeChecks
         // not be a reliable signal for clearing live displays. Explicitly
         // clear every gauge on Refresh before the next successful poll.
         // This is a source contract only, not an executed WPF interaction.
-        int refreshStart = source.IndexOf("private void Refresh_Click(", StringComparison.Ordinal);
-        int refreshEnd = source.IndexOf("private void DeviceCombo_SelectionChanged(",
-            refreshStart, StringComparison.Ordinal);
-        if (refreshStart < 0 || refreshEnd <= refreshStart)
+        int refreshGaugeStart = source.IndexOf("private void Refresh_Click(", StringComparison.Ordinal);
+        int refreshGaugeEnd = source.IndexOf("private void DeviceCombo_SelectionChanged(",
+            refreshGaugeStart, StringComparison.Ordinal);
+        if (refreshGaugeStart < 0 || refreshGaugeEnd <= refreshGaugeStart)
             throw new Exception("FAILED: controller refresh handler not found");
-        string refreshBody = source[refreshStart..refreshEnd];
+        string refreshGaugeBody = source[refreshGaugeStart..refreshGaugeEnd];
         foreach (string expected in new[]
         {
             "_raw = Array.Empty<uint>();",
@@ -96,7 +96,7 @@ internal static class WinmmStaleGaugeChecks
             "SweepProgress.Value = 0;",
             "AdvancedAxesText.Text = \"Controller refreshed"
         })
-            if (!refreshBody.Contains(expected, StringComparison.Ordinal))
+            if (!refreshGaugeBody.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: refresh left stale WinMM gauge: {expected}");
         Console.WriteLine("PASS: WinMM refresh clears all live gauges before next poll (WPF source contract)");
 
