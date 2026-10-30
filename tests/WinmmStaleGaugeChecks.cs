@@ -33,6 +33,14 @@ internal static class WinmmStaleGaugeChecks
             if (!body.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: stale WinMM gauge not reset: {expected}");
 
+        // A completed WinMM idle/noise check is historical after disconnect.
+        // The user can still review its metrics, but must see a stale label
+        // immediately in the live test view without navigating away and back.
+        if (!body.Contains("SignalText.Text = MarkStaleForReview(SignalText.Text);",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: completed WinMM idle check must be marked stale on disconnect");
+        Console.WriteLine("PASS: completed WinMM idle check marked stale after disconnect (WPF source contract)");
+
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
 
         // After a failed WinMM poll, a refresh must not silently reselect a
