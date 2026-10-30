@@ -1326,9 +1326,12 @@ static class Checks
         // The guided capture pages (steps 1-3) also render a live gauge.
         // Out-of-range values must not appear as normal pedal percentages there.
         // This is a hardware-free source contract; Windows CI compiles WPF.
-        int guidedUiStart = windowSource.IndexOf("if (_step is >= 1 and <= 3)", StringComparison.Ordinal);
+        // Scope this source contract to Poll, not an earlier capture-view stale handler.
+        int pollUiStart = windowSource.IndexOf("private void Poll(", StringComparison.Ordinal);
+        int guidedUiStart = windowSource.IndexOf("if (_step is >= 1 and <= 3)",
+            pollUiStart, StringComparison.Ordinal);
         int guidedUiEnd = windowSource.IndexOf("else if (_step == 4)", guidedUiStart, StringComparison.Ordinal);
-        Require(guidedUiStart >= 0 && guidedUiEnd > guidedUiStart,
+        Require(pollUiStart >= 0 && guidedUiStart > pollUiStart && guidedUiEnd > guidedUiStart,
             "guided WinMM preview UI branch must exist");
         string guidedUiSource = windowSource[guidedUiStart..guidedUiEnd];
         int guidedInvalidGuard = guidedUiSource.IndexOf(
