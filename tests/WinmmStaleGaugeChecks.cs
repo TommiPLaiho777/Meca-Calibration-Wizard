@@ -41,6 +41,13 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: completed WinMM idle check must be marked stale on disconnect");
         Console.WriteLine("PASS: completed WinMM idle check marked stale after disconnect (WPF source contract)");
 
+        // A completed sweep's status line must also become stale immediately;
+        // marking only the separate analysis text leaves a success label visible.
+        if (!body.Contains("SweepStatusText.Text = MarkStaleForReview(SweepStatusText.Text);",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: completed WinMM sweep status must be marked stale on disconnect");
+        Console.WriteLine("PASS: completed WinMM sweep status marked stale after disconnect (WPF source contract)");
+
         // An interrupted guided-capture view must not keep its earlier
         // "Preview captured" footer or an unmarked quality result. Navigating
         // away and back must preserve the stale warning. Source-only contract:
