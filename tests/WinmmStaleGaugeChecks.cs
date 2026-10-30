@@ -41,6 +41,28 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: completed WinMM idle check must be marked stale on disconnect");
         Console.WriteLine("PASS: completed WinMM idle check marked stale after disconnect (WPF source contract)");
 
+        // An interrupted guided-capture view must not keep its earlier
+        // "Preview captured" footer or an unmarked quality result. Navigating
+        // away and back must preserve the stale warning. Source-only contract:
+        // actual WPF navigation and physical pedals are not exercised here.
+        if (!body.Contains("if (_step is >= 1 and <= 3)", StringComparison.Ordinal) ||
+            !body.Contains("CaptureFooter.Text = \\"STALE — WinMM session interrupted.",
+                StringComparison.Ordinal) ||
+            !body.Contains("CaptureQualityText.Text = MarkStaleForReview(CaptureQualityText.Text);",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: interrupted guided capture must mark visible footer and quality stale");
+        int stepStart = source.IndexOf("private void ChangeStep(", StringComparison.Ordinal);
+        int stepEnd = source.IndexOf("private PedalKind StepKind(", stepStart, StringComparison.Ordinal);
+        if (stepStart < 0 || stepEnd <= stepStart)
+            throw new Exception("FAILED: guided navigation source not found");
+        string stepBody = source[stepStart..stepEnd];
+        if (!stepBody.Contains("MarkStaleForReview(current.PeakSpreadSummary);",
+                StringComparison.Ordinal) ||
+            !stepBody.Contains("CaptureFooter.Text = _winmmSessionInvalid",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: guided navigation must keep prior capture results visibly stale");
+        Console.WriteLine("PASS: interrupted guided capture and re-entry keep quality/footer stale (WPF source contract)");
+
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
 
         // After a failed WinMM poll, a refresh must not silently reselect a
