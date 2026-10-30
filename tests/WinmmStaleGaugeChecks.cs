@@ -85,6 +85,26 @@ internal static class WinmmStaleGaugeChecks
         }
         Console.WriteLine("PASS: Poll retains completed STALE signal/sweep status (WPF source contract)");
 
+        // Regression for the out-of-range branch: a previously completed
+        // guided capture must keep its STALE footer. Only a capture that was
+        // actually running may receive a cancellation message. This checks
+        // source structure, not WPF runtime behavior or physical pedals.
+        string invalidAxisPoll = source[outOfRangeStart..streamingStart];
+        int captureActiveFlag = invalidAxisPoll.IndexOf(
+            "bool captureWasActive = _capture is not null;", StringComparison.Ordinal);
+        int staleCaptureMark = invalidAxisPoll.IndexOf(
+            "MarkLiveReadingsUnavailable();", StringComparison.Ordinal);
+        int captureCancelGuard = invalidAxisPoll.IndexOf(
+            "if (captureWasActive && _step is >= 1 and <= 3)", StringComparison.Ordinal);
+        int captureCancelMessage = invalidAxisPoll.IndexOf(
+            "CaptureFooter.Text = \\"STALE — WinMM session interrupted. Active capture cancelled;",
+            StringComparison.Ordinal);
+        if (captureActiveFlag < 0 || staleCaptureMark <= captureActiveFlag ||
+            captureCancelGuard <= staleCaptureMark || captureCancelMessage <= captureCancelGuard)
+            throw new Exception("FAILED: out-of-range WinMM poll must retain completed capture STALE footer");
+        Console.WriteLine("PASS: invalid WinMM axis preserves completed guided-capture STALE footer (WPF source contract)");
+
+
 
         // An interrupted guided-capture view must not keep its earlier
         // "Preview captured" footer or an unmarked quality result. Navigating
