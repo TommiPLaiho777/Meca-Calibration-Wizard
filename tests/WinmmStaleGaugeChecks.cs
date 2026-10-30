@@ -237,6 +237,23 @@ internal static class WinmmStaleGaugeChecks
                 StringComparison.Ordinal))
             throw new Exception("FAILED: invalid WinMM Connect session still offers Begin");
         Console.WriteLine("PASS: interrupted WinMM Connect view blocks Begin and explains Refresh (WPF source contract)");
+        // The same interrupted session must disable Continue / Skip on guided
+        // Brake, Throttle and optional Clutch screens, both immediately after
+        // the failed poll and after returning to an earlier step. This checks
+        // only WPF source contracts, not a rendered window or real pedals.
+        int guidedStart = stepBody.IndexOf("else if (step is >= 1 and <= 3)", StringComparison.Ordinal);
+        int guidedEnd = stepBody.IndexOf("else if (step == 4)", guidedStart, StringComparison.Ordinal);
+        if (guidedStart < 0 || guidedEnd <= guidedStart)
+            throw new Exception("FAILED: guided navigation block missing");
+        string guidedBody = stepBody[guidedStart..guidedEnd];
+        if (!guidedBody.Contains(
+                "NextButton.IsEnabled = !_winmmSessionInvalid && (kind == PedalKind.Clutch || _mappings.ContainsKey(kind));",
+                StringComparison.Ordinal) ||
+            !body.Contains("if (_step is >= 1 and <= 3)\\n            NextButton.IsEnabled = false;",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: stale guided WinMM capture still offers Continue or Skip");
+        Console.WriteLine("PASS: interrupted guided capture disables Continue and Skip (WPF source contract)");
+
 
         // After a failed WinMM poll, a refresh must not silently reselect a
         // reused joystick ID. This checks the WPF source contract only; no
