@@ -114,6 +114,24 @@ public partial class MainWindow : Window
         _lastNoise = null;
         _lastSignalHealth = null;
         _raw = Array.Empty<uint>();
+        // Refresh is a new session even if WinMM reuses the same ID. Do not
+        // depend on WPF SelectionChanged or the next timer tick to clear old
+        // pedal readings; the gauges must stop looking live immediately.
+        LiveValue.Text = "—";
+        LiveRaw.Text = "Controller refreshed · awaiting a new WinMM reading.";
+        CaptureProgress.Value = 0;
+        BrakeProgress.Value = 0;
+        ThrottleProgress.Value = 0;
+        ClutchProgress.Value = 0;
+        NeedleRotation.Angle = -5;
+        ClutchDiscShift.X = 0;
+        ClutchHubShift.X = 0;
+        BrakeCaliper.Opacity = 1.0;
+        BrakeValue.Text = "No live input";
+        ThrottleValue.Text = "No live input";
+        ClutchValue.Text = "No live input";
+        SweepProgress.Value = 0;
+        AdvancedAxesText.Text = "Controller refreshed · no current WinMM reading.";
         CaptureButton.IsEnabled = true;
         CheckSignalButton.IsEnabled = true;
         LongSignalButton.IsEnabled = true;
