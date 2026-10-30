@@ -97,7 +97,7 @@ internal static class WinmmStaleGaugeChecks
         int captureCancelGuard = invalidAxisPoll.IndexOf(
             "if (captureWasActive && _step is >= 1 and <= 3)", StringComparison.Ordinal);
         int captureCancelMessage = invalidAxisPoll.IndexOf(
-            "CaptureFooter.Text = \\"STALE — WinMM session interrupted. Active capture cancelled;",
+            "Active capture cancelled; refresh and capture again.",
             StringComparison.Ordinal);
         if (captureActiveFlag < 0 || staleCaptureMark <= captureActiveFlag ||
             captureCancelGuard <= staleCaptureMark || captureCancelMessage <= captureCancelGuard)
