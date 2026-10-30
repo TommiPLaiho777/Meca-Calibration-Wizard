@@ -67,6 +67,39 @@ internal static class WinmmStaleGaugeChecks
                 throw new Exception($"FAILED: controller selection left stale WinMM UI: {expected}");
         Console.WriteLine("PASS: controller selection clears stale WinMM gauges (WPF source contract)");
 
+        // Refresh can reselect the same WinMM ID, so WPF SelectionChanged may
+        // not be a reliable signal for clearing live displays. Explicitly
+        // clear every gauge on Refresh before the next successful poll.
+        // This is a source contract only, not an executed WPF interaction.
+        int refreshStart = source.IndexOf("private void Refresh_Click(", StringComparison.Ordinal);
+        int refreshEnd = source.IndexOf("private void DeviceCombo_SelectionChanged(",
+            refreshStart, StringComparison.Ordinal);
+        if (refreshStart < 0 || refreshEnd <= refreshStart)
+            throw new Exception("FAILED: controller refresh handler not found");
+        string refreshBody = source[refreshStart..refreshEnd];
+        foreach (string expected in new[]
+        {
+            "_raw = Array.Empty<uint>();",
+            "LiveValue.Text = \"—\";",
+            "LiveRaw.Text = \"Controller refreshed",
+            "CaptureProgress.Value = 0;",
+            "BrakeProgress.Value = 0;",
+            "ThrottleProgress.Value = 0;",
+            "ClutchProgress.Value = 0;",
+            "NeedleRotation.Angle = -5;",
+            "ClutchDiscShift.X = 0;",
+            "ClutchHubShift.X = 0;",
+            "BrakeCaliper.Opacity = 1.0;",
+            "BrakeValue.Text = \"No live input\";",
+            "ThrottleValue.Text = \"No live input\";",
+            "ClutchValue.Text = \"No live input\";",
+            "SweepProgress.Value = 0;",
+            "AdvancedAxesText.Text = \"Controller refreshed"
+        })
+            if (!refreshBody.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: refresh left stale WinMM gauge: {expected}");
+        Console.WriteLine("PASS: WinMM refresh clears all live gauges before next poll (WPF source contract)");
+
         // A completed WinMM idle/noise check is historical after disconnect.
         // The user can still review its metrics, but must see a stale label
         // immediately in the live test view without navigating away and back.
