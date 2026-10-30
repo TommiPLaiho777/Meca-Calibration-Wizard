@@ -292,6 +292,8 @@ public partial class MainWindow : Window
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
         SweepProgress.Value = 0;
+        if (_step is >= 1 and <= 3)
+            NextButton.IsEnabled = false; // Stale guided captures must not offer Continue or Skip.
         if (_step == 0)
         {
             // The Connect view must not offer Begin for an invalid WinMM session.
@@ -394,7 +396,7 @@ public partial class MainWindow : Window
                 : _mappings.ContainsKey(kind) ? "Preview captured. Press Start to measure again."
                 : "Release the pedal, then click Start. Wait for the PRESS prompt.";
             NextButton.Content = kind == PedalKind.Clutch && !_mappings.ContainsKey(kind) ? "Skip  →" : "Continue  →";
-            NextButton.IsEnabled = kind == PedalKind.Clutch || _mappings.ContainsKey(kind);
+            NextButton.IsEnabled = !_winmmSessionInvalid && (kind == PedalKind.Clutch || _mappings.ContainsKey(kind));
         }
         else if (step == 4)
         {
