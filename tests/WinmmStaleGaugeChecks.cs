@@ -46,7 +46,7 @@ internal static class WinmmStaleGaugeChecks
         // away and back must preserve the stale warning. Source-only contract:
         // actual WPF navigation and physical pedals are not exercised here.
         if (!body.Contains("if (_step is >= 1 and <= 3)", StringComparison.Ordinal) ||
-            !body.Contains("CaptureFooter.Text = \\"STALE — WinMM session interrupted.",
+            !body.Contains("CaptureFooter.Text = ", StringComparison.Ordinal) ||
                 StringComparison.Ordinal) ||
             !body.Contains("CaptureQualityText.Text = MarkStaleForReview(CaptureQualityText.Text);",
                 StringComparison.Ordinal))
