@@ -255,6 +255,13 @@ public partial class MainWindow : Window
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
         SweepProgress.Value = 0;
+        if (_step is >= 1 and <= 3)
+        {
+            // An interrupted capture view must not keep a previous success
+            // message or unmarked quality summary after a failed WinMM read.
+            CaptureFooter.Text = "STALE — WinMM session interrupted. Click Refresh and capture pedals again.";
+            CaptureQualityText.Text = MarkStaleForReview(CaptureQualityText.Text);
+        }
         if (_step == 4)
         {
             // A completed idle check must not appear current after a failed WinMM read.
@@ -327,8 +334,10 @@ public partial class MainWindow : Window
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
                 ? "3 / 3 presses" : "0 / 3 presses";
             CaptureQualityText.Text = current is null ? "" :
-                current.PeakSpreadSummary;
-            CaptureFooter.Text = _mappings.ContainsKey(kind) ? "Preview captured. Press Start to measure again."
+                MarkStaleForReview(current.PeakSpreadSummary);
+            CaptureFooter.Text = _winmmSessionInvalid
+                ? "STALE — WinMM session interrupted. Click Refresh and capture pedals again."
+                : _mappings.ContainsKey(kind) ? "Preview captured. Press Start to measure again."
                 : "Release the pedal, then click Start. Wait for the PRESS prompt.";
             NextButton.Content = kind == PedalKind.Clutch && !_mappings.ContainsKey(kind) ? "Skip  →" : "Continue  →";
             NextButton.IsEnabled = kind == PedalKind.Clutch || _mappings.ContainsKey(kind);
