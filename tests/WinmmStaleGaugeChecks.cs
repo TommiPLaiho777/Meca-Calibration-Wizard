@@ -33,6 +33,40 @@ internal static class WinmmStaleGaugeChecks
             if (!body.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: stale WinMM gauge not reset: {expected}");
 
+        // A deliberate device selection change, including selecting no device,
+        // must clear the last controller's visible gauges immediately. Poll
+        // returns without updating the UI when _device is null. This is a
+        // WPF source contract, not a runtime or physical pedal test.
+        int deviceSelectionStart = source.IndexOf(
+            "private void DeviceCombo_SelectionChanged(", StringComparison.Ordinal);
+        int deviceSelectionEnd = source.IndexOf(
+            "private void ClutchCheck_Changed(", deviceSelectionStart, StringComparison.Ordinal);
+        if (deviceSelectionStart < 0 || deviceSelectionEnd <= deviceSelectionStart)
+            throw new Exception("FAILED: WinMM controller selection handler not found");
+        string deviceSelectionBody = source[deviceSelectionStart..deviceSelectionEnd];
+        foreach (string expected in new[]
+        {
+            "_raw = Array.Empty<uint>();",
+            "LiveValue.Text = \"—\";",
+            "LiveRaw.Text = \"Controller selection changed",
+            "CaptureProgress.Value = 0;",
+            "BrakeProgress.Value = 0;",
+            "ThrottleProgress.Value = 0;",
+            "ClutchProgress.Value = 0;",
+            "NeedleRotation.Angle = -5;",
+            "ClutchDiscShift.X = 0;",
+            "ClutchHubShift.X = 0;",
+            "BrakeCaliper.Opacity = 1.0;",
+            "BrakeValue.Text = \"No live input\";",
+            "ThrottleValue.Text = \"No live input\";",
+            "ClutchValue.Text = \"No live input\";",
+            "SweepProgress.Value = 0;",
+            "AdvancedAxesText.Text = \"No current WinMM reading"
+        })
+            if (!deviceSelectionBody.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: controller selection left stale WinMM UI: {expected}");
+        Console.WriteLine("PASS: controller selection clears stale WinMM gauges (WPF source contract)");
+
         // A completed WinMM idle/noise check is historical after disconnect.
         // The user can still review its metrics, but must see a stale label
         // immediately in the live test view without navigating away and back.
