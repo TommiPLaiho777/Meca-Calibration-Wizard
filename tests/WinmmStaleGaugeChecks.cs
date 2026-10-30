@@ -162,6 +162,27 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: guided navigation must keep prior capture results visibly stale");
         Console.WriteLine("PASS: interrupted guided capture and re-entry keep quality/footer stale (WPF source contract)");
 
+        // A missing signal check or sweep is NOT an old successful result.
+        // Keep "Not measured" and empty summaries distinct from genuinely
+        // stale WinMM measurements after disconnect. This is a WPF source
+        // contract; it does not execute the WPF view or physical pedals.
+        int staleHelperStart = source.IndexOf(
+            "private string MarkStaleForReview(", StringComparison.Ordinal);
+        int staleHelperEnd = source.IndexOf(
+            "private void ChangeStep(", staleHelperStart, StringComparison.Ordinal);
+        if (staleHelperStart < 0 || staleHelperEnd <= staleHelperStart)
+            throw new Exception("FAILED: stale WinMM diagnostic label helper missing");
+        string staleHelper = source[staleHelperStart..staleHelperEnd];
+        foreach (string expected in new[]
+        {
+            "!string.IsNullOrWhiteSpace(text)",
+            "!string.Equals(text, \"Not measured\", StringComparison.Ordinal)",
+            "!text.StartsWith(\"STALE —\", StringComparison.Ordinal)"
+        })
+            if (!staleHelper.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: never-recorded WinMM diagnostic mislabeled stale: {expected}");
+        Console.WriteLine("PASS: unrecorded WinMM diagnostics retain Not measured status (WPF source contract)");
+
         Console.WriteLine("PASS: stale WinMM gauges reset after input interruption (WPF source contract)");
 
         // After a failed WinMM poll, a refresh must not silently reselect a
