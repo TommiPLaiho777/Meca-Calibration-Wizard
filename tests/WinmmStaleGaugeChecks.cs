@@ -67,6 +67,22 @@ internal static class WinmmStaleGaugeChecks
                 throw new Exception($"FAILED: controller selection left stale WinMM UI: {expected}");
         Console.WriteLine("PASS: controller selection clears stale WinMM gauges (WPF source contract)");
 
+        // With multiple controllers, Connect may start without a selection.
+        // Selecting one manually must enable Begin without waiting for a poll;
+        // clearing selection or a stale session must keep Begin disabled.
+        // This is a source-level WPF contract, not an executed UI interaction.
+        if (!deviceSelectionBody.Contains("if (_step == 0)", StringComparison.Ordinal) ||
+            !deviceSelectionBody.Contains(
+                "NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;",
+                StringComparison.Ordinal) ||
+            !deviceSelectionBody.Contains("StepHint.Text = _winmmSessionInvalid",
+                StringComparison.Ordinal) ||
+            !deviceSelectionBody.Contains(
+                "Controller selected · capture pedals to establish WinMM axis mapping",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: manual WinMM selection does not update Connect Begin state");
+        Console.WriteLine("PASS: manual WinMM selection updates Connect Begin and preserves stale-session gate (WPF source contract)");
+
         // Refresh can reselect the same WinMM ID, so WPF SelectionChanged may
         // not be a reliable signal for clearing live displays. Explicitly
         // clear every gauge on Refresh before the next successful poll.
