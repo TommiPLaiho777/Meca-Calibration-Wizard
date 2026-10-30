@@ -252,6 +252,20 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: direct capture must reject out-of-range WinMM samples before starting calibration");
         Console.WriteLine("PASS: direct capture invalidates out-of-range WinMM session (WPF source contract)");
 
+        // Direct Capture_Click also performs a WinMM read. When that read fails,
+        // MarkLiveReadingsUnavailable labels earlier results STALE; the final
+        // capture footer must not overwrite that warning with an unmarked error.
+        // Source-order contract only: no WPF window or physical pedal exercised.
+        int directCaptureStaleMark = captureBody.IndexOf(
+            "MarkLiveReadingsUnavailable();", StringComparison.Ordinal);
+        int directCaptureStaleFooter = captureBody.IndexOf(
+            "CaptureFooter.Text = \"STALE — WinMM read failed or an axis was out of range.",
+            StringComparison.Ordinal);
+        if (directCaptureStaleMark < 0 ||
+            directCaptureStaleFooter <= directCaptureStaleMark)
+            throw new Exception("FAILED: direct WinMM capture read failure overwrote STALE footer");
+        Console.WriteLine("PASS: direct capture read failure keeps visible STALE footer (WPF source contract)");
+
         // Changing the optional clutch selection while an idle WinMM check
         // is active must cancel it before Poll can publish a mixed-session
         // result. This is a source-level regression, not a WPF/pedal test.
