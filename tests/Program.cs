@@ -979,7 +979,7 @@ static class Checks
         string clutchHandlerSource = windowSource[clutchToggleStart..clutchToggleEnd];
         Require(clutchHandlerSource.Contains("_capture?.Kind == PedalKind.Clutch") &&
                 clutchHandlerSource.Contains("_capture = null;") &&
-                clutchHandlerSource.Contains("CaptureButton.IsEnabled = true;") &&
+                clutchHandlerSource.Contains("CaptureButton.IsEnabled = _device is not null && !_winmmSessionInvalid;") &&
                 clutchHandlerSource.Contains("Clutch disabled · capture cancelled.") &&
                 clutchHandlerSource.Contains("_mappings.Remove(PedalKind.Clutch);") &&
                 clutchHandlerSource.Contains("_calibrationResults.Remove(PedalKind.Clutch);"),
