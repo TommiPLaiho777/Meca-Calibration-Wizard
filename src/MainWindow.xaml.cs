@@ -278,7 +278,7 @@ public partial class MainWindow : Window
     {
         BrakeMapText.Text = MapLabel(PedalKind.Brake);
         ThrottleMapText.Text = MapLabel(PedalKind.Throttle);
-        ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : "Not installed";
+        ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : "Optional · not selected";
     }
 
     private string MapLabel(PedalKind kind) => _mappings.TryGetValue(kind, out var mapping)
