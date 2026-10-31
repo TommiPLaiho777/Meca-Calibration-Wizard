@@ -70,10 +70,11 @@ internal static class SweepDiagnostics
         bool endedNearRest = values[^1] <= .03;
         // A single final low WinMM sample may be a transient drop rather than
         // evidence of a completed release. Require a descending three-sample
-        // return toward rest, including two near-rest samples spanning >=80 ms.
+        // return toward rest, including two samples within the same 3% rest
+        // band used for the start/end checks, spanning >=80 ms.
         // This checks Windows signal shape, not physical pedal force.
         bool releaseTailConfirmed = values.Length >= 3 &&
-            values[^3] <= .20 && values[^2] <= .10 && endedNearRest &&
+            values[^3] <= .20 && values[^2] <= .03 && endedNearRest &&
             values[^3] >= values[^2] - .025 &&
             values[^2] >= values[^1] - .025 &&
             trace[^1].TimeMs - trace[^3].TimeMs >= 80;
