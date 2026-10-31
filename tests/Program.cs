@@ -419,12 +419,14 @@ static class Checks
         // Two distinct press/release strokes in one imported WinMM trace must
         // not be reported as one completed guided sweep. Check both polarities
         // using synthetic C# data; no Windows controller or pedals are accessed.
+        // The final two samples must be within the 3% released band;
+        // otherwise a final zero could be a one-sample WinMM dropout.
         var doubleStrokeTrace = Enumerable.Range(0, 49).Select(i =>
         {
             double fraction = i <= 12 ? i / 12.0
                 : i <= 24 ? (24 - i) / 12.0
                 : i <= 36 ? (i - 24) / 12.0
-                : (48 - i) / 12.0;
+                : i == 47 ? .02 : (48 - i) / 12.0;
             return new SweepPoint(i * 160L, (uint)Math.Round(65535.0 * fraction));
         }).ToArray();
         var doubleStrokeInverted = doubleStrokeTrace
@@ -448,7 +450,8 @@ static class Checks
         // based on millisecond-fast movement or a large missing sample window.
         // These are synthetic Windows WinMM samples, not actual pedal tests.
         var timingValues = Enumerable.Range(0, 25)
-            .Select(i => (uint)Math.Round(65535.0 * (i <= 12 ? i : 24 - i) / 12))
+            .Select(i => i == 23 ? (uint)Math.Round(65535.0 * .02)
+                : (uint)Math.Round(65535.0 * (i <= 12 ? i : 24 - i) / 12))
             .ToArray();
         var tooFastTrace = timingValues.Select((v, i) => new SweepPoint(i * 5L, v)).ToArray();
         var missingWindowTrace = timingValues.Select((v, i) =>
@@ -473,7 +476,7 @@ static class Checks
         // classifying a correct inverted pedal stroke as an incomplete sweep.
         var invertedTrace = Enumerable.Range(0, 41)
             .Select(i => new SweepPoint(i * 200L,
-                (uint)Math.Round(65535.0 * Math.Abs(i - 20) / 20)))
+                (uint)Math.Round(65535.0 * (i == 39 ? .98 : Math.Abs(i - 20) / 20.0))))
             .ToArray();
         var invertedAssessment = SweepDiagnostics.Evaluate(invertedTrace, 0, 65535, inverted: true);
         var normalAssessment = SweepDiagnostics.Evaluate(invertedTrace, 0, 65535);
@@ -489,7 +492,7 @@ static class Checks
         // Do not mistake that endpoint for proof of a full-force press.
         var partialInvertedTrace = Enumerable.Range(0, 41)
             .Select(i => new SweepPoint(i * 200L,
-                (uint)Math.Round(10000.0 + 55535.0 * Math.Abs(i - 20) / 20)))
+                (uint)Math.Round(10000.0 + 55535.0 * (i == 39 ? .98 : Math.Abs(i - 20) / 20.0))))
             .ToArray();
         var partialInvertedAssessment = SweepDiagnostics.Evaluate(
             partialInvertedTrace, 0, 65535, inverted: true);
@@ -502,7 +505,7 @@ static class Checks
         // physical pedal press or as a sensor headroom measurement.
         var belowHighInvertedTrace = Enumerable.Range(0, 41)
             .Select(i => new SweepPoint(i * 200L,
-                (uint)Math.Round(65000.0 * Math.Abs(i - 20) / 20)))
+                (uint)Math.Round(65000.0 * (i == 39 ? .98 : Math.Abs(i - 20) / 20.0))))
             .ToArray();
         var belowHighInverted = SweepDiagnostics.Evaluate(
             belowHighInvertedTrace, 0, 65535, inverted: true);
@@ -531,7 +534,7 @@ static class Checks
         var nearHighValues = Enumerable.Range(0, 16)
             .Select(index => (uint)Math.Round(65500.0 * index / 15))
             .Concat(Enumerable.Range(0, 16)
-                .Select(index => (uint)Math.Round(65500.0 * (15 - index) / 15)))
+                .Select(index => index == 14 ? 1000u : (uint)Math.Round(65500.0 * (15 - index) / 15)))
             .ToArray();
         var nearHighTrace = nearHighValues
             .Select((value, index) => new SweepPoint(index * 260L, value)).ToArray();
@@ -1148,7 +1151,7 @@ static class Checks
         var clutchSweep = new InputSweepRun(2, 0, 65535, clutchSweepStart);
         for (int i = 0; i <= 40; i++)
         {
-            uint reading = (uint)Math.Round(65535.0 * Math.Abs(i - 20) / 20);
+            uint reading = (uint)Math.Round(65535.0 * (i == 39 ? .98 : Math.Abs(i - 20) / 20.0));
             clutchSweep.Observe(Axes(2, reading), clutchSweepStart.AddMilliseconds(i * 200));
         }
         Require(clutchSweep.Complete && clutchSweep.Result is { } clutchResult &&
