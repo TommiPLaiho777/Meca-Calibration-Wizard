@@ -228,8 +228,8 @@ public partial class MainWindow : Window
         if (_noise is not null)
         {
             _noise = null;
-            CheckSignalButton.IsEnabled = true;
-            LongSignalButton.IsEnabled = true;
+            CheckSignalButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
+            LongSignalButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
             _lastNoise = null;
             _lastSignalHealth = null;
             SignalText.Text = "Pedal selection changed · signal check cancelled. Repeat with pedals released.";
@@ -251,7 +251,7 @@ public partial class MainWindow : Window
             if (_capture?.Kind == PedalKind.Clutch)
             {
                 _capture = null;
-                CaptureButton.IsEnabled = true;
+                CaptureButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
                 CaptureCounter.Text = "0 / 3 presses";
                 CaptureQualityText.Text = "";
                 CaptureFooter.Text = "Clutch disabled · capture cancelled. No clutch data saved.";
@@ -267,9 +267,9 @@ public partial class MainWindow : Window
             {
                 _sweep = null;
                 _sweepKind = null;
-                BrakeSweepButton.IsEnabled = true;
-                ThrottleSweepButton.IsEnabled = true;
-                ClutchSweepButton.IsEnabled = true;
+                BrakeSweepButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
+                ThrottleSweepButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
+                ClutchSweepButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
                 SweepProgress.Value = 0;
                 SweepStatusText.Text = "Clutch disabled · sweep cancelled. No clutch sweep saved.";
             }
@@ -375,12 +375,13 @@ public partial class MainWindow : Window
         _noise = null;
         _sweep = null;
         _sweepKind = null;
-        CaptureButton.IsEnabled = true;
-        BrakeSweepButton.IsEnabled = true;
-        ThrottleSweepButton.IsEnabled = true;
-        ClutchSweepButton.IsEnabled = true;
-        CheckSignalButton.IsEnabled = true;
-        LongSignalButton.IsEnabled = true;
+        bool canStartWinmmMeasurement = _device is not null && !_winmmSessionInvalid;
+        CaptureButton.IsEnabled = canStartWinmmMeasurement;
+        BrakeSweepButton.IsEnabled = canStartWinmmMeasurement;
+        ThrottleSweepButton.IsEnabled = canStartWinmmMeasurement;
+        ClutchSweepButton.IsEnabled = canStartWinmmMeasurement;
+        CheckSignalButton.IsEnabled = canStartWinmmMeasurement;
+        LongSignalButton.IsEnabled = canStartWinmmMeasurement;
         _step = step;
         WelcomeView.Visibility = step == 0 ? Visibility.Visible : Visibility.Collapsed;
         CaptureView.Visibility = step is >= 1 and <= 3 ? Visibility.Visible : Visibility.Collapsed;
@@ -542,12 +543,12 @@ public partial class MainWindow : Window
             _noise = null;
             _sweep = null;
             _sweepKind = null;
-            CheckSignalButton.IsEnabled = true;
-            LongSignalButton.IsEnabled = true;
-            BrakeSweepButton.IsEnabled = true;
-            ThrottleSweepButton.IsEnabled = true;
-            ClutchSweepButton.IsEnabled = true;
-            CaptureButton.IsEnabled = true;
+            CheckSignalButton.IsEnabled = false;
+            LongSignalButton.IsEnabled = false;
+            BrakeSweepButton.IsEnabled = false;
+            ThrottleSweepButton.IsEnabled = false;
+            ClutchSweepButton.IsEnabled = false;
+            CaptureButton.IsEnabled = false;
             AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
             StatusText.Text = "Controller unavailable · return to Connect and click Refresh";
             CaptureFooter.Text = "STALE — WinMM read failed or an axis was out of range. Return to Connect and click Refresh; capture pedals again.";
@@ -587,16 +588,16 @@ public partial class MainWindow : Window
                 if (signalWasActive)
                     SignalText.Text = "Signal check cancelled: controller disconnected.";
                 _noise = null;
-                CheckSignalButton.IsEnabled = true;
-                LongSignalButton.IsEnabled = true;
+                CheckSignalButton.IsEnabled = false;
+                LongSignalButton.IsEnabled = false;
                 _sweep = null;
                 _sweepKind = null;
-                BrakeSweepButton.IsEnabled = true;
-                ThrottleSweepButton.IsEnabled = true;
-                ClutchSweepButton.IsEnabled = true;
+                BrakeSweepButton.IsEnabled = false;
+                ThrottleSweepButton.IsEnabled = false;
+                ClutchSweepButton.IsEnabled = false;
                 if (sweepWasActive)
                     SweepStatusText.Text = "Sweep cancelled: controller disconnected.";
-                CaptureButton.IsEnabled = true;
+                CaptureButton.IsEnabled = false;
             }
             return;
         }
@@ -619,12 +620,12 @@ public partial class MainWindow : Window
             _noise = null;
             _sweep = null;
             _sweepKind = null;
-            CaptureButton.IsEnabled = true;
-            CheckSignalButton.IsEnabled = true;
-            LongSignalButton.IsEnabled = true;
-            BrakeSweepButton.IsEnabled = true;
-            ThrottleSweepButton.IsEnabled = true;
-            ClutchSweepButton.IsEnabled = true;
+            CaptureButton.IsEnabled = false;
+            CheckSignalButton.IsEnabled = false;
+            LongSignalButton.IsEnabled = false;
+            BrakeSweepButton.IsEnabled = false;
+            ThrottleSweepButton.IsEnabled = false;
+            ClutchSweepButton.IsEnabled = false;
             StatusText.Text = "WinMM reading outside the reported or assumed axis range. Session invalid · return to Connect and click Refresh, then re-capture.";
             AdvancedAxesText.Text = "WinMM sample invalid · live readings stopped. No sensor clipping or device identity inferred.";
             // Do not overwrite a completed capture's STALE footer with a generic
