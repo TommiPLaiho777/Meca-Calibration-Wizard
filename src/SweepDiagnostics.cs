@@ -77,7 +77,11 @@ internal static class SweepDiagnostics
             values[^3] <= .20 && values[^2] <= .03 && endedNearRest &&
             values[^3] >= values[^2] - .025 &&
             values[^2] >= values[^1] - .025 &&
-            trace[^1].TimeMs - trace[^3].TimeMs >= 80;
+            trace[^1].TimeMs - trace[^3].TimeMs >= 80 &&
+            // Two near-rest readings one millisecond apart are not an
+            // independently observed settled release, even if the prior
+            // approach toward rest took longer. Live polling is slower.
+            trace[^1].TimeMs - trace[^2].TimeMs >= 20;
         bool strokeShapeComplete = startedNearRest && pressIndex > 0 &&
             endedNearRest && releaseTailConfirmed;
         // Imported/cached traces bypass the live eight-second capture gate.
