@@ -1189,6 +1189,26 @@ static class Checks
                 windowSource.Contains("_sweepResults.Clear();"),
             "WPF export must respect session invalidation and explicit refresh must clear captures");
         Console.WriteLine("PASS: interrupted WinMM session blocks stale exports (C# logic + WPF source contract)");
+
+        // A failed final WinMM read in Export_Click occurs outside the normal
+        // Poll path. It must disable every WinMM measurement button immediately,
+        // rather than leaving enabled controls that only reject clicks later.
+        // This is a WPF source contract; it does not execute the GUI or pedals.
+        int finalExportReadStart = windowSource.IndexOf(
+            "if (_device is { } exportDevice &&", exportStart, StringComparison.Ordinal);
+        int finalExportReadEnd = windowSource.IndexOf(
+            "        try\n        {\n            // Validate optional HID metadata",
+            finalExportReadStart, StringComparison.Ordinal);
+        Require(finalExportReadStart > exportStart && finalExportReadEnd > finalExportReadStart,
+            "final read-only WinMM export check must exist");
+        string finalExportRead = windowSource[finalExportReadStart..finalExportReadEnd];
+        Require(finalExportRead.Contains("_winmmSessionInvalid = true;") &&
+                finalExportRead.Contains("MarkLiveReadingsUnavailable();") &&
+                new[] { "CaptureButton", "CheckSignalButton", "LongSignalButton",
+                        "BrakeSweepButton", "ThrottleSweepButton", "ClutchSweepButton" }
+                    .All(button => finalExportRead.Contains(button + ".IsEnabled = false;")),
+            "failed final WinMM export read must visibly disable all measurement controls");
+        Console.WriteLine("PASS: final export read failure disables WinMM controls (WPF source contract)");
         // WPF source-path contract: a valid-looking mapped axis must not
         // conceal an out-of-range reading on a different WinMM axis.
         // The UI must stop all in-flight measurements and block JSON export.
