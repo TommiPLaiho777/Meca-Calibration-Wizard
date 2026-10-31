@@ -60,6 +60,20 @@ internal static class HidInventoryProvenanceChecks
         })
             if (!winmmReport.Contains(required, StringComparison.Ordinal))
                 throw new Exception("FAILED: WinMM report missing explicit unverified provenance: " + required);
+        // The sweep's legacy MinimumWinmm/MaximumWinmm are extrema of the
+        // captured trace, not the axis bounds advertised by joyGetDevCaps.
+        // Keep compatibility fields, but export explicit observed-value aliases.
+        string sweepReport = wpfSource[sweepsStart..];
+        foreach (string required in new[]
+        {
+            "ObservedMinimumWinmm = p.Value.MinimumWinmm",
+            "ObservedMaximumWinmm = p.Value.MaximumWinmm",
+            "SweepExtremaSource = \\"OBSERVED_WINMM_SAMPLES_NOT_DEVICE_AXIS_LIMITS\\""
+        })
+            if (!sweepReport.Contains(required, StringComparison.Ordinal))
+                throw new Exception("FAILED: WinMM sweep export confuses observed extrema with axis limits: " + required);
+        Console.WriteLine("PASS: WinMM sweep extrema explicitly labeled observed (hardware-free WPF source contract)");
+
         Console.WriteLine("PASS: WinMM+HID JSON preserves unverified device and sensor provenance (WPF source contract)");
 
         Console.WriteLine("PASS: explicit HID provenance and path privacy");
