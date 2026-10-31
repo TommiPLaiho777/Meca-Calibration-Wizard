@@ -460,8 +460,8 @@ internal static class WinmmStaleGaugeChecks
         foreach (string expected in new[]
         {
             "_noise = null;",
-            "CheckSignalButton.IsEnabled = true;",
-            "LongSignalButton.IsEnabled = true;",
+            "CheckSignalButton.IsEnabled = _device is not null && !_winmmSessionInvalid;",
+            "LongSignalButton.IsEnabled = _device is not null && !_winmmSessionInvalid;",
             "_lastNoise = null;",
             "_lastSignalHealth = null;",
             "signal check cancelled"
