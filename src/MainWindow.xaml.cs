@@ -244,7 +244,9 @@ public partial class MainWindow : Window
                 CaptureFooter.Text = "Clutch disabled · capture cancelled. No clutch data saved.";
                 if (_step == 3)
                 {
-                    NextButton.IsEnabled = true;
+                    // A checkbox change must not re-enable Skip after a failed
+                    // WinMM read. Only Refresh can start a new capture session.
+                    NextButton.IsEnabled = !_winmmSessionInvalid;
                     NextButton.Content = "Skip  →";
                 }
             }
