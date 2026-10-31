@@ -140,6 +140,14 @@ internal static class WinmmJoystick
             device.Min.Length != AxisNames.Length || device.Max.Length != AxisNames.Length)
             throw new ArgumentException("Invalid WinMM axis preview inputs.");
 
+        // The live WPF poll already rejects impossible WinMM readings. Keep
+        // this read-only formatter safe for any future caller as well: an
+        // out-of-range or zero-width axis must not look like a valid preview.
+        if (device.Min[axis] >= device.Max[axis] ||
+            sample[axis] < device.Min[axis] || sample[axis] > device.Max[axis])
+            throw new ArgumentOutOfRangeException(nameof(sample),
+                "WinMM axis preview value is outside the available axis bounds.");
+
         string source = device.AssumedAxisRanges is { Length: 6 } assumed
             ? assumed[axis] ? "assumed fallback" : "driver-reported"
             : "unverified";
