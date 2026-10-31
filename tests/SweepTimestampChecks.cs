@@ -226,6 +226,28 @@ internal static class SweepTimestampChecks
             if (!candidate.CompletePressAndRelease)
                 throw new Exception("FAILED: valid three-sample WinMM release tail was rejected");
         }
+        // Two nominally distinct near-rest samples just 1 ms apart must not
+        // certify a settled release by borrowing the earlier descent time.
+        // Preserve the normal 200 ms tail above. Synthetic WinMM only.
+        var nearSimultaneousRest = settledTail.Select((p, i) => i switch
+        {
+            39 => p with { TimeMs = 7998 },
+            40 => p with { TimeMs = 7999 },
+            _ => p
+        }).ToArray();
+        foreach (var candidate in new[]
+        {
+            SweepDiagnostics.Evaluate(nearSimultaneousRest, 0, 65535),
+            SweepDiagnostics.Evaluate(nearSimultaneousRest.Select(p =>
+                p with { WinmmValue = 65535u - p.WinmmValue }).ToArray(),
+                0, 65535, inverted: true)
+        })
+        {
+            if (candidate.CompletePressAndRelease || candidate.Status != "Release not confirmed")
+                throw new Exception("FAILED: 1 ms apart WinMM rest samples falsely confirmed release");
+        }
+        Console.WriteLine("PASS: WinMM release tail requires separately timed rest readings (synthetic C#)");
+
         Console.WriteLine("PASS: final WinMM release tail needs multiple samples in both polarities (synthetic C#)");
 
         Console.WriteLine("PASS: sustained WinMM press required; isolated spikes rejected (synthetic C#)");
