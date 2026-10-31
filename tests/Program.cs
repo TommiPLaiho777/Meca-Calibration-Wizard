@@ -304,7 +304,9 @@ static class Checks
         stationary.Observe(Axes(), sweepClock.AddSeconds(8));
         Require(stationary.Result is not null && stationary.Result.DistinctValues == 1 &&
                 stationary.Result.IntermediateSamples == 0, "idle signal is not full sweep");
-        Require(stationary.Result.HighLimitInterpretation.Contains("No Windows WinMM high-limit samples observed") &&
+        Require(stationary.Result.HighLimitInterpretation.Contains("No Windows WinMM high-end axis band samples observed") &&
+                !stationary.Result.HighLimitInterpretation.Contains("high-limit samples") &&
+                stationary.Result.HighLimitInterpretationFor(true).Contains("high-end axis band samples observed at the released end") &&
                 stationary.Result.HighLimitInterpretation.Contains("does not establish sensor headroom"),
             "absence of WinMM saturation must not imply native sensor headroom");
         Console.WriteLine("PASS: no movement is not a valid full sweep");
