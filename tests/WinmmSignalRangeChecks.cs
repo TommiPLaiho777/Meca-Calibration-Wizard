@@ -101,6 +101,36 @@ internal static class WinmmSignalRangeChecks
         if (!windowSource.Contains(
                 "WinmmJoystick.FormatAxisPreview(_device, sample, i)", StringComparison.Ordinal))
             throw new Exception("FAILED: Advanced WinMM UI bypasses axis provenance formatter");
+        // The read-only preview formatter is a second defensive boundary.
+        // A future caller must not render impossible WinMM values or a
+        // zero-width capability range as a normal live axis measurement.
+        // Synthetic arrays only; no WinMM API, HID handle or physical pedal.
+        foreach (uint impossible in new uint[] { 99u, 1001u })
+        {
+            var invalidPreview = (uint[])normalSample.Clone();
+            invalidPreview[0] = impossible;
+            try
+            {
+                _ = WinmmJoystick.FormatAxisPreview(previewDevice, invalidPreview, 0);
+                throw new Exception("FAILED: impossible WinMM axis preview was formatted as valid");
+            }
+            catch (ArgumentOutOfRangeException) { }
+        }
+        try
+        {
+            _ = WinmmJoystick.FormatAxisPreview(flatDevice, normalSample, 3);
+            throw new Exception("FAILED: zero-width WinMM axis preview was formatted as valid");
+        }
+        catch (ArgumentOutOfRangeException) { }
+        foreach (uint endpoint in new uint[] { 100u, 1000u })
+        {
+            var legalPreview = (uint[])normalSample.Clone();
+            legalPreview[0] = endpoint;
+            if (!WinmmJoystick.FormatAxisPreview(normalDevice, legalPreview, 0)
+                    .Contains($"WinMM range 100–1000", StringComparison.Ordinal))
+                throw new Exception("FAILED: legal WinMM axis preview endpoint rejected");
+        }
+        Console.WriteLine("PASS: read-only WinMM preview rejects impossible axis values (synthetic C#)");
         Console.WriteLine("PASS: WinMM axis provenance visible in Advanced preview (synthetic C# + WPF source contract)");
 
         Console.WriteLine("PASS: WinMM sample/capability boundary rejects malformed inputs (synthetic C#)");
