@@ -116,6 +116,18 @@ internal static class WinmmSignalRangeChecks
             }
             catch (ArgumentOutOfRangeException) { }
         }
+        // A valid displayed axis must not hide an impossible reading on
+        // another, currently unmapped axis in the same six-axis WinMM sample.
+        // This protects future read-only preview callers that bypass WPF polling.
+        var invalidOtherAxis = (uint[])normalSample.Clone();
+        invalidOtherAxis[4] = 1001;
+        try
+        {
+            _ = WinmmJoystick.FormatAxisPreview(previewDevice, invalidOtherAxis, 0);
+            throw new Exception("FAILED: invalid other-axis WinMM value was hidden by preview");
+        }
+        catch (ArgumentOutOfRangeException) { }
+
         try
         {
             _ = WinmmJoystick.FormatAxisPreview(flatDevice, normalSample, 3);
