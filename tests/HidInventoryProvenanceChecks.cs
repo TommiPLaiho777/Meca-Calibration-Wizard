@@ -68,7 +68,7 @@ internal static class HidInventoryProvenanceChecks
         {
             "ObservedMinimumWinmm = p.Value.MinimumWinmm",
             "ObservedMaximumWinmm = p.Value.MaximumWinmm",
-            "SweepExtremaSource = \\"OBSERVED_WINMM_SAMPLES_NOT_DEVICE_AXIS_LIMITS\\""
+            "SweepExtremaSource = \"OBSERVED_WINMM_SAMPLES_NOT_DEVICE_AXIS_LIMITS\""
         })
             if (!sweepReport.Contains(required, StringComparison.Ordinal))
                 throw new Exception("FAILED: WinMM sweep export confuses observed extrema with axis limits: " + required);
