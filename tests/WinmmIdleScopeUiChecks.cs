@@ -34,8 +34,8 @@ internal static class WinmmIdleScopeUiChecks
         string source = File.ReadAllText(
             Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         if (!source.Contains(
-                "ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : \\"" +
-                optionalClutchLabel + "\\";", StringComparison.Ordinal))
+                "ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : \"" +
+                optionalClutchLabel + "\";", StringComparison.Ordinal))
             throw new Exception("FAILED: unchecked clutch label must preserve unverified hardware state");
         Console.WriteLine("PASS: optional clutch UI does not infer physical absence (hardware-free source contract)");
         Console.WriteLine("PASS: WinMM idle-check scope is explicit in WPF markup (hardware-free C#)");
