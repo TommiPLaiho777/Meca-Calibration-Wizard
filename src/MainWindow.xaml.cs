@@ -178,6 +178,19 @@ public partial class MainWindow : Window
             _capture = null;
             _noise = null;
             _sweep = null;
+            _sweepKind = null;
+            // Switching WinMM controllers cancels active guided, signal and sweep
+            // runs. Restore the start buttons for the newly selected controller,
+            // but never permit a stale session to resume without Refresh.
+            bool canReadSelectedController = next is not null && !_winmmSessionInvalid;
+            CaptureButton.IsEnabled = canReadSelectedController;
+            CheckSignalButton.IsEnabled = canReadSelectedController;
+            LongSignalButton.IsEnabled = canReadSelectedController;
+            BrakeSweepButton.IsEnabled = canReadSelectedController;
+            ThrottleSweepButton.IsEnabled = canReadSelectedController;
+            ClutchSweepButton.IsEnabled = canReadSelectedController;
+            SignalText.Text = "Controller selection changed · run a new signal check.";
+            SweepStatusText.Text = "Controller selection changed · record a new sweep.";
             _sweepResults.Clear();
             _lastNoise = null;
             _lastSignalHealth = null;
