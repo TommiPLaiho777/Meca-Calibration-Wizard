@@ -1106,8 +1106,11 @@ public partial class MainWindow : Window
                 {
                     Axis = WinmmJoystick.AxisNames[_mappings[p.Key].Axis],
                     p.Value.InputSource,
-                    p.Value.MinimumWinmm,
+                    p.Value.MinimumWinmm, // legacy fields: observed sweep extrema, not capability bounds
                     p.Value.MaximumWinmm,
+                    ObservedMinimumWinmm = p.Value.MinimumWinmm,
+                    ObservedMaximumWinmm = p.Value.MaximumWinmm,
+                    SweepExtremaSource = "OBSERVED_WINMM_SAMPLES_NOT_DEVICE_AXIS_LIMITS",
                     p.Value.SampleCount,
                     p.Value.DistinctValues,
                     p.Value.IntermediateSamples,
