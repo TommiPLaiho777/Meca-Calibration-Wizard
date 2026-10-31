@@ -1047,6 +1047,15 @@ public partial class MainWindow : Window
             _winmmSessionInvalid = true;
             _raw = Array.Empty<uint>();
             MarkLiveReadingsUnavailable();
+            // A failed final export read is a session failure, not merely an
+            // export error. Keep all WinMM measurement controls visibly disabled
+            // until an explicit Refresh, just as in the polling failure path.
+            CaptureButton.IsEnabled = false;
+            CheckSignalButton.IsEnabled = false;
+            LongSignalButton.IsEnabled = false;
+            BrakeSweepButton.IsEnabled = false;
+            ThrottleSweepButton.IsEnabled = false;
+            ClutchSweepButton.IsEnabled = false;
             AdvancedAxesText.Text = "WinMM stream interrupted · readings are not current.";
             StatusText.Text = "WinMM export check failed · return to Connect and click Refresh";
             MessageBox.Show(this,
