@@ -12,9 +12,12 @@ internal static class NonzeroWinmmAxisSweepChecks
         const uint axisMin = 1000;
         const uint axisMax = 2000;
 
+        // End with two WinMM readings inside the 3% released band.
+        // The earlier linear fixture ended at 10%, 5%, 0%, which left
+        // only one near-rest sample and could conceal a final dropout.
         var invertedTrace = Enumerable.Range(0, 41)
             .Select(i => new SweepPoint(i * 200L,
-                axisMin + (uint)(50 * Math.Abs(i - 20))))
+                axisMin + (i == 39 ? 980u : (uint)(50 * Math.Abs(i - 20)))))
             .ToArray();
         var inverted = SweepDiagnostics.Evaluate(
             invertedTrace, axisMin, axisMax, inverted: true);
