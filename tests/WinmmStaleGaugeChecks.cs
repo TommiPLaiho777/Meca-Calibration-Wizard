@@ -83,6 +83,27 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: manual WinMM selection does not update Connect Begin state");
         Console.WriteLine("PASS: manual WinMM selection updates Connect Begin and preserves stale-session gate (WPF source contract)");
 
+        // Switching controllers during an active guided capture, signal check
+        // or sweep must cancel that run and restore its start controls. A stale
+        // WinMM session or an empty selection must NOT enable new measurements.
+        // This checks source wiring; a real WPF interaction is still untested.
+        foreach (string expected in new[]
+        {
+            "_sweepKind = null;",
+            "bool canReadSelectedController = next is not null && !_winmmSessionInvalid;",
+            "CaptureButton.IsEnabled = canReadSelectedController;",
+            "CheckSignalButton.IsEnabled = canReadSelectedController;",
+            "LongSignalButton.IsEnabled = canReadSelectedController;",
+            "BrakeSweepButton.IsEnabled = canReadSelectedController;",
+            "ThrottleSweepButton.IsEnabled = canReadSelectedController;",
+            "ClutchSweepButton.IsEnabled = canReadSelectedController;",
+            "SignalText.Text = \"Controller selection changed",
+            "SweepStatusText.Text = \"Controller selection changed"
+        })
+            if (!deviceSelectionBody.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: WinMM controller change did not restore safe measurement controls: {expected}");
+        Console.WriteLine("PASS: controller change restores measurement controls without bypassing stale-session gate (WPF source contract)");
+
         // Refresh can reselect the same WinMM ID, so WPF SelectionChanged may
         // not be a reliable signal for clearing live displays. Explicitly
         // clear every gauge on Refresh before the next successful poll.
