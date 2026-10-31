@@ -191,12 +191,30 @@ internal static class SweepTimestampChecks
                 !candidate.Explanation.Contains("single final low WinMM reading"))
                 throw new Exception("FAILED: one-sample WinMM release drop was accepted");
         }
-        var settledTail = finalDrop.Select((p, i) => i switch
+        // A 7.6% penultimate WinMM value is not in the 3% released band.
+        // A single final zero can be a transient dropout, even after a
+        // descending tail. This is a synthetic trace, not a pedal test.
+        var prematureTail = finalDrop.Select((p, i) => i switch
         {
             38 => p with { WinmmValue = 11000u },
             39 => p with { WinmmValue = 5000u },
             _ => p
         }).ToArray();
+        foreach (var candidate in new[]
+        {
+            SweepDiagnostics.Evaluate(prematureTail, 0, 65535),
+            SweepDiagnostics.Evaluate(prematureTail.Select(p =>
+                p with { WinmmValue = 65535u - p.WinmmValue }).ToArray(),
+                0, 65535, inverted: true)
+        })
+        {
+            if (candidate.CompletePressAndRelease || candidate.Status != "Release not confirmed")
+                throw new Exception("FAILED: a single final near-rest WinMM sample was accepted");
+        }
+        // Two consecutive samples within 3% of the released end are sufficient
+        // when preceded by a descending return and valid timing evidence.
+        var settledTail = prematureTail.Select((p, i) =>
+            i == 39 ? p with { WinmmValue = 1000u } : p).ToArray();
         foreach (var candidate in new[]
         {
             SweepDiagnostics.Evaluate(settledTail, 0, 65535),
