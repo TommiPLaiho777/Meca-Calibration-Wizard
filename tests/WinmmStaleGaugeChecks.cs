@@ -270,6 +270,22 @@ internal static class WinmmStaleGaugeChecks
             throw new Exception("FAILED: stale guided WinMM capture still offers Continue or Skip");
         Console.WriteLine("PASS: interrupted guided capture disables Continue and Skip (WPF source contract)");
 
+        // Optional clutch checkbox events can fire after a WinMM disconnect.
+        // Disabling the clutch must not re-enable Skip on a stale capture screen.
+        // Source contract only: no WPF event or physical controller is exercised.
+        int clutchChangeStart = source.IndexOf(
+            "private void ClutchCheck_Changed(", StringComparison.Ordinal);
+        int clutchChangeEnd = source.IndexOf(
+            "private void UpdateMappingLabels(", clutchChangeStart, StringComparison.Ordinal);
+        if (clutchChangeStart < 0 || clutchChangeEnd <= clutchChangeStart)
+            throw new Exception("FAILED: optional clutch change handler missing");
+        string clutchChangeBody = source[clutchChangeStart..clutchChangeEnd];
+        if (!clutchChangeBody.Contains("if (_step == 3)", StringComparison.Ordinal) ||
+            !clutchChangeBody.Contains(
+                "NextButton.IsEnabled = !_winmmSessionInvalid;", StringComparison.Ordinal))
+            throw new Exception("FAILED: disabling clutch must not re-enable Skip on stale WinMM session");
+        Console.WriteLine("PASS: clutch toggle preserves interrupted WinMM Skip gate (WPF source contract)");
+
 
         // After a failed WinMM poll, a refresh must not silently reselect a
         // reused joystick ID. This checks the WPF source contract only; no
