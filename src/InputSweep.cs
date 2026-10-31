@@ -25,7 +25,7 @@ internal sealed record InputSweepResult(
     // Neither reaching nor avoiding the axis ceiling establishes physical force.
     public string HighLimitInterpretation => AtHighLimitSamples > 0
         ? "Windows WinMM high-end axis band observed. This does not verify sensor ADC clipping or physical pedal force; band counts alone do not establish the exact Windows axis maximum."
-        : "No Windows WinMM high-limit samples observed. This does not establish sensor headroom or physical pedal force.";
+        : "No Windows WinMM high-end axis band samples observed. This does not establish sensor headroom or physical pedal force.";
 
     // The raw WinMM high band is the released endpoint for an inverted mapping.
     // Keep the existing property for compatibility; only mapped exports need this context.
