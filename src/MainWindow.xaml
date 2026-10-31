@@ -56,7 +56,7 @@
                         <TextBlock Text="●" Foreground="#7BA4F2" FontSize="19"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="CLUTCH" FontWeight="Bold" FontSize="12"/>
-                            <TextBlock x:Name="ClutchMapText" Text="Not installed" Foreground="{StaticResource DimBrush}" FontSize="12"/>
+                            <TextBlock x:Name="ClutchMapText" Text="Optional · not selected" Foreground="{StaticResource DimBrush}" FontSize="12"/>
                         </StackPanel>
                     </Grid>
                     <Border Background="{StaticResource BorderBrush}" Height="1" Margin="0,25,0,19"/>
