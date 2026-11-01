@@ -191,11 +191,11 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Orientation="Horizontal">
+                                    <WrapPanel Orientation="Horizontal">
                                         <Button x:Name="CheckSignalButton" Content="Check Signal · 3s" Click="CheckSignal_Click"/>
                                         <Button x:Name="LongSignalButton" Content="Long check · 10s"
                                                 Click="CheckLongSignal_Click" Margin="8,0,0,0"/>
-                                    </StackPanel>
+                                    </WrapPanel>
                                     <TextBlock x:Name="SignalText" Grid.Row="1" Text="Not measured" TextWrapping="Wrap"
                                                Margin="0,10,0,0" FontSize="12"/>
                                 </Grid>
@@ -206,12 +206,12 @@
                                 <TextBlock Text="AXIS SWEEP · 8 SECONDS" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
                                 <TextBlock Text="Start fully released and wait briefly after clicking Sweep. Then press once slowly, hold briefly, release fully, and stay released until the 8-second check ends. Windows joystick values only; not sensor ADC."
                                            TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,6,0,12"/>
-                                <StackPanel Orientation="Horizontal">
+                                <WrapPanel Orientation="Horizontal">
                                     <Button x:Name="BrakeSweepButton" Content="Brake sweep" Click="BrakeSweep_Click" Margin="0,0,10,0"/>
                                     <Button x:Name="ThrottleSweepButton" Content="Throttle sweep" Click="ThrottleSweep_Click"/>
                                      <Button x:Name="ClutchSweepButton" Content="Clutch sweep" Click="ClutchSweep_Click"
                                              Visibility="Collapsed" Margin="10,0,0,0"/>
-                                </StackPanel>
+                                </WrapPanel>
                                 <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"/>
                                 <TextBlock x:Name="SweepStatusText" Text="Not measured" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
                                 <TextBlock x:Name="SweepAnalysisText" Text="Complete a sweep to review its signal shape." TextWrapping="Wrap"
