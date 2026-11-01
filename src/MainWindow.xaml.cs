@@ -126,7 +126,7 @@ public partial class MainWindow : Window
         NeedleRotation.Angle = -5;
         ClutchDiscShift.X = 0;
         ClutchHubShift.X = 0;
-        BrakeCaliper.Opacity = 1.0;
+        BrakeNeedleRotation.Angle = -5;
         BrakeValue.Text = "No live input";
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
@@ -169,7 +169,7 @@ public partial class MainWindow : Window
             NeedleRotation.Angle = -5;
             ClutchDiscShift.X = 0;
             ClutchHubShift.X = 0;
-            BrakeCaliper.Opacity = 1.0;
+            BrakeNeedleRotation.Angle = -5;
             BrakeValue.Text = "No live input";
             ThrottleValue.Text = "No live input";
             ClutchValue.Text = "No live input";
@@ -317,7 +317,7 @@ public partial class MainWindow : Window
         NeedleRotation.Angle = -5;
         ClutchDiscShift.X = 0;
         ClutchHubShift.X = 0;
-        BrakeCaliper.Opacity = 1.0;
+        BrakeNeedleRotation.Angle = -5;
         BrakeValue.Text = "No live input";
         ThrottleValue.Text = "No live input";
         ClutchValue.Text = "No live input";
@@ -770,7 +770,7 @@ public partial class MainWindow : Window
             NeedleRotation.Angle = -5 + (percent * 1.1);
             ClutchDiscShift.X = percent * 0.32;
             ClutchHubShift.X = percent * 0.32;
-            BrakeCaliper.Opacity = 1.0 - percent * 0.003;
+            BrakeNeedleRotation.Angle = -5 + (percent * 1.1);
         }
         else if (_step == 4)
         {
