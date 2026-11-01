@@ -40,6 +40,15 @@ internal static class WinmmIdleScopeUiChecks
             throw new Exception("FAILED: advanced WinMM axis provenance lines must wrap");
         Console.WriteLine("PASS: advanced WinMM axis provenance wraps in diagnostics (hardware-free XAML contract)");
 
+        // Live WinMM readings also display long interrupted-session guidance.
+        // Keep it visible on the minimum-width WPF window; markup-only test.
+        var liveRaw = markup.Descendants().FirstOrDefault(e =>
+            (string?)e.Attribute(xamlNamespace + "Name") == "LiveRaw");
+        if ((string?)liveRaw?.Attribute("TextWrapping") != "Wrap")
+            throw new Exception("FAILED: WinMM live reading and interrupted-session guidance must wrap");
+        Console.WriteLine("PASS: WinMM live reading and interrupted-session guidance wraps (hardware-free XAML contract)");
+
+
         string source = File.ReadAllText(
             Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         if (!source.Contains(
