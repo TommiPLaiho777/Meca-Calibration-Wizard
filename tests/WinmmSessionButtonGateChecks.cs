@@ -81,8 +81,8 @@ internal static class WinmmSessionButtonGateChecks
         if (signalStart < 0 || signalEnd <= signalStart)
             throw new Exception("FAILED: WinMM signal layout boundaries missing");
         string signalLayout = xaml[signalStart..signalEnd];
-        if (!signalLayout.Contains("x:Name=\\"SignalText\\" Grid.Row=\\"1\\" Text=\\"Not measured\\" TextWrapping=\\"Wrap\\"", StringComparison.Ordinal) ||
-            signalLayout.Contains("<DockPanel LastChildFill=\\"True\\">", StringComparison.Ordinal))
+        if (!signalLayout.Contains("x:Name=\"SignalText\" Grid.Row=\"1\" Text=\"Not measured\" TextWrapping=\"Wrap\"", StringComparison.Ordinal) ||
+            signalLayout.Contains("<DockPanel LastChildFill=\"True\">", StringComparison.Ordinal))
             throw new Exception("FAILED: WinMM signal status must wrap below the action buttons");
         Console.WriteLine("PASS: WinMM signal status has full-width wrapped row (WPF source contract)");
 
