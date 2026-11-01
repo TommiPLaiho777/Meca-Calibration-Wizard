@@ -48,6 +48,9 @@ internal sealed class GuidedCalibration
     private DateTime _lastSampleUtc;
     private DateTime _movementStartUtc;
     private double _currentPeak;
+    // Second-largest high-band sample distinguishes a lone WinMM peak spike
+    // from a sustained pedal endpoint; it does not establish sensor accuracy.
+    private double _secondHighestPressDisplacement;
     // Reject brief WinMM spikes as pedal presses; require sustained movement.
     private int _pressAboveThresholdSamples;
     private DateTime _firstPressAboveUtc;
@@ -205,6 +208,7 @@ internal sealed class GuidedCalibration
         if (Phase == GuidePhase.AwaitingPress && displacement >= pressThreshold)
         {
             _currentPeak = displacement;
+            _secondHighestPressDisplacement = 0;
             _pressAboveThresholdSamples = 1;
             _firstPressAboveUtc = utcNow;
             _lastPressAboveUtc = utcNow;
@@ -222,7 +226,11 @@ internal sealed class GuidedCalibration
                 _firstPressAboveUtc = default;
                 _lastPressAboveUtc = default;
                 _currentPeak = 0;
+                _secondHighestPressDisplacement = 0;
             }
+            if (displacement >= pressThreshold)
+                _secondHighestPressDisplacement = Math.Max(
+                    _secondHighestPressDisplacement, Math.Min(_currentPeak, displacement));
             _currentPeak = Math.Max(_currentPeak, displacement);
             if (displacement >= pressThreshold)
             {
@@ -245,6 +253,7 @@ internal sealed class GuidedCalibration
                     _firstPressAboveUtc = default;
                     _lastPressAboveUtc = default;
                     _currentPeak = 0;
+                    _secondHighestPressDisplacement = 0;
                 }
             }
             else
@@ -262,10 +271,21 @@ internal sealed class GuidedCalibration
                     (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100 &&
                     _currentPeak >= pressThreshold)
                 {
+                    // A single extreme WinMM sample can otherwise become a
+                    // false pedal endpoint even after an ordinary sustained hold.
+                    // Reject this ambiguous capture rather than silently changing
+                    // its peak or claiming that a sensor was verified.
+                    if (_currentPeak > _secondHighestPressDisplacement * 2.0 &&
+                        _currentPeak - _secondHighestPressDisplacement > _range[_axis] * 0.25)
+                    {
+                        Fail("Isolated WinMM peak detected. Release the pedal and retry capture smoothly.");
+                        return;
+                    }
                     double absolutePeak = _rest[_axis] + _direction * _currentPeak;
                     _peaks.Add((uint)Math.Clamp(Math.Round(absolutePeak), 0d, (double)uint.MaxValue));
                 }
                 _currentPeak = 0;
+                _secondHighestPressDisplacement = 0;
                 _pressAboveThresholdSamples = 0;
                 _releaseBelowThresholdSamples = 0;
                 Phase = GuidePhase.AwaitingPress;
