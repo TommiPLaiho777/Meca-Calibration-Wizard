@@ -108,16 +108,18 @@
                         <TextBlock x:Name="CaptureHelp" Text="Release, then press and release three times." TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="14"/>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="14" Padding="17" Margin="0,20,0,16">
                             <Grid Height="180">
-                                <!-- Disc brake: rotor, hub, and caliper -->
+                                <!-- White-faced analog brake preview: WinMM percentage, not force or sensor ADC. -->
                                 <Canvas x:Name="BrakeIcon" Height="165" Width="255" HorizontalAlignment="Center">
-                                    <Ellipse Width="145" Height="145" Canvas.Left="40" Canvas.Top="10" Stroke="#B9CAD8" StrokeThickness="13" Fill="#5B768C"/>
-                                    <Ellipse Width="107" Height="107" Canvas.Left="59" Canvas.Top="29" Stroke="#91A7B9" StrokeThickness="4" Fill="#314252"/>
-                                    <Ellipse Width="45" Height="45" Canvas.Left="90" Canvas.Top="60" Fill="#ABBCCA" Stroke="#E5EFF6" StrokeThickness="2"/>
-                                    <Ellipse Width="12" Height="12" Canvas.Left="106" Canvas.Top="76" Fill="#314252"/>
-                                    <Rectangle x:Name="BrakeCaliper" Width="59" Height="85" RadiusX="9" RadiusY="9"
-                                               Fill="#EE7468" Stroke="#FDB2AC" StrokeThickness="2" Canvas.Left="142" Canvas.Top="39"/>
-                                    <Rectangle Width="16" Height="28" Fill="#7D3533" Canvas.Left="154" Canvas.Top="68"/>
-                                    <TextBlock Text="BRAKE" Canvas.Left="197" Canvas.Top="74" FontSize="12" FontWeight="Bold"/>
+                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
+                                    <Path x:Name="BrakeCaliper" Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#C85B52" StrokeThickness="7" Fill="Transparent"/>
+                                    <TextBlock Text="0" Canvas.Left="70" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="50" Canvas.Left="109" Canvas.Top="28" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="100" Canvas.Left="155" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <Line x:Name="BrakeNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#152027" StrokeThickness="4" StrokeStartLineCap="Round">
+                                        <Line.RenderTransform><RotateTransform x:Name="BrakeNeedleRotation" CenterX="118" CenterY="85"/></Line.RenderTransform>
+                                    </Line>
+                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
+                                    <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
                                 <!-- White-faced analog throttle preview: WinMM percentage, not RPM or sensor ADC. -->
                                 <Canvas x:Name="ThrottleIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed">
