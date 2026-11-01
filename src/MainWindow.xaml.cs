@@ -716,7 +716,19 @@ public partial class MainWindow : Window
             else
             {
                 SweepProgress.Value = _sweep.Progress(now) * 100;
-                SweepStatusText.Text = $"{sweepPedal}: recording… {Math.Max(0, InputSweepRun.DurationSeconds - (now - _sweepStartUtc).TotalSeconds):0.0}s";
+                // Guide the operator through one slow WinMM stroke without
+                // claiming to measure physical pedal force or sensor ADC.
+                // Timing cues are advisory; SweepDiagnostics still validates
+                // the actual recorded signal and its release tail.
+                double remaining = Math.Max(0, InputSweepRun.DurationSeconds -
+                    (now - _sweepStartUtc).TotalSeconds);
+                double elapsed = InputSweepRun.DurationSeconds - remaining;
+                string cue = elapsed < 0.75
+                    ? "WAIT RELEASED"
+                    : elapsed < 6.0
+                        ? "PRESS ONCE · hold briefly, then release"
+                        : "STAY RELEASED until capture ends";
+                SweepStatusText.Text = $"{sweepPedal}: recording… {remaining:0.0}s · {cue}";
                 if (_sweep.Complete && _sweep.Result is { } result)
                 {
                     _sweepResults[sweepPedal] = result;
@@ -839,7 +851,7 @@ public partial class MainWindow : Window
         ThrottleSweepButton.IsEnabled = false;
         ClutchSweepButton.IsEnabled = false;
         SweepProgress.Value = 0;
-        SweepStatusText.Text = $"{kind}: slowly press, hold, release within 8 seconds.";
+        SweepStatusText.Text = $"{kind}: WAIT RELEASED · follow the press/release cue.";
     }
 
     private void UpdateSweepDetails()
