@@ -129,6 +129,35 @@ static class Checks
             "three one-sample WinMM spikes must not become a valid calibration");
         Console.WriteLine("PASS: transient WinMM spikes do not count as guided presses (synthetic C#)");
 
+        // A one-sample full-scale WinMM glitch followed by a sustained
+        // lower-amplitude press must not become the guided pedal endpoint.
+        // Check both axis polarities without accessing a physical controller.
+        foreach (bool invertedSpike in new[] { false, true })
+        {
+            var peakClock = new DateTime(2026, 11, 1, 1, 0, 0, DateTimeKind.Utc);
+            var peakGuide = new GuidedCalibration(PedalKind.Brake, Device,
+                Array.Empty<int>(), peakClock);
+            uint rest = invertedSpike ? 65535u : 0u;
+            uint sustained = invertedSpike ? 50535u : 15000u;
+            uint isolatedExtreme = invertedSpike ? 0u : 65535u;
+            for (int i = 1; i <= 32; i++)
+                peakGuide.Observe(Axes(0, rest), peakClock.AddMilliseconds(i * 40));
+            Require(peakGuide.Phase == GuidePhase.AwaitingPress,
+                "peak outlier fixture must finish rest sampling");
+            peakClock = peakClock.AddMilliseconds(32 * 40);
+            foreach (uint value in new[] { isolatedExtreme, sustained, sustained,
+                                          sustained, sustained, rest, rest, rest })
+            {
+                peakClock = peakClock.AddMilliseconds(40);
+                peakGuide.Observe(Axes(0, value), peakClock);
+            }
+            Require(peakGuide.Phase == GuidePhase.Failed &&
+                    peakGuide.Result is null && peakGuide.PressesCompleted == 0 &&
+                    peakGuide.FailureReason.Contains("Isolated WinMM peak"),
+                "single extreme WinMM peak must invalidate guided capture");
+        }
+        Console.WriteLine("PASS: isolated WinMM guided peak outliers rejected in both polarities (synthetic C#)");
+
         // Three nonconsecutive high samples must not be accumulated into a
         // sustained press when each is separated by a below-threshold reading
         // that is still above the release threshold. Synthetic WinMM only.
