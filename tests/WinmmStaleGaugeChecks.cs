@@ -51,7 +51,7 @@ internal static class WinmmStaleGaugeChecks
             "NeedleRotation.Angle = -5;",
             "ClutchDiscShift.X = 0;",
             "ClutchHubShift.X = 0;",
-            "BrakeCaliper.Opacity = 1.0;"
+            "BrakeNeedleRotation.Angle = -5;"
         })
             if (!body.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: stale WinMM gauge not reset: {expected}");
@@ -79,7 +79,7 @@ internal static class WinmmStaleGaugeChecks
             "NeedleRotation.Angle = -5;",
             "ClutchDiscShift.X = 0;",
             "ClutchHubShift.X = 0;",
-            "BrakeCaliper.Opacity = 1.0;",
+            "BrakeNeedleRotation.Angle = -5;",
             "BrakeValue.Text = \"No live input\";",
             "ThrottleValue.Text = \"No live input\";",
             "ClutchValue.Text = \"No live input\";",
@@ -149,7 +149,7 @@ internal static class WinmmStaleGaugeChecks
             "NeedleRotation.Angle = -5;",
             "ClutchDiscShift.X = 0;",
             "ClutchHubShift.X = 0;",
-            "BrakeCaliper.Opacity = 1.0;",
+            "BrakeNeedleRotation.Angle = -5;",
             "BrakeValue.Text = \"No live input\";",
             "ThrottleValue.Text = \"No live input\";",
             "ClutchValue.Text = \"No live input\";",
