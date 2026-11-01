@@ -1401,6 +1401,25 @@ static class Checks
             "guided preview must suppress out-of-range WinMM percentages");
         Console.WriteLine("PASS: guided WinMM preview suppresses invalid live values (WPF source contract)");
 
+        // Hardware-free WPF source contract for the brake's white-faced
+        // analog WinMM gauge. This does not render the window or test pedals.
+        var brakeDial = xaml.Descendants().Single(e => e.Name.LocalName == "Canvas" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "BrakeIcon"));
+        Require(brakeDial.Elements().Any(e => e.Name.LocalName == "Ellipse" &&
+                    (string?)e.Attribute("Fill") == "#F6F8F8") &&
+                new[] { "0", "50", "100" }.All(label =>
+                    brakeDial.Elements().Any(e => e.Name.LocalName == "TextBlock" &&
+                        (string?)e.Attribute("Text") == label &&
+                        (string?)e.Attribute("Foreground") == "#152027")) &&
+                brakeDial.Descendants().Any(e => e.Name.LocalName == "RotateTransform" &&
+                    e.Attributes().Any(a => a.Name.LocalName == "Name" &&
+                        a.Value == "BrakeNeedleRotation")) &&
+                guidedUiSource.Contains("BrakeNeedleRotation.Angle = -5 + (percent * 1.1);") &&
+                windowSource.Split("BrakeNeedleRotation.Angle = -5;").Length - 1 == 3 &&
+                !windowSource.Contains("BrakeCaliper.Opacity = 1.0 - percent"),
+            "brake WinMM analog dial, needle update and stale-read reset must stay wired");
+        Console.WriteLine("PASS: white-faced brake WinMM analog gauge (WPF source contract, no hardware)");
+
         Console.WriteLine("ALL CHECKS PASSED");
         return 0;
     }
