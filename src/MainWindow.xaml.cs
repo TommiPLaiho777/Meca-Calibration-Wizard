@@ -291,6 +291,9 @@ public partial class MainWindow : Window
     {
         BrakeMapText.Text = MapLabel(PedalKind.Brake);
         ThrottleMapText.Text = MapLabel(PedalKind.Throttle);
+        // An absent optional clutch must not occupy space in the setup sidebar.
+        if (ClutchMappingRow is not null)
+            ClutchMappingRow.Visibility = ClutchCheck?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : "Optional · not selected";
     }
 
