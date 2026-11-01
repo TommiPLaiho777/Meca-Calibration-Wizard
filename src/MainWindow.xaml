@@ -234,7 +234,7 @@
                         <TextBlock Text="Windows joystick axis names may differ from DIView labels."
                                    Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,25,0,0" Padding="23" CornerRadius="12">
-                            <TextBlock x:Name="AdvancedAxesText" FontFamily="Consolas" FontSize="17" LineHeight="38" Text="No input"/>
+                            <TextBlock x:Name="AdvancedAxesText" FontFamily="Consolas" FontSize="17" LineHeight="38" TextWrapping="Wrap" Text="No input"/>
                         </Border>
                         <TextBlock x:Name="WinmmIdsText" Text="WinMM capability IDs unavailable"
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,15,0,0"/>
