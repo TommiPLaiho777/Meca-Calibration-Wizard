@@ -37,6 +37,20 @@ internal static class WinmmIdleScopeUiChecks
                 "ClutchMapText.Text = ClutchCheck?.IsChecked == true ? MapLabel(PedalKind.Clutch) : \"" +
                 optionalClutchLabel + "\";", StringComparison.Ordinal))
             throw new Exception("FAILED: unchecked clutch label must preserve unverified hardware state");
+        // The eight-second read-only sweep starts with a settled released pedal.
+        // Preserve the guidance after UI copy edits: one slow stroke, a held
+        // press, and a settled release. This is markup only, not a pedal test.
+        var sweepGuide = notes.FirstOrDefault(s =>
+            s!.Contains("Start fully released and wait briefly after clicking Sweep.",
+                StringComparison.Ordinal));
+        if (sweepGuide is null ||
+            !sweepGuide.Contains("press once slowly, hold briefly, release fully, and stay released",
+                StringComparison.Ordinal) ||
+            !sweepGuide.Contains("Windows joystick values only; not sensor ADC",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM sweep instructions must require a released start, one held stroke, a settled release, and explicit Windows-only scope");
+        Console.WriteLine("PASS: WinMM sweep instructions preserve released start, settled release and WinMM-only scope (hardware-free markup contract)");
+
         Console.WriteLine("PASS: optional clutch UI does not infer physical absence (hardware-free source contract)");
         Console.WriteLine("PASS: WinMM idle-check scope is explicit in WPF markup (hardware-free C#)");
     }
