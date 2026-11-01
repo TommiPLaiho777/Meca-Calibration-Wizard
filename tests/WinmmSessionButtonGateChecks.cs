@@ -84,6 +84,23 @@ internal static class WinmmSessionButtonGateChecks
         if (!signalLayout.Contains("x:Name=\"SignalText\" Grid.Row=\"1\" Text=\"Not measured\" TextWrapping=\"Wrap\"", StringComparison.Ordinal) ||
             signalLayout.Contains("<DockPanel LastChildFill=\"True\">", StringComparison.Ordinal))
             throw new Exception("FAILED: WinMM signal status must wrap below the action buttons");
+        // Read-only WinMM action buttons must wrap rather than clip when the
+        // diagnostics pane is narrow or the optional clutch button is visible.
+        // Markup-only contract: real WPF layout remains to be checked on Windows.
+        if (!signalLayout.Contains("<WrapPanel Orientation=\"Horizontal\">", StringComparison.Ordinal) ||
+            signalLayout.Contains("<StackPanel Orientation=\"Horizontal\">", StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM signal actions must wrap on narrow windows");
+        int sweepStart = xaml.IndexOf("AXIS SWEEP · 8 SECONDS", StringComparison.Ordinal);
+        int sweepEnd = sweepStart < 0 ? -1 : xaml.IndexOf("Export preview report (JSON)", sweepStart, StringComparison.Ordinal);
+        if (sweepStart < 0 || sweepEnd <= sweepStart)
+            throw new Exception("FAILED: WinMM sweep action layout boundaries missing");
+        string sweepLayout = xaml[sweepStart..sweepEnd];
+        if (!sweepLayout.Contains("<WrapPanel Orientation=\"Horizontal\">", StringComparison.Ordinal) ||
+            sweepLayout.Contains("<StackPanel Orientation=\"Horizontal\">", StringComparison.Ordinal) ||
+            !sweepLayout.Contains("x:Name=\"ClutchSweepButton\"", StringComparison.Ordinal))
+            throw new Exception("FAILED: optional clutch and sweep actions must wrap on narrow windows");
+        Console.WriteLine("PASS: WinMM signal and sweep action rows wrap (hardware-free WPF markup contract)");
+
         Console.WriteLine("PASS: WinMM signal status has full-width wrapped row (WPF source contract)");
 
         Console.WriteLine("PASS: stale WinMM sessions cannot re-enable measurement starts through WPF state resets (source contract)");
