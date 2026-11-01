@@ -11,6 +11,29 @@ internal static class WinmmStaleGaugeChecks
     internal static void Verify()
     {
         var source = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+
+        // Hardware-free source contract for the first approved analog dial.
+        // WPF visual behavior still requires a separate Windows GUI test.
+        var xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        int dialStart = xaml.IndexOf("<Canvas x:Name=\"ThrottleIcon\"", StringComparison.Ordinal);
+        int dialEnd = xaml.IndexOf("<!-- Two clutch discs separating -->", dialStart, StringComparison.Ordinal);
+        if (dialStart < 0 || dialEnd <= dialStart)
+            throw new Exception("FAILED: WinMM throttle dial XAML not found");
+        string dial = xaml[dialStart..dialEnd];
+        foreach (string expected in new[]
+        {
+            "Fill=\"#F6F8F8\"",
+            "Text=\"0\"",
+            "Text=\"50\"",
+            "Text=\"100\"",
+            "Foreground=\"#152027\"",
+            "x:Name=\"ThrottleNeedle\"",
+            "x:Name=\"NeedleRotation\"",
+            "Text=\"WINMM\""
+        })
+            if (!dial.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: white-faced WinMM dial contract: {expected}");
+        Console.WriteLine("PASS: white-faced WinMM dial retains dark numbers and live needle (XAML source contract)");
         int start = source.IndexOf("private void MarkLiveReadingsUnavailable()", StringComparison.Ordinal);
         int end = source.IndexOf("private void UpdateDeviceInfo(", start, StringComparison.Ordinal);
         if (start < 0 || end <= start)
