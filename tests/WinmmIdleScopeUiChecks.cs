@@ -31,6 +31,15 @@ internal static class WinmmIdleScopeUiChecks
             (string?)e.Attribute(xamlNamespace + "Name") == "ClutchMapText");
         if ((string?)clutchMap?.Attribute("Text") != optionalClutchLabel)
             throw new Exception("FAILED: initial clutch label must not assert physical absence");
+        // Long WinMM range/provenance lines can exceed the diagnostics card
+        // width on the minimum-size window. Keep the values visible by wrapping
+        // within the scrollable panel; this is a markup check, not WPF rendering.
+        var advancedAxes = markup.Descendants().FirstOrDefault(e =>
+            (string?)e.Attribute(xamlNamespace + "Name") == "AdvancedAxesText");
+        if ((string?)advancedAxes?.Attribute("TextWrapping") != "Wrap")
+            throw new Exception("FAILED: advanced WinMM axis provenance lines must wrap");
+        Console.WriteLine("PASS: advanced WinMM axis provenance wraps in diagnostics (hardware-free XAML contract)");
+
         string source = File.ReadAllText(
             Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         if (!source.Contains(
