@@ -51,7 +51,7 @@
                             <TextBlock x:Name="ThrottleMapText" Text="Not captured" Foreground="{StaticResource DimBrush}" FontSize="12"/>
                         </StackPanel>
                     </Grid>
-                    <Grid Margin="0,19,0,0">
+                    <Grid x:Name="ClutchMappingRow" Margin="0,19,0,0" Visibility="Collapsed">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <TextBlock Text="●" Foreground="#7BA4F2" FontSize="19"/>
                         <StackPanel Grid.Column="1">
