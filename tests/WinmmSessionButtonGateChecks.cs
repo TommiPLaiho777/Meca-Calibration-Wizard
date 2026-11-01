@@ -73,6 +73,19 @@ internal static class WinmmSessionButtonGateChecks
             throw new Exception("FAILED: optional clutch mapping visibility must follow explicit clutch selection");
         Console.WriteLine("PASS: optional clutch mapping is hidden unless selected (WPF source contract)");
 
+        // The WinMM idle-check status needs a full-width, wrapped row below
+        // the two buttons. This is a source-level layout contract, not a
+        // Windows rendering or physical-pedal validation.
+        int signalStart = xaml.IndexOf("WINMM SIGNAL STABILITY", StringComparison.Ordinal);
+        int signalEnd = xaml.IndexOf("AXIS SWEEP · 8 SECONDS", signalStart, StringComparison.Ordinal);
+        if (signalStart < 0 || signalEnd <= signalStart)
+            throw new Exception("FAILED: WinMM signal layout boundaries missing");
+        string signalLayout = xaml[signalStart..signalEnd];
+        if (!signalLayout.Contains("x:Name=\\"SignalText\\" Grid.Row=\\"1\\" Text=\\"Not measured\\" TextWrapping=\\"Wrap\\"", StringComparison.Ordinal) ||
+            signalLayout.Contains("<DockPanel LastChildFill=\\"True\\">", StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM signal status must wrap below the action buttons");
+        Console.WriteLine("PASS: WinMM signal status has full-width wrapped row (WPF source contract)");
+
         Console.WriteLine("PASS: stale WinMM sessions cannot re-enable measurement starts through WPF state resets (source contract)");
     }
 }
