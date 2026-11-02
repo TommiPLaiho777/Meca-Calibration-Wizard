@@ -112,7 +112,7 @@
                             <Grid Height="180">
                                 <!-- White-faced analog brake preview: WinMM percentage, not force or sensor ADC. -->
                                 <Canvas x:Name="BrakeIcon" Height="165" Width="255" HorizontalAlignment="Center"
-                                        AutomationProperties.Name="Brake WinMM input gauge"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Brake WinMM input gauge: {0}'}"
                                         ToolTip="Brake gauge: Windows-reported input percentage, not measured force or raw sensor ADC.">
                                     <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
                                     <Path x:Name="BrakeCaliper" Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#C85B52" StrokeThickness="7" Fill="Transparent"/>
@@ -127,7 +127,7 @@
                                 </Canvas>
                                 <!-- White-faced analog throttle preview: WinMM percentage, not RPM or sensor ADC. -->
                                 <Canvas x:Name="ThrottleIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed"
-                                        AutomationProperties.Name="Throttle WinMM input gauge"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Throttle WinMM input gauge: {0}'}"
                                         ToolTip="Throttle gauge: Windows-reported input percentage, not engine RPM or raw sensor ADC.">
                                     <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
                                     <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#238F79" StrokeThickness="7" Fill="Transparent"/>
@@ -142,7 +142,7 @@
                                 </Canvas>
                                 <!-- White-faced analog clutch preview: optional WinMM pedal travel, not measured force. -->
                                 <Canvas x:Name="ClutchIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed"
-                                        AutomationProperties.Name="Clutch WinMM input gauge"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Clutch WinMM input gauge: {0}'}"
                                         ToolTip="Optional clutch gauge: Windows-reported input percentage, not measured pedal travel, force, or raw sensor ADC.">
                                     <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
                                     <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#5689C9" StrokeThickness="7" Fill="Transparent"/>
@@ -162,7 +162,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBlock Text="LIVE INPUT" Foreground="{StaticResource DimBrush}" FontSize="11" FontWeight="Bold"/>
-                            <TextBlock x:Name="LiveValue" Grid.Column="1" Text="0%" FontWeight="Bold" FontSize="16"/>
+                            <TextBlock x:Name="LiveValue" Grid.Column="1" Text="—" FontWeight="Bold" FontSize="16"/>
                         </Grid>
                         <ProgressBar x:Name="CaptureProgress" Value="0" Margin="0,10,0,5"/>
                         <TextBlock x:Name="LiveRaw" Text="WinMM reading: — (not sensor ADC)" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="11"/>
