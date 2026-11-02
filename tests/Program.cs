@@ -912,6 +912,18 @@ static class Checks
         }
         Console.WriteLine("PASS: analog gauge accessibility names track live WinMM values (XAML source contract)");
 
+        // The sweep progress bar reports elapsed time, not pedal force.
+        // Source contract only: actual screen-reader behavior requires a Windows GUI test.
+        var sweepProgress = xaml.Descendants().Single(e => e.Name.LocalName == "ProgressBar" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "SweepProgress"));
+        Require((string?)sweepProgress.Attribute("AutomationProperties.Name") ==
+                    "WinMM pedal sweep elapsed time" &&
+                ((string?)sweepProgress.Attribute("AutomationProperties.HelpText"))?.Contains(
+                    "elapsed time, not pedal force or raw sensor ADC.") == true &&
+                ((string?)sweepProgress.Attribute("ToolTip"))?.Contains("elapsed time only") == true,
+            "WinMM sweep progress must be accessible without implying a physical force reading");
+        Console.WriteLine("PASS: WinMM sweep progress elapsed-time accessibility (XAML source contract)");
+
         // Setup copy must not imply that WinMM peak similarity measures
         // native load-cell force or physically verified repeatability.
         Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
