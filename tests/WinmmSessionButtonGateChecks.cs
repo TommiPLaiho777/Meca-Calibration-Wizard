@@ -66,6 +66,13 @@ internal static class WinmmSessionButtonGateChecks
         // Source-level GUI contract: absent optional clutch has no visible mapping row.
         // This does not substitute for a real WPF layout test on Windows.
         string xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        // Refresh is a destructive session boundary, not a harmless list reload.
+        // Explain the recapture requirement to pointer and assistive-technology users.
+        if (!xaml.Contains("Click=\"Refresh_Click\"", StringComparison.Ordinal) ||
+            !xaml.Contains("ToolTip=\"Refresh clears the previous WinMM pedal, signal and sweep measurements and HID scan results. Capture or scan again before exporting.\"", StringComparison.Ordinal) ||
+            !xaml.Contains("AutomationProperties.HelpText=\"Refresh clears previous measurements. Select the controller and repeat capture. A WinMM ID does not verify physical device identity.\"", StringComparison.Ordinal))
+            throw new Exception("FAILED: Refresh must explain discarded WinMM/HID data and physical identity limits");
+        Console.WriteLine("PASS: Refresh warns about lost measurements and WinMM identity limits (WPF source contract)");
         // Switching away from a scrolled diagnostics page must show the next
         // wizard heading, rather than preserving an off-screen scroll offset.
         // This is a source contract; actual scrolling needs a Windows WPF UI test.
