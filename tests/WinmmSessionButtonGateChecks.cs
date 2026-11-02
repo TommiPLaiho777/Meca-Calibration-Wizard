@@ -97,6 +97,21 @@ internal static class WinmmSessionButtonGateChecks
         if (!mapping.Contains("ClutchMappingRow.Visibility = ClutchCheck?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;", StringComparison.Ordinal))
             throw new Exception("FAILED: optional clutch mapping visibility must follow explicit clutch selection");
         Console.WriteLine("PASS: optional clutch mapping is hidden unless selected (WPF source contract)");
+
+        // Long WinMM axis labels and the critical STALE warning must remain
+        // visible in the narrow setup sidebar. This checks XAML only;
+        // rendered wrapping still needs a Windows WPF visual test.
+        foreach (string mappingName in new[] { "BrakeMapText", "ThrottleMapText", "ClutchMapText" })
+        {
+            string marker = "<TextBlock x:Name=\\"" + mappingName + "\\"";
+            int start = xaml.IndexOf(marker, StringComparison.Ordinal);
+            int end = start < 0 ? -1 : xaml.IndexOf("/>", start, StringComparison.Ordinal);
+            if (start < 0 || end <= start ||
+                !xaml[start..(end + 2)].Contains("TextWrapping=\\"Wrap\\"", StringComparison.Ordinal))
+                throw new Exception("FAILED: WinMM sidebar mapping label must wrap: " + mappingName);
+        }
+        Console.WriteLine("PASS: WinMM mapping and stale-session labels wrap in sidebar (WPF source contract)");
+
         // The optional analog clutch gauge must disappear immediately if the
         // clutch is unchecked while its capture view remains open. Returning to
         // that view with no clutch selected must not reveal the gauge either.
