@@ -890,6 +890,28 @@ static class Checks
                 ((string?)liveReadout.Attribute("Text"))?.Contains("not sensor ADC") == true,
             "initial live input label must identify WinMM and disclaim sensor ADC");
         Console.WriteLine("PASS: initial live pedal reading is labelled WinMM, not sensor ADC");
+
+        // The visible analog dial must expose the current WinMM percentage
+        // to assistive technology, not just a static pedal name. Binding to
+        // LiveValue also propagates the interrupted/no-reading marker.
+        // This is a markup/source contract, not a rendered WPF accessibility test.
+        var livePercent = xaml.Descendants().Single(e => e.Name.LocalName == "TextBlock" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "LiveValue"));
+        Require((string?)livePercent.Attribute("Text") == "—",
+            "live WinMM percentage must not initially imply a controller reading");
+        foreach (string pedal in new[] { "Brake", "Throttle", "Clutch" })
+        {
+            var gauge = xaml.Descendants().Single(e => e.Name.LocalName == "Canvas" &&
+                e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == pedal + "Icon"));
+            string? accessibleName = (string?)gauge.Attribute("AutomationProperties.Name");
+            Require(accessibleName is not null &&
+                    accessibleName.Contains("ElementName=LiveValue", StringComparison.Ordinal) &&
+                    accessibleName.Contains("StringFormat='" + pedal +
+                        " WinMM input gauge: {0}'", StringComparison.Ordinal),
+                pedal + " gauge accessibility name must track the live WinMM readout");
+        }
+        Console.WriteLine("PASS: analog gauge accessibility names track live WinMM values (XAML source contract)");
+
         // Setup copy must not imply that WinMM peak similarity measures
         // native load-cell force or physically verified repeatability.
         Require(xaml.Descendants().Any(e => e.Name.LocalName == "TextBlock" &&
