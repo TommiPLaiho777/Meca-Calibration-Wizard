@@ -912,6 +912,21 @@ static class Checks
         }
         Console.WriteLine("PASS: analog gauge accessibility names track live WinMM values (XAML source contract)");
 
+        // The guided capture bar shows current WinMM pedal input, not
+        // measurement completion or physical force. Actual assistive-tech
+        // behavior still needs a Windows WPF test.
+        var captureInputBar = xaml.Descendants().Single(e => e.Name.LocalName == "ProgressBar" &&
+            e.Attributes().Any(a => a.Name.LocalName == "Name" && a.Value == "CaptureProgress"));
+        Require((string?)captureInputBar.Attribute("AutomationProperties.Name") ==
+                    "Current pedal WinMM input percentage" &&
+                ((string?)captureInputBar.Attribute("AutomationProperties.HelpText"))?.Contains(
+                    "not capture completion, pedal force, or raw sensor ADC.") == true &&
+                ((string?)captureInputBar.Attribute("ToolTip"))?.Contains(
+                    "not measurement completion or physical force") == true &&
+                windowSource.Contains("CaptureProgress.Value = percent;", StringComparison.Ordinal),
+            "guided capture bar must describe live WinMM input, not capture progress or force");
+        Console.WriteLine("PASS: guided capture bar WinMM input accessibility (XAML source contract)");
+
         // The sweep progress bar reports elapsed time, not pedal force.
         // Source contract only: actual screen-reader behavior requires a Windows GUI test.
         var sweepProgress = xaml.Descendants().Single(e => e.Name.LocalName == "ProgressBar" &&
