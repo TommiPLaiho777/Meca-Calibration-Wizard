@@ -247,6 +247,7 @@ public partial class MainWindow : Window
             if (SignalText is not null)
                 SignalText.Text = "Pedal selection changed · run signal check again.";
         }
+        bool cancelledActiveClutch = _capture?.Kind == PedalKind.Clutch;
         if (ClutchCheck.IsChecked != true)
         {
             // Disabling an optional clutch while its guided capture is running
@@ -281,6 +282,30 @@ public partial class MainWindow : Window
             // A removed pedal must not leave an orphan sweep: JSON export
             // resolves each saved sweep through the active pedal mapping.
             _sweepResults.Remove(PedalKind.Clutch);
+        }
+        // Toggling the optional clutch on its capture page must not leave a
+        // previously captured counter, quality label or Continue action visible.
+        // A disabled clutch has no valid mapping or saved guided measurement.
+        if (_step == 3)
+        {
+            bool clutchSelected = ClutchCheck.IsChecked == true;
+            bool clutchCaptured = clutchSelected && _mappings.ContainsKey(PedalKind.Clutch);
+            NextButton.Content = clutchCaptured ? "Continue  →" : "Skip  →";
+            NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;
+            if (!clutchSelected)
+            {
+                CaptureCounter.Text = "0 / 3 presses";
+                CaptureQualityText.Text = "";
+                CaptureFooter.Text = cancelledActiveClutch
+                    ? "Clutch disabled · capture cancelled. No clutch data saved."
+                    : "Clutch disabled · optional step skipped. No clutch data saved.";
+            }
+            else if (_capture is null && !clutchCaptured)
+            {
+                CaptureCounter.Text = "0 / 3 presses";
+                CaptureQualityText.Text = "";
+                CaptureFooter.Text = "Clutch selected · release pedal, then click Start to capture.";
+            }
         }
         UpdateMappingLabels();
         if (_step == 4)
