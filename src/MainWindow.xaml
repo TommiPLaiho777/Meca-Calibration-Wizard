@@ -186,18 +186,24 @@
                                 <TextBlock Text="BRAKE" FontWeight="Bold" FontSize="12" Foreground="#F4A09B"/>
                                 <TextBlock x:Name="BrakeValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                             </Grid>
-                            <ProgressBar x:Name="BrakeProgress" Foreground="#EC776B" Margin="0,8,0,22"/>
+                            <ProgressBar x:Name="BrakeProgress" Foreground="#EC776B" Margin="0,8,0,22"
+                                         AutomationProperties.Name="Brake WinMM input"
+                                         AutomationProperties.HelpText="Read-only Windows-reported input percentage, not physical pedal force or raw sensor ADC."/>
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="THROTTLE" FontWeight="Bold" FontSize="12" Foreground="#72E9C9"/>
                                 <TextBlock x:Name="ThrottleValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                             </Grid>
-                            <ProgressBar x:Name="ThrottleProgress" Foreground="#52D2AC" Margin="0,8,0,22"/>
+                            <ProgressBar x:Name="ThrottleProgress" Foreground="#52D2AC" Margin="0,8,0,22"
+                                         AutomationProperties.Name="Throttle WinMM input"
+                                         AutomationProperties.HelpText="Read-only Windows-reported input percentage, not physical pedal travel or raw sensor ADC."/>
                             <StackPanel x:Name="ClutchTestArea" Visibility="Collapsed">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="CLUTCH" FontWeight="Bold" FontSize="12" Foreground="#9BBDF9"/>
                                     <TextBlock x:Name="ClutchValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                                 </Grid>
-                                <ProgressBar x:Name="ClutchProgress" Foreground="#7BA4F2" Margin="0,8,0,12"/>
+                                <ProgressBar x:Name="ClutchProgress" Foreground="#7BA4F2" Margin="0,8,0,12"
+                                             AutomationProperties.Name="Clutch WinMM input"
+                                             AutomationProperties.HelpText="Optional read-only Windows-reported input percentage, not physical pedal travel or raw sensor ADC."/>
                             </StackPanel>
                         </StackPanel>
                         <TextBlock x:Name="SummaryText" Text="" Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,7"/>
