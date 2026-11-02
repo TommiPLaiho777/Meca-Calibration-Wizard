@@ -215,6 +215,11 @@ public partial class MainWindow : Window
     private void ClutchCheck_Changed(object sender, RoutedEventArgs e)
     {
         if (ClutchCheck is null) return;
+        // An optional clutch must not leave its analog gauge visible when unchecked,
+        // including while the user is still on the clutch capture step.
+        if (ClutchIcon is not null)
+            ClutchIcon.Visibility = _step == 3 && ClutchCheck.IsChecked == true
+                ? Visibility.Visible : Visibility.Collapsed;
         // An unused WinMM axis is not evidence of a physical clutch.
         if (ClutchSweepButton is not null)
             ClutchSweepButton.Visibility = ClutchCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -414,7 +419,8 @@ public partial class MainWindow : Window
             CaptureHelp.Text = info.Item3;
             BrakeIcon.Visibility = kind == PedalKind.Brake ? Visibility.Visible : Visibility.Collapsed;
             ThrottleIcon.Visibility = kind == PedalKind.Throttle ? Visibility.Visible : Visibility.Collapsed;
-            ClutchIcon.Visibility = kind == PedalKind.Clutch ? Visibility.Visible : Visibility.Collapsed;
+            ClutchIcon.Visibility = kind == PedalKind.Clutch && ClutchCheck.IsChecked == true
+                ? Visibility.Visible : Visibility.Collapsed;
             StepLabel.Text = info.Item1;
             StepHint.Text = "Read-only WinMM preview · rest, three presses and WinMM peak variation";
             CaptureCounter.Text = _calibrationResults.TryGetValue(kind, out var current)
