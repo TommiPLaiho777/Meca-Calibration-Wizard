@@ -81,7 +81,9 @@
                                     <Button DockPanel.Dock="Right" Content="Refresh" Click="Refresh_Click" Margin="12,0,0,0"
                                 ToolTip="Refresh clears the previous WinMM pedal, signal and sweep measurements and HID scan results. Capture or scan again before exporting."
                                 AutomationProperties.HelpText="Refresh clears previous measurements. Select the controller and repeat capture. A WinMM ID does not verify physical device identity."/>
-                                    <ComboBox x:Name="DeviceCombo" SelectionChanged="DeviceCombo_SelectionChanged"/>
+                                    <ComboBox x:Name="DeviceCombo" SelectionChanged="DeviceCombo_SelectionChanged"
+                                              AutomationProperties.Name="WinMM pedal controller"
+                                              AutomationProperties.HelpText="Select the WinMM controller used by the pedals. WinMM ID and name do not verify physical USB identity."/>
                                 </DockPanel>
                                 <TextBlock Text="Refresh clears captured pedal measurements. WinMM ID and name do not prove physical device identity."
                                            Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,7,0,0"/>
