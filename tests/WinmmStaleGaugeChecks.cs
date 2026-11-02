@@ -23,7 +23,7 @@ internal static class WinmmStaleGaugeChecks
         {
             ("BrakeIcon", "Brake WinMM input gauge", "not measured force"),
             ("ThrottleIcon", "Throttle WinMM input gauge", "not engine RPM"),
-            ("ClutchIcon", "Clutch WinMM input gauge", "pedal travel percentage")
+            ("ClutchIcon", "Clutch WinMM input gauge", "not measured pedal travel")
         })
         {
             string marker = "<Canvas x:Name=" + (char)34 + canvasName + (char)34;
