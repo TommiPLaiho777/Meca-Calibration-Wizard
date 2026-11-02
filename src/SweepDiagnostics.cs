@@ -13,7 +13,8 @@ internal sealed record SweepAssessment(
 
 internal static class SweepDiagnostics
 {
-    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax, bool inverted = false)
+    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax,
+        bool inverted = false, bool axisRangeAssumed = false)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid Windows-reported axis range.");
         // A direct assessment may also receive cached/imported traces that
@@ -59,7 +60,10 @@ internal static class SweepDiagnostics
         var max = values.Max();
         // Only an observed exact WinMM endpoint establishes that the reported axis maximum was reached.
         // A 98–99.9% reading is near the limit, not proof of an endpoint sample.
-        bool full = trace.Any(point => point.WinmmValue == axisMax);
+        // An assumed 0..65535 fallback is not a driver-reported maximum.
+        // Preserve the raw upper-bound observation only for clearly qualified wording.
+        bool observedUpper = trace.Any(point => point.WinmmValue == axisMax);
+        bool full = !axisRangeAssumed && observedUpper;
         double observedTravel = (max - min) * 100;
 
         // A complete guided sweep must start released, reach the pressed end,
@@ -194,7 +198,12 @@ internal static class SweepDiagnostics
             status = "Sweep captured";
             // On inverted pedals the raw WinMM high endpoint is the released end,
             // not the pressed end. Do not imply the pedal saturated under load.
-            explanation = full
+            explanation = axisRangeAssumed
+                ? "Press and release recorded. WinMM axis bounds are assumed (capabilities unavailable or invalid); " +
+                  (observedUpper ? "the assumed upper bound was observed" : "the assumed upper bound was not observed") +
+                  (inverted ? " at the released end of this inverted mapping" : "") +
+                  ". This is not a verified driver-reported maximum or sensor-force clipping."
+                : full
                 ? inverted
                     ? "Press and release recorded. Windows axis high endpoint was observed at the released end of this inverted mapping; this does not establish pedal-force clipping."
                     : "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
