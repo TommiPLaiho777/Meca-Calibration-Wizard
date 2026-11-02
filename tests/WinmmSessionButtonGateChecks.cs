@@ -97,6 +97,14 @@ internal static class WinmmSessionButtonGateChecks
         if (!mapping.Contains("ClutchMappingRow.Visibility = ClutchCheck?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;", StringComparison.Ordinal))
             throw new Exception("FAILED: optional clutch mapping visibility must follow explicit clutch selection");
         Console.WriteLine("PASS: optional clutch mapping is hidden unless selected (WPF source contract)");
+        // The optional analog clutch gauge must disappear immediately if the
+        // clutch is unchecked while its capture view remains open. Returning to
+        // that view with no clutch selected must not reveal the gauge either.
+        // This is a source contract, not a rendered Windows WPF UI test.
+        if (!clutch.Contains("ClutchIcon.Visibility = _step == 3 && ClutchCheck.IsChecked == true", StringComparison.Ordinal) ||
+            !navigation.Contains("ClutchIcon.Visibility = kind == PedalKind.Clutch && ClutchCheck.IsChecked == true", StringComparison.Ordinal))
+            throw new Exception("FAILED: optional clutch gauge must be hidden when no clutch is selected");
+        Console.WriteLine("PASS: optional clutch gauge follows explicit selection (WPF source contract)");
 
         // The WinMM idle-check status needs a full-width, wrapped row below
         // the two buttons. This is a source-level layout contract, not a
