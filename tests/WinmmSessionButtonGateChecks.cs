@@ -103,11 +103,11 @@ internal static class WinmmSessionButtonGateChecks
         // rendered wrapping still needs a Windows WPF visual test.
         foreach (string mappingName in new[] { "BrakeMapText", "ThrottleMapText", "ClutchMapText" })
         {
-            string marker = "<TextBlock x:Name=\\"" + mappingName + "\\"";
+            string marker = "<TextBlock x:Name=\"" + mappingName + "\"";
             int start = xaml.IndexOf(marker, StringComparison.Ordinal);
             int end = start < 0 ? -1 : xaml.IndexOf("/>", start, StringComparison.Ordinal);
             if (start < 0 || end <= start ||
-                !xaml[start..(end + 2)].Contains("TextWrapping=\\"Wrap\\"", StringComparison.Ordinal))
+                !xaml[start..(end + 2)].Contains("TextWrapping=\"Wrap\"", StringComparison.Ordinal))
                 throw new Exception("FAILED: WinMM sidebar mapping label must wrap: " + mappingName);
         }
         Console.WriteLine("PASS: WinMM mapping and stale-session labels wrap in sidebar (WPF source contract)");
