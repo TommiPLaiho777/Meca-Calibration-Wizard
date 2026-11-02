@@ -91,6 +91,30 @@ internal static class WinmmIdleScopeUiChecks
             throw new Exception("FAILED: WinMM sweep instructions must require a released start, one held stroke, a settled release, and explicit Windows-only scope");
         Console.WriteLine("PASS: WinMM sweep instructions preserve released start, settled release and WinMM-only scope (hardware-free markup contract)");
 
+        // Grayscale/color-vision-friendly sweep legend: distinguish the three
+        // WinMM traces by line pattern as well as color. Markup-only contract;
+        // Windows WPF rendering and physical pedal behavior remain untested.
+        foreach (var (name, expectedPattern) in new[]
+        {
+            ("BrakeSweepLine", (string?)null),
+            ("ThrottleSweepLine", "5,3"),
+            ("ClutchSweepLine", "1,3")
+        })
+        {
+            var trace = markup.Descendants().FirstOrDefault(e =>
+                e.Name.LocalName == "Polyline" &&
+                (string?)e.Attribute(xamlNamespace + "Name") == name);
+            if (trace is null ||
+                (string?)trace.Attribute("StrokeDashArray") != expectedPattern)
+                throw new Exception("FAILED: distinct WinMM sweep line pattern: " + name);
+        }
+        if (!notes.Any(s => s is not null &&
+                s.Contains("Brake (solid red)", StringComparison.Ordinal) &&
+                s.Contains("Throttle (dashed green)", StringComparison.Ordinal) &&
+                s.Contains("Clutch (dotted blue if installed)", StringComparison.Ordinal)))
+            throw new Exception("FAILED: WinMM sweep legend must name line patterns");
+        Console.WriteLine("PASS: WinMM sweep traces distinguish pedals by pattern and legend (XAML contract)");
+
         Console.WriteLine("PASS: optional clutch UI does not infer physical absence (hardware-free source contract)");
         Console.WriteLine("PASS: WinMM idle-check scope is explicit in WPF markup (hardware-free C#)");
     }
