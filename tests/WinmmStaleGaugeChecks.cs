@@ -32,7 +32,7 @@ internal static class WinmmStaleGaugeChecks
             if (openAt < 0 || tagEnd < openAt)
                 throw new Exception("FAILED: accessible WinMM dial missing: " + canvasName);
             string openTag = xaml[openAt..(tagEnd + 1)];
-            if (!openTag.Contains("AutomationProperties.Name=" + (char)34 + accessibleName + (char)34, StringComparison.Ordinal) ||
+            if (!openTag.Contains("AutomationProperties.Name=" + (char)34 + "{Binding Text, ElementName=LiveValue, StringFormat=\'" + accessibleName + ": {0}\'}" + (char)34, StringComparison.Ordinal) ||
                 !openTag.Contains("ToolTip=" + (char)34, StringComparison.Ordinal) ||
                 !openTag.Contains(tooltipPhrase, StringComparison.Ordinal))
                 throw new Exception("FAILED: accessible WinMM dial provenance missing: " + canvasName);
