@@ -124,8 +124,7 @@ public partial class MainWindow : Window
         ThrottleProgress.Value = 0;
         ClutchProgress.Value = 0;
         NeedleRotation.Angle = -5;
-        ClutchDiscShift.X = 0;
-        ClutchHubShift.X = 0;
+        ClutchNeedleRotation.Angle = -5;
         BrakeNeedleRotation.Angle = -5;
         BrakeValue.Text = "No live input";
         ThrottleValue.Text = "No live input";
@@ -167,8 +166,7 @@ public partial class MainWindow : Window
             ThrottleProgress.Value = 0;
             ClutchProgress.Value = 0;
             NeedleRotation.Angle = -5;
-            ClutchDiscShift.X = 0;
-            ClutchHubShift.X = 0;
+            ClutchNeedleRotation.Angle = -5;
             BrakeNeedleRotation.Angle = -5;
             BrakeValue.Text = "No live input";
             ThrottleValue.Text = "No live input";
@@ -315,8 +313,7 @@ public partial class MainWindow : Window
         // Reset the visual instruments as well as the numeric readouts:
         // a frozen needle or displaced clutch graphic is not a live sample.
         NeedleRotation.Angle = -5;
-        ClutchDiscShift.X = 0;
-        ClutchHubShift.X = 0;
+        ClutchNeedleRotation.Angle = -5;
         BrakeNeedleRotation.Angle = -5;
         BrakeValue.Text = "No live input";
         ThrottleValue.Text = "No live input";
@@ -768,8 +765,7 @@ public partial class MainWindow : Window
                     (invalidWinmmReading ? " · OUTSIDE WINMM AXIS RANGE" : "")
                 : "Awaiting pedal movement to identify WinMM axis";
             NeedleRotation.Angle = -5 + (percent * 1.1);
-            ClutchDiscShift.X = percent * 0.32;
-            ClutchHubShift.X = percent * 0.32;
+            ClutchNeedleRotation.Angle = -5 + (percent * 1.1);
             BrakeNeedleRotation.Angle = -5 + (percent * 1.1);
         }
         else if (_step == 4)
