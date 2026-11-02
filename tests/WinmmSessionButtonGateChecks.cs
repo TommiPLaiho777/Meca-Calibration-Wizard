@@ -66,6 +66,13 @@ internal static class WinmmSessionButtonGateChecks
         // Source-level GUI contract: absent optional clutch has no visible mapping row.
         // This does not substitute for a real WPF layout test on Windows.
         string xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        // Switching away from a scrolled diagnostics page must show the next
+        // wizard heading, rather than preserving an off-screen scroll offset.
+        // This is a source contract; actual scrolling needs a Windows WPF UI test.
+        if (!xaml.Contains("<ScrollViewer x:Name=\"WizardScroll\" VerticalScrollBarVisibility=\"Auto\" HorizontalScrollBarVisibility=\"Disabled\">", StringComparison.Ordinal) ||
+            !navigation.Contains("WizardScroll.ScrollToTop();", StringComparison.Ordinal))
+            throw new Exception("FAILED: wizard view transitions must reset the scroll viewport");
+        Console.WriteLine("PASS: wizard view changes reset the scroll viewport (WPF source contract)");
         if (!xaml.Contains(@"x:Name=""ClutchMappingRow"" Margin=""0,19,0,0"" Visibility=""Collapsed""", StringComparison.Ordinal))
             throw new Exception("FAILED: optional clutch mapping row must start hidden");
         string mapping = Section(source, "private void UpdateMappingLabels()", "private string MapLabel(");
