@@ -134,16 +134,18 @@
                                     <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
                                     <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
-                                <!-- Two clutch discs separating -->
+                                <!-- White-faced analog clutch preview: optional WinMM pedal travel, not measured force. -->
                                 <Canvas x:Name="ClutchIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed">
-                                    <Ellipse Width="104" Height="130" Canvas.Left="47" Canvas.Top="18" Fill="#637B90" Stroke="#D0DFEB" StrokeThickness="5"/>
-                                    <Ellipse Width="42" Height="42" Canvas.Left="78" Canvas.Top="62" Fill="#2B3947" Stroke="#BBCEDC" StrokeThickness="8"/>
-                                    <Ellipse Width="104" Height="130" Canvas.Left="98" Canvas.Top="18" Fill="#35506A" Stroke="#85B7DF" StrokeThickness="5">
-                                        <Ellipse.RenderTransform><TranslateTransform x:Name="ClutchDiscShift"/></Ellipse.RenderTransform>
-                                    </Ellipse>
-                                    <Ellipse Width="41" Height="41" Canvas.Left="130" Canvas.Top="62" Fill="#1F3040" Stroke="#A9C9E4" StrokeThickness="7">
-                                        <Ellipse.RenderTransform><TranslateTransform x:Name="ClutchHubShift"/></Ellipse.RenderTransform>
-                                    </Ellipse>
+                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
+                                    <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#5689C9" StrokeThickness="7" Fill="Transparent"/>
+                                    <TextBlock Text="0" Canvas.Left="70" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="50" Canvas.Left="109" Canvas.Top="28" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="100" Canvas.Left="155" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <Line x:Name="ClutchNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#152027" StrokeThickness="4" StrokeStartLineCap="Round">
+                                        <Line.RenderTransform><RotateTransform x:Name="ClutchNeedleRotation" CenterX="118" CenterY="85"/></Line.RenderTransform>
+                                    </Line>
+                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
+                                    <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
                             </Grid>
                         </Border>
