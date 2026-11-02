@@ -895,7 +895,7 @@ public partial class MainWindow : Window
             if (!_mappings.TryGetValue(pair.Key, out var mapping) || _device is null) continue;
             var a = SweepDiagnostics.Evaluate(pair.Value.Trace, _device.Min[mapping.Axis], _device.Max[mapping.Axis],
                 mapping.Full < mapping.Rest,
-                axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed && assumed[mapping.Axis]);
+                axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed ? assumed[mapping.Axis] : true);
             descriptions.Add($"{pair.Key}: {a.Status} — {a.Explanation}");
         }
         SweepAnalysisText.Text = MarkStaleForReview(descriptions.Count == 0
@@ -1190,7 +1190,7 @@ public partial class MainWindow : Window
                         _mappings[p.Key].Full < _mappings[p.Key].Rest),
                     Assessment = SweepDiagnostics.Evaluate(p.Value.Trace, _device.Min[_mappings[p.Key].Axis], _device.Max[_mappings[p.Key].Axis],
                         _mappings[p.Key].Full < _mappings[p.Key].Rest,
-                        axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed && assumed[_mappings[p.Key].Axis]),
+                        axisRangeAssumed: _device.AssumedAxisRanges is { Length: 6 } assumed ? assumed[_mappings[p.Key].Axis] : true),
                     p.Value.Trace
                 }),
                 Note = "WinMM values may already be calibrated by Windows: not raw sensor ADC or physical force. Zero reported idle variation cannot prove correct earthing or absence of EMI. Axis names differ from DIView. No calibration is applied."
