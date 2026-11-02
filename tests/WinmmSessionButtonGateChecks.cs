@@ -66,6 +66,17 @@ internal static class WinmmSessionButtonGateChecks
         // Source-level GUI contract: absent optional clutch has no visible mapping row.
         // This does not substitute for a real WPF layout test on Windows.
         string xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+        // Hardware-free accessibility source contract for the controller selector.
+        // Actual screen-reader announcement still needs a Windows WPF test.
+        int selectorStart = xaml.IndexOf("<ComboBox x:Name=\\"DeviceCombo\\"", StringComparison.Ordinal);
+        int selectorEnd = selectorStart < 0 ? -1 : xaml.IndexOf("/>", selectorStart, StringComparison.Ordinal);
+        if (selectorStart < 0 || selectorEnd < selectorStart)
+            throw new Exception("FAILED: WinMM controller selector XAML missing");
+        string selectorMarkup = xaml[selectorStart..(selectorEnd + 2)];
+        if (!selectorMarkup.Contains("AutomationProperties.Name=\\"WinMM pedal controller\\"", StringComparison.Ordinal) ||
+            !selectorMarkup.Contains("AutomationProperties.HelpText=\\"Select the WinMM controller used by the pedals. WinMM ID and name do not verify physical USB identity.\\"", StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM controller selector accessible name or physical identity warning missing");
+        Console.WriteLine("PASS: WinMM controller selector accessible label and identity warning (WPF source contract)");
         // Refresh is a destructive session boundary, not a harmless list reload.
         // Explain the recapture requirement to pointer and assistive-technology users.
         if (!xaml.Contains("Click=\"Refresh_Click\"", StringComparison.Ordinal) ||
