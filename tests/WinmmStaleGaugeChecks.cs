@@ -16,7 +16,7 @@ internal static class WinmmStaleGaugeChecks
         // WPF visual behavior still requires a separate Windows GUI test.
         var xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
         int dialStart = xaml.IndexOf("<Canvas x:Name=\"ThrottleIcon\"", StringComparison.Ordinal);
-        int dialEnd = xaml.IndexOf("<!-- Two clutch discs separating -->", dialStart, StringComparison.Ordinal);
+        int dialEnd = xaml.IndexOf("<!-- White-faced analog clutch preview:", dialStart, StringComparison.Ordinal);
         if (dialStart < 0 || dialEnd <= dialStart)
             throw new Exception("FAILED: WinMM throttle dial XAML not found");
         string dial = xaml[dialStart..dialEnd];
@@ -34,6 +34,30 @@ internal static class WinmmStaleGaugeChecks
             if (!dial.Contains(expected, StringComparison.Ordinal))
                 throw new Exception($"FAILED: white-faced WinMM dial contract: {expected}");
         Console.WriteLine("PASS: white-faced WinMM dial retains dark numbers and live needle (XAML source contract)");
+        // Optional clutch uses the same white analog face, without assuming a clutch is installed.
+        // Markup/source contract only: Windows visual and pedal tests remain separate.
+        int clutchDialStart = xaml.IndexOf("<Canvas x:Name=\"ClutchIcon\"", StringComparison.Ordinal);
+        int clutchDialEnd = xaml.IndexOf("</Canvas>", clutchDialStart, StringComparison.Ordinal);
+        if (clutchDialStart < 0 || clutchDialEnd <= clutchDialStart)
+            throw new Exception("FAILED: optional clutch dial XAML not found");
+        string clutchDial = xaml[clutchDialStart..clutchDialEnd];
+        foreach (string expected in new[]
+        {
+            "Visibility=\"Collapsed\"",
+            "Fill=\"#F6F8F8\"",
+            "Stroke=\"#5689C9\"",
+            "Text=\"0\"", "Text=\"50\"", "Text=\"100\"",
+            "Foreground=\"#152027\"",
+            "x:Name=\"ClutchNeedle\"",
+            "x:Name=\"ClutchNeedleRotation\"",
+            "Text=\"WINMM\""
+        })
+            if (!clutchDial.Contains(expected, StringComparison.Ordinal))
+                throw new Exception($"FAILED: optional clutch analog dial contract: {expected}");
+        if (!source.Contains("ClutchNeedleRotation.Angle = -5 + (percent * 1.1);", StringComparison.Ordinal))
+            throw new Exception("FAILED: optional clutch needle must follow WinMM percentage");
+        Console.WriteLine("PASS: optional clutch analog dial uses white face and live WinMM needle (XAML source contract)");
+
         int start = source.IndexOf("private void MarkLiveReadingsUnavailable()", StringComparison.Ordinal);
         int end = source.IndexOf("private void UpdateDeviceInfo(", start, StringComparison.Ordinal);
         if (start < 0 || end <= start)
@@ -49,8 +73,7 @@ internal static class WinmmStaleGaugeChecks
             "ThrottleProgress.Value = 0;",
             "ClutchProgress.Value = 0;",
             "NeedleRotation.Angle = -5;",
-            "ClutchDiscShift.X = 0;",
-            "ClutchHubShift.X = 0;",
+            "ClutchNeedleRotation.Angle = -5;",
             "BrakeNeedleRotation.Angle = -5;"
         })
             if (!body.Contains(expected, StringComparison.Ordinal))
@@ -77,8 +100,7 @@ internal static class WinmmStaleGaugeChecks
             "ThrottleProgress.Value = 0;",
             "ClutchProgress.Value = 0;",
             "NeedleRotation.Angle = -5;",
-            "ClutchDiscShift.X = 0;",
-            "ClutchHubShift.X = 0;",
+            "ClutchNeedleRotation.Angle = -5;",
             "BrakeNeedleRotation.Angle = -5;",
             "BrakeValue.Text = \"No live input\";",
             "ThrottleValue.Text = \"No live input\";",
@@ -147,8 +169,7 @@ internal static class WinmmStaleGaugeChecks
             "ThrottleProgress.Value = 0;",
             "ClutchProgress.Value = 0;",
             "NeedleRotation.Angle = -5;",
-            "ClutchDiscShift.X = 0;",
-            "ClutchHubShift.X = 0;",
+            "ClutchNeedleRotation.Angle = -5;",
             "BrakeNeedleRotation.Angle = -5;",
             "BrakeValue.Text = \"No live input\";",
             "ThrottleValue.Text = \"No live input\";",
