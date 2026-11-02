@@ -166,7 +166,10 @@
                             <TextBlock Text="LIVE INPUT" Foreground="{StaticResource DimBrush}" FontSize="11" FontWeight="Bold"/>
                             <TextBlock x:Name="LiveValue" Grid.Column="1" Text="—" FontWeight="Bold" FontSize="16"/>
                         </Grid>
-                        <ProgressBar x:Name="CaptureProgress" Value="0" Margin="0,10,0,5"/>
+                        <ProgressBar x:Name="CaptureProgress" Value="0" Margin="0,10,0,5"
+                                     AutomationProperties.Name="Current pedal WinMM input percentage"
+                                     AutomationProperties.HelpText="Read-only Windows-reported input percentage, not capture completion, pedal force, or raw sensor ADC."
+                                     ToolTip="Current WinMM pedal input percentage (not measurement completion or physical force)."/>
                         <TextBlock x:Name="LiveRaw" Text="WinMM reading: — (not sensor ADC)" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="11"/>
                         <Button x:Name="CaptureButton" Content="Start 3-press measurement" Click="Capture_Click" Margin="0,19,0,0"
                                 HorizontalAlignment="Center" Background="{StaticResource AccentBrush}" Foreground="#101B20" MinWidth="180"/>
