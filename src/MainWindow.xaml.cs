@@ -387,6 +387,8 @@ public partial class MainWindow : Window
         CaptureView.Visibility = step is >= 1 and <= 3 ? Visibility.Visible : Visibility.Collapsed;
         TestView.Visibility = step == 4 ? Visibility.Visible : Visibility.Collapsed;
         AdvancedView.Visibility = step == 5 ? Visibility.Visible : Visibility.Collapsed;
+        // Every wizard view starts at its heading, even after a long diagnostics view was scrolled.
+        WizardScroll.ScrollToTop();
 
         BackButton.IsEnabled = step != 0;
         if (step == 0)
