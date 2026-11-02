@@ -67,7 +67,7 @@
             </Border>
 
             <Border Grid.Column="2" CornerRadius="15" Background="{StaticResource CardBrush}" Padding="30,22">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer x:Name="WizardScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Grid>
                     <!-- Welcome and device selection -->
                     <StackPanel x:Name="WelcomeView">
