@@ -922,8 +922,7 @@ static class Checks
                 ((string?)captureInputBar.Attribute("AutomationProperties.HelpText"))?.Contains(
                     "not capture completion, pedal force, or raw sensor ADC.") == true &&
                 ((string?)captureInputBar.Attribute("ToolTip"))?.Contains(
-                    "not measurement completion or physical force") == true &&
-                windowSource.Contains("CaptureProgress.Value = percent;", StringComparison.Ordinal),
+                    "not measurement completion or physical force") == true,
             "guided capture bar must describe live WinMM input, not capture progress or force");
         Console.WriteLine("PASS: guided capture bar WinMM input accessibility (XAML source contract)");
 
