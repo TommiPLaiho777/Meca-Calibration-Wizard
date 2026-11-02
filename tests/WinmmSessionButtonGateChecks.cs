@@ -117,6 +117,17 @@ internal static class WinmmSessionButtonGateChecks
 
         Console.WriteLine("PASS: WinMM signal status has full-width wrapped row (WPF source contract)");
 
+        // The trace plots time horizontally and the Windows-reported axis value
+        // vertically. Pedal movement may decrease the WinMM value on inverted
+        // axes; the chart must not suggest that "up" always means "pressed".
+        // Markup/source contract only: no WPF rendering or pedal test here.
+        string trace = Section(source, "private void DrawTrace(", "private void ScanHid_Click(");
+        if (!xaml.Contains("Graph axes: left to right = 0–8 seconds; vertical = WinMM axis value within its reported or assumed range. Pressing a pedal may move the line down.", StringComparison.Ordinal) ||
+            !trace.Contains("p.TimeMs / (InputSweepRun.DurationSeconds * 1000)", StringComparison.Ordinal) ||
+            !trace.Contains("(p.WinmmValue - min) / range", StringComparison.Ordinal))
+            throw new Exception("FAILED: sweep graph explanation must match WinMM time/value axes");
+        Console.WriteLine("PASS: sweep graph explains WinMM axes and inverted pedal direction (WPF source contract)");
+
         Console.WriteLine("PASS: stale WinMM sessions cannot re-enable measurement starts through WPF state resets (source contract)");
     }
 }
