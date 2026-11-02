@@ -38,6 +38,28 @@ internal static class WinmmIdleScopeUiChecks
             (string?)e.Attribute(xamlNamespace + "Name") == "AdvancedAxesText");
         if ((string?)advancedAxes?.Attribute("TextWrapping") != "Wrap")
             throw new Exception("FAILED: advanced WinMM axis provenance lines must wrap");
+        // Live test progress bars need distinct pedal names in the Windows UIA
+        // tree. These are WinMM percentages, not raw ADC, physical travel or force.
+        // This checks markup only; a real screen reader still needs WPF testing.
+        foreach (var (control, accessibleName) in new[]
+        {
+            ("BrakeProgress", "Brake WinMM input"),
+            ("ThrottleProgress", "Throttle WinMM input"),
+            ("ClutchProgress", "Clutch WinMM input")
+        })
+        {
+            var bar = markup.Descendants().FirstOrDefault(e =>
+                e.Name.LocalName == "ProgressBar" &&
+                (string?)e.Attribute(xamlNamespace + "Name") == control);
+            string? name = (string?)bar?.Attribute("AutomationProperties.Name");
+            string? help = (string?)bar?.Attribute("AutomationProperties.HelpText");
+            if (name != accessibleName || help is null ||
+                !help.Contains("Read-only", StringComparison.OrdinalIgnoreCase) ||
+                !help.Contains("raw sensor ADC", StringComparison.Ordinal))
+                throw new Exception("FAILED: live WinMM progress bar accessible label or scope: " + control);
+        }
+        Console.WriteLine("PASS: three live WinMM bars have distinct accessible names and scope (XAML contract)");
+
         Console.WriteLine("PASS: advanced WinMM axis provenance wraps in diagnostics (hardware-free XAML contract)");
 
         // Live WinMM readings also display long interrupted-session guidance.
