@@ -26,14 +26,14 @@ internal static class WinmmStaleGaugeChecks
             ("ClutchIcon", "Clutch WinMM input gauge", "pedal travel percentage")
         })
         {
-            string marker = "<Canvas x:Name=\\\"" + canvasName + "\\\"";
+            string marker = "<Canvas x:Name=" + (char)34 + canvasName + (char)34;
             int openAt = xaml.IndexOf(marker, StringComparison.Ordinal);
             int tagEnd = openAt < 0 ? -1 : xaml.IndexOf('>', openAt);
             if (openAt < 0 || tagEnd < openAt)
                 throw new Exception("FAILED: accessible WinMM dial missing: " + canvasName);
             string openTag = xaml[openAt..(tagEnd + 1)];
-            if (!openTag.Contains("AutomationProperties.Name=\\\"" + accessibleName + "\\\"", StringComparison.Ordinal) ||
-                !openTag.Contains("ToolTip=\\\"", StringComparison.Ordinal) ||
+            if (!openTag.Contains("AutomationProperties.Name=" + (char)34 + accessibleName + (char)34, StringComparison.Ordinal) ||
+                !openTag.Contains("ToolTip=" + (char)34, StringComparison.Ordinal) ||
                 !openTag.Contains(tooltipPhrase, StringComparison.Ordinal))
                 throw new Exception("FAILED: accessible WinMM dial provenance missing: " + canvasName);
         }
