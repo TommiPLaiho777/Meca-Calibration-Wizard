@@ -105,6 +105,25 @@ internal static class WinmmSessionButtonGateChecks
             !navigation.Contains("ClutchIcon.Visibility = kind == PedalKind.Clutch && ClutchCheck.IsChecked == true", StringComparison.Ordinal))
             throw new Exception("FAILED: optional clutch gauge must be hidden when no clutch is selected");
         Console.WriteLine("PASS: optional clutch gauge follows explicit selection (WPF source contract)");
+        // Disabling a previously captured optional clutch must clear the on-screen
+        // 3/3 counter and old quality text immediately, not only on navigation.
+        // This verifies WPF source wiring; Windows interaction remains untested.
+        string clutchToggleUi = Section(clutch,
+            "if (_step == 3)\n        {\n            bool clutchSelected",
+            "        UpdateMappingLabels();");
+        foreach (string expected in new[]
+        {
+            "bool clutchCaptured = clutchSelected && _mappings.ContainsKey(PedalKind.Clutch);",
+            "NextButton.Content = clutchCaptured ? \"Continue  →\" : \"Skip  →\";",
+            "NextButton.IsEnabled = _device is not null && !_winmmSessionInvalid;",
+            "CaptureCounter.Text = \"0 / 3 presses\";",
+            "CaptureQualityText.Text = \"\";",
+            "Clutch disabled · optional step skipped. No clutch data saved.",
+            "Clutch selected · release pedal, then click Start to capture."
+        })
+            if (!clutchToggleUi.Contains(expected, StringComparison.Ordinal))
+                throw new Exception("FAILED: optional clutch capture page has stale state after toggle: " + expected);
+        Console.WriteLine("PASS: optional clutch toggle clears stale capture labels and navigation (WPF source contract)");
 
         // The WinMM idle-check status needs a full-width, wrapped row below
         // the two buttons. This is a source-level layout contract, not a
