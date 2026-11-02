@@ -44,7 +44,8 @@ internal static class SweepAssumedRangeChecks
         string source = File.ReadAllText(Path.Combine(
             AppContext.BaseDirectory, "MainWindow.xaml.cs"));
         if (System.Text.RegularExpressions.Regex.Matches(source,
-                @"axisRangeAssumed:\s*_device\.AssumedAxisRanges").Count != 2)
+                @"SweepDiagnostics\.Evaluate\([^;]*axisRangeAssumed:\s*_device\.AssumedAxisRanges",
+                System.Text.RegularExpressions.RegexOptions.Singleline).Count != 2)
             throw new Exception("FAILED: WPF sweep display/export omitted range provenance");
 
         Console.WriteLine("PASS: assumed WinMM sweep bound is not a reported maximum (synthetic)");
