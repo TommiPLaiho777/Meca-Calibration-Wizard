@@ -111,10 +111,10 @@ internal static class WinmmSessionButtonGateChecks
         // only: screen-reader behavior still needs Windows WPF validation.
         foreach (string expected in new[]
         {
-            "ToolTip=\\"Read-only 3-second WinMM at-rest check. Keep all pedals released. This cannot prove absence of sensor noise or EMI.\\"",
-            "AutomationProperties.HelpText=\\"Keep all pedals released for a 3-second WinMM signal check. No Windows calibration changes are made.\\"",
-            "ToolTip=\\"Read-only 10-second WinMM at-rest check. Keep all pedals released. Windows deadzones may hide sensor noise.\\"",
-            "AutomationProperties.HelpText=\\"Keep all pedals released for a 10-second WinMM signal check. This does not establish sensor noise or EMI.\\""
+            "ToolTip=\"Read-only 3-second WinMM at-rest check. Keep all pedals released. This cannot prove absence of sensor noise or EMI.\"",
+            "AutomationProperties.HelpText=\"Keep all pedals released for a 3-second WinMM signal check. No Windows calibration changes are made.\"",
+            "ToolTip=\"Read-only 10-second WinMM at-rest check. Keep all pedals released. Windows deadzones may hide sensor noise.\"",
+            "AutomationProperties.HelpText=\"Keep all pedals released for a 10-second WinMM signal check. This does not establish sensor noise or EMI.\""
         })
             if (!signalLayout.Contains(expected, StringComparison.Ordinal))
                 throw new Exception("FAILED: WinMM idle-check button guidance missing: " + expected);
