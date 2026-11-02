@@ -32,7 +32,7 @@
                 <StackPanel>
                     <TextBlock Text="SETUP STATUS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                     <TextBlock x:Name="DeviceText" Text="No controller selected" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold" Margin="0,15,0,4"/>
-                    <TextBlock x:Name="StatusText" Text="Connect the pedal USB controller" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}"/>
+                    <TextBlock x:Name="StatusText" Text="Select a WinMM controller" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}"/>
                     <Border Background="{StaticResource BorderBrush}" Height="1" Margin="0,23,0,19"/>
                     <TextBlock Text="PEDAL MAPPING" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                     <Grid Margin="0,17,0,0">
@@ -40,7 +40,7 @@
                         <TextBlock Text="●" Foreground="#F47F72" FontSize="19"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="BRAKE" FontWeight="Bold" FontSize="12"/>
-                            <TextBlock x:Name="BrakeMapText" Text="Not captured" Foreground="{StaticResource DimBrush}" FontSize="12"/>
+                            <TextBlock x:Name="BrakeMapText" Text="Not captured" Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
                     <Grid Margin="0,19,0,0">
@@ -48,40 +48,46 @@
                         <TextBlock Text="●" Foreground="#52D2AC" FontSize="19"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="THROTTLE" FontWeight="Bold" FontSize="12"/>
-                            <TextBlock x:Name="ThrottleMapText" Text="Not captured" Foreground="{StaticResource DimBrush}" FontSize="12"/>
+                            <TextBlock x:Name="ThrottleMapText" Text="Not captured" Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
-                    <Grid Margin="0,19,0,0">
+                    <Grid x:Name="ClutchMappingRow" Margin="0,19,0,0" Visibility="Collapsed">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <TextBlock Text="●" Foreground="#7BA4F2" FontSize="19"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="CLUTCH" FontWeight="Bold" FontSize="12"/>
-                            <TextBlock x:Name="ClutchMapText" Text="Not installed" Foreground="{StaticResource DimBrush}" FontSize="12"/>
+                            <TextBlock x:Name="ClutchMapText" Text="Optional · not selected" Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
                     <Border Background="{StaticResource BorderBrush}" Height="1" Margin="0,25,0,19"/>
-                    <TextBlock Text="SYSTEM SAFE" Foreground="#52D2AC" FontSize="12" FontWeight="Bold"/>
-                    <TextBlock Text="No driver or Windows calibration changes." Foreground="{StaticResource DimBrush}"
+                    <TextBlock Text="READ-ONLY PREVIEW" Foreground="#52D2AC" FontSize="12" FontWeight="Bold"/>
+                    <TextBlock Text="WinMM readings may reflect Windows calibration. This preview does not change drivers or Windows calibration settings." Foreground="{StaticResource DimBrush}"
                                FontSize="12" TextWrapping="Wrap" Margin="0,7,0,0"/>
                 </StackPanel>
             </Border>
 
             <Border Grid.Column="2" CornerRadius="15" Background="{StaticResource CardBrush}" Padding="30,22">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer x:Name="WizardScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Grid>
                     <!-- Welcome and device selection -->
                     <StackPanel x:Name="WelcomeView">
                         <TextBlock Text="01  /  CONNECT" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" FontSize="12"/>
-                        <TextBlock Text="Your pedals. Ready to go." FontSize="26" FontWeight="Bold" Margin="0,10,0,4"/>
-                        <TextBlock Text="Choose your USB pedal controller to start the visual setup." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
+                        <TextBlock Text="Select your pedal controller" FontSize="26" FontWeight="Bold" Margin="0,10,0,4"/>
+                        <TextBlock Text="Choose the WinMM controller used by your pedals. Physical USB identity is not verified." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="14" Margin="0,22,0,20" Padding="23">
                             <StackPanel>
-                                <TextBlock Text="USB CONTROLLER" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
+                                <TextBlock Text="WINMM CONTROLLER" FontSize="11" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
                                 <DockPanel Margin="0,12,0,4" LastChildFill="True">
-                                    <Button DockPanel.Dock="Right" Content="Refresh" Click="Refresh_Click" Margin="12,0,0,0"/>
-                                    <ComboBox x:Name="DeviceCombo" SelectionChanged="DeviceCombo_SelectionChanged"/>
+                                    <Button DockPanel.Dock="Right" Content="Refresh" Click="Refresh_Click" Margin="12,0,0,0"
+                                ToolTip="Refresh clears the previous WinMM pedal, signal and sweep measurements and HID scan results. Capture or scan again before exporting."
+                                AutomationProperties.HelpText="Refresh clears previous measurements. Select the controller and repeat capture. A WinMM ID does not verify physical device identity."/>
+                                    <ComboBox x:Name="DeviceCombo" SelectionChanged="DeviceCombo_SelectionChanged"
+                                              AutomationProperties.Name="WinMM pedal controller"
+                                              AutomationProperties.HelpText="Select the WinMM controller used by the pedals. WinMM ID and name do not verify physical USB identity."/>
                                 </DockPanel>
-                                <CheckBox x:Name="ClutchCheck" Content="Clutch installed (optional)" Foreground="{StaticResource LabelBrush}"
+                                <TextBlock Text="Refresh clears captured pedal measurements. WinMM ID and name do not prove physical device identity."
+                                           Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,7,0,0"/>
+                                <CheckBox x:Name="ClutchCheck" Content="Clutch pedal installed (optional)" ToolTip="Enable only when a physical clutch is connected. An unused WinMM axis does not prove a clutch exists; press the clutch during capture to identify its axis." Foreground="{StaticResource LabelBrush}"
                                           Margin="2,19,0,0" FontSize="13" Checked="ClutchCheck_Changed" Unchecked="ClutchCheck_Changed"/>
                             </StackPanel>
                         </Border>
@@ -90,7 +96,7 @@
                                 <TextBlock Text="HOW IT WORKS" Foreground="#85E4CF" FontSize="11" FontWeight="Bold"/>
                                 <TextBlock Text="1. Release  →  2. Press ×3  →  3. Test" Margin="0,8,0,0"
                                            FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
-                                <TextBlock Text="The wizard finds the axis and measures repeatability. No changes are saved."
+                                <TextBlock Text="The wizard maps WinMM axes and compares Windows-reported pedal peaks. Physical force is not measured. No controller or Windows calibration settings are changed; JSON export is optional."
                                            Foreground="{StaticResource DimBrush}" Margin="0,7,0,0" FontSize="12" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
@@ -102,51 +108,69 @@
                     <!-- Animated symbolic pedal capture -->
                     <StackPanel x:Name="CaptureView" Visibility="Collapsed">
                         <TextBlock x:Name="CaptureStepText" Text="02 / BRAKE" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="Bold"/>
-                        <TextBlock x:Name="CaptureTitle" Text="Brake calibration" FontSize="26" FontWeight="Bold" Margin="0,9,0,4"/>
+                        <TextBlock x:Name="CaptureTitle" Text="Brake input preview" FontSize="26" FontWeight="Bold" Margin="0,9,0,4"/>
                         <TextBlock x:Name="CaptureHelp" Text="Release, then press and release three times." TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="14"/>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="14" Padding="17" Margin="0,20,0,16">
                             <Grid Height="180">
-                                <!-- Disc brake: rotor, hub, and caliper -->
-                                <Canvas x:Name="BrakeIcon" Height="165" Width="255" HorizontalAlignment="Center">
-                                    <Ellipse Width="145" Height="145" Canvas.Left="40" Canvas.Top="10" Stroke="#B9CAD8" StrokeThickness="13" Fill="#5B768C"/>
-                                    <Ellipse Width="107" Height="107" Canvas.Left="59" Canvas.Top="29" Stroke="#91A7B9" StrokeThickness="4" Fill="#314252"/>
-                                    <Ellipse Width="45" Height="45" Canvas.Left="90" Canvas.Top="60" Fill="#ABBCCA" Stroke="#E5EFF6" StrokeThickness="2"/>
-                                    <Ellipse Width="12" Height="12" Canvas.Left="106" Canvas.Top="76" Fill="#314252"/>
-                                    <Rectangle x:Name="BrakeCaliper" Width="59" Height="85" RadiusX="9" RadiusY="9"
-                                               Fill="#EE7468" Stroke="#FDB2AC" StrokeThickness="2" Canvas.Left="142" Canvas.Top="39"/>
-                                    <Rectangle Width="16" Height="28" Fill="#7D3533" Canvas.Left="154" Canvas.Top="68"/>
-                                    <TextBlock Text="BRAKE" Canvas.Left="197" Canvas.Top="74" FontSize="12" FontWeight="Bold"/>
+                                <!-- White-faced analog brake preview: WinMM percentage, not force or sensor ADC. -->
+                                <Canvas x:Name="BrakeIcon" Height="165" Width="255" HorizontalAlignment="Center"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Brake WinMM input gauge: {0}'}"
+                                        ToolTip="Brake gauge: Windows-reported input percentage, not measured force or raw sensor ADC.">
+                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
+                                    <Path x:Name="BrakeCaliper" Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#C85B52" StrokeThickness="7" Fill="Transparent"/>
+                                    <TextBlock Text="0" Canvas.Left="70" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="50" Canvas.Left="109" Canvas.Top="28" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="100" Canvas.Left="155" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <Line x:Name="BrakeNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#152027" StrokeThickness="4" StrokeStartLineCap="Round">
+                                        <Line.RenderTransform><RotateTransform x:Name="BrakeNeedleRotation" CenterX="118" CenterY="85"/></Line.RenderTransform>
+                                    </Line>
+                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
+                                    <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
-                                <!-- Accelerator and engine/tachometer -->
-                                <Canvas x:Name="ThrottleIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed">
-                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#314252" Stroke="#7C9AAC" StrokeThickness="5"/>
-                                    <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#50D1AE" StrokeThickness="9" Fill="Transparent"/>
-                                    <Line x:Name="ThrottleNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#E6F5F2" StrokeThickness="5" StrokeStartLineCap="Round">
+                                <!-- White-faced analog throttle preview: WinMM percentage, not RPM or sensor ADC. -->
+                                <Canvas x:Name="ThrottleIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Throttle WinMM input gauge: {0}'}"
+                                        ToolTip="Throttle gauge: Windows-reported input percentage, not engine RPM or raw sensor ADC.">
+                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
+                                    <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#238F79" StrokeThickness="7" Fill="Transparent"/>
+                                    <TextBlock Text="0" Canvas.Left="70" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="50" Canvas.Left="109" Canvas.Top="28" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="100" Canvas.Left="155" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <Line x:Name="ThrottleNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#152027" StrokeThickness="4" StrokeStartLineCap="Round">
                                         <Line.RenderTransform><RotateTransform x:Name="NeedleRotation" CenterX="118" CenterY="85"/></Line.RenderTransform>
                                     </Line>
-                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#F3F9FF"/>
-                                    <TextBlock Text="RPM" Canvas.Left="107" Canvas.Top="120" FontSize="14" FontWeight="Bold"/>
+                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
+                                    <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
-                                <!-- Two clutch discs separating -->
-                                <Canvas x:Name="ClutchIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed">
-                                    <Ellipse Width="104" Height="130" Canvas.Left="47" Canvas.Top="18" Fill="#637B90" Stroke="#D0DFEB" StrokeThickness="5"/>
-                                    <Ellipse Width="42" Height="42" Canvas.Left="78" Canvas.Top="62" Fill="#2B3947" Stroke="#BBCEDC" StrokeThickness="8"/>
-                                    <Ellipse Width="104" Height="130" Canvas.Left="98" Canvas.Top="18" Fill="#35506A" Stroke="#85B7DF" StrokeThickness="5">
-                                        <Ellipse.RenderTransform><TranslateTransform x:Name="ClutchDiscShift"/></Ellipse.RenderTransform>
-                                    </Ellipse>
-                                    <Ellipse Width="41" Height="41" Canvas.Left="130" Canvas.Top="62" Fill="#1F3040" Stroke="#A9C9E4" StrokeThickness="7">
-                                        <Ellipse.RenderTransform><TranslateTransform x:Name="ClutchHubShift"/></Ellipse.RenderTransform>
-                                    </Ellipse>
+                                <!-- White-faced analog clutch preview: optional WinMM pedal travel, not measured force. -->
+                                <Canvas x:Name="ClutchIcon" Height="165" Width="255" HorizontalAlignment="Center" Visibility="Collapsed"
+                                        AutomationProperties.Name="{Binding Text, ElementName=LiveValue, StringFormat='Clutch WinMM input gauge: {0}'}"
+                                        ToolTip="Optional clutch gauge: Windows-reported input percentage, not measured pedal travel, force, or raw sensor ADC.">
+                                    <Ellipse Width="140" Height="140" Canvas.Left="48" Canvas.Top="13" Fill="#F6F8F8" Stroke="#A7B3B9" StrokeThickness="5"/>
+                                    <Path Data="M 80,112 A 55,55 0 0 1 160,112" Stroke="#5689C9" StrokeThickness="7" Fill="Transparent"/>
+                                    <TextBlock Text="0" Canvas.Left="70" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="50" Canvas.Left="109" Canvas.Top="28" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <TextBlock Text="100" Canvas.Left="155" Canvas.Top="119" FontSize="11" FontWeight="Bold" Foreground="#152027"/>
+                                    <Line x:Name="ClutchNeedle" X1="118" Y1="85" X2="78" Y2="119" Stroke="#152027" StrokeThickness="4" StrokeStartLineCap="Round">
+                                        <Line.RenderTransform><RotateTransform x:Name="ClutchNeedleRotation" CenterX="118" CenterY="85"/></Line.RenderTransform>
+                                    </Line>
+                                    <Ellipse Width="14" Height="14" Canvas.Left="111" Canvas.Top="78" Fill="#152027"/>
+                                    <TextBlock Text="WINMM" Canvas.Left="99" Canvas.Top="135" FontSize="9" FontWeight="Bold" Foreground="#152027"/>
                                 </Canvas>
                             </Grid>
                         </Border>
+                        <TextBlock Text="Dials show Windows-reported input (0–100%), not pedal force or raw sensor ADC."
+                                   Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBlock Text="LIVE INPUT" Foreground="{StaticResource DimBrush}" FontSize="11" FontWeight="Bold"/>
-                            <TextBlock x:Name="LiveValue" Grid.Column="1" Text="0%" FontWeight="Bold" FontSize="16"/>
+                            <TextBlock x:Name="LiveValue" Grid.Column="1" Text="—" FontWeight="Bold" FontSize="16"/>
                         </Grid>
-                        <ProgressBar x:Name="CaptureProgress" Value="0" Margin="0,10,0,5"/>
-                        <TextBlock x:Name="LiveRaw" Text="Raw: –" Foreground="{StaticResource DimBrush}" FontSize="11"/>
+                        <ProgressBar x:Name="CaptureProgress" Value="0" Margin="0,10,0,5"
+                                     AutomationProperties.Name="Current pedal WinMM input percentage"
+                                     AutomationProperties.HelpText="Read-only Windows-reported input percentage, not capture completion, pedal force, or raw sensor ADC."
+                                     ToolTip="Current WinMM pedal input percentage (not measurement completion or physical force)."/>
+                        <TextBlock x:Name="LiveRaw" Text="WinMM reading: — (not sensor ADC)" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="11"/>
                         <Button x:Name="CaptureButton" Content="Start 3-press measurement" Click="Capture_Click" Margin="0,19,0,0"
                                 HorizontalAlignment="Center" Background="{StaticResource AccentBrush}" Foreground="#101B20" MinWidth="180"/>
                         <TextBlock x:Name="CaptureCounter" Text="0 / 3 presses" TextAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="0,8,0,0"/>
@@ -159,66 +183,92 @@
                     <StackPanel x:Name="TestView" Visibility="Collapsed">
                         <TextBlock Text="05  /  TEST" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" FontSize="12"/>
                         <TextBlock Text="Live pedal test" FontSize="26" FontWeight="Bold" Margin="0,9,0,5"/>
-                        <TextBlock Text="Check every pedal moves smoothly through its captured range." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
+                        <TextBlock Text="Move each pedal slowly and watch the WinMM bar. Visible steps or deadzones may reflect Windows input processing, not a sensor fault." Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <StackPanel Margin="0,27,0,0">
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="BRAKE" FontWeight="Bold" FontSize="12" Foreground="#F4A09B"/>
                                 <TextBlock x:Name="BrakeValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                             </Grid>
-                            <ProgressBar x:Name="BrakeProgress" Foreground="#EC776B" Margin="0,8,0,22"/>
+                            <ProgressBar x:Name="BrakeProgress" Foreground="#EC776B" Margin="0,8,0,22"
+                                         AutomationProperties.Name="Brake WinMM input"
+                                         AutomationProperties.HelpText="Read-only Windows-reported input percentage, not physical pedal force or raw sensor ADC."/>
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="THROTTLE" FontWeight="Bold" FontSize="12" Foreground="#72E9C9"/>
                                 <TextBlock x:Name="ThrottleValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                             </Grid>
-                            <ProgressBar x:Name="ThrottleProgress" Foreground="#52D2AC" Margin="0,8,0,22"/>
+                            <ProgressBar x:Name="ThrottleProgress" Foreground="#52D2AC" Margin="0,8,0,22"
+                                         AutomationProperties.Name="Throttle WinMM input"
+                                         AutomationProperties.HelpText="Read-only Windows-reported input percentage, not physical pedal travel or raw sensor ADC."/>
                             <StackPanel x:Name="ClutchTestArea" Visibility="Collapsed">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="CLUTCH" FontWeight="Bold" FontSize="12" Foreground="#9BBDF9"/>
                                     <TextBlock x:Name="ClutchValue" Grid.Column="1" FontWeight="Bold" Text="—"/>
                                 </Grid>
-                                <ProgressBar x:Name="ClutchProgress" Foreground="#7BA4F2" Margin="0,8,0,12"/>
+                                <ProgressBar x:Name="ClutchProgress" Foreground="#7BA4F2" Margin="0,8,0,12"
+                                             AutomationProperties.Name="Clutch WinMM input"
+                                             AutomationProperties.HelpText="Optional read-only Windows-reported input percentage, not physical pedal travel or raw sensor ADC."/>
                             </StackPanel>
                         </StackPanel>
                         <TextBlock x:Name="SummaryText" Text="" Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,7"/>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="10" Padding="14" Margin="0,9,0,0">
                             <StackPanel>
-                                <TextBlock Text="SIGNAL HEALTH" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
-                                <TextBlock Text="Keep all pedals released. Zero variation may be masked by Windows deadzones." FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,5,0,9"/>
-                                <DockPanel LastChildFill="True">
-                                    <Button x:Name="CheckSignalButton" DockPanel.Dock="Left" Content="Check Signal · 3s" Click="CheckSignal_Click"/>
-                                    <Button x:Name="LongSignalButton" DockPanel.Dock="Left" Content="Long check · 10s"
-                                            Click="CheckLongSignal_Click" Margin="8,0,0,0"/>
-                                    <TextBlock x:Name="SignalText" Text="Not measured" TextWrapping="Wrap"
-                                               VerticalAlignment="Center" Margin="13,0,0,0" FontSize="12"/>
-                                </DockPanel>
+                                <TextBlock Text="WINMM SIGNAL STABILITY" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
+                                <TextBlock Text="Keep all pedals released. This checks Windows WinMM joystick variation, not sensor noise or EMI. Windows deadzones may hide changes." TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,5,0,9"/>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <WrapPanel Orientation="Horizontal">
+                                        <Button x:Name="CheckSignalButton" Content="Check Signal · 3s" Click="CheckSignal_Click"
+                                                ToolTip="Read-only 3-second WinMM at-rest check. Keep all pedals released. This cannot prove absence of sensor noise or EMI."
+                                                AutomationProperties.HelpText="Keep all pedals released for a 3-second WinMM signal check. No Windows calibration changes are made."/>
+                                        <Button x:Name="LongSignalButton" Content="Long check · 10s"
+                                                Click="CheckLongSignal_Click" Margin="8,0,0,0"
+                                                ToolTip="Read-only 10-second WinMM at-rest check. Keep all pedals released. Windows deadzones may hide sensor noise."
+                                                AutomationProperties.HelpText="Keep all pedals released for a 10-second WinMM signal check. This does not establish sensor noise or EMI."/>
+                                    </WrapPanel>
+                                    <TextBlock x:Name="SignalText" Grid.Row="1" Text="Not measured" TextWrapping="Wrap"
+                                               Margin="0,10,0,0" FontSize="12"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
                         <Border Background="{StaticResource RaisedBrush}" CornerRadius="10" Padding="14" Margin="0,14,0,0">
                             <StackPanel>
                                 <TextBlock Text="AXIS SWEEP · 8 SECONDS" FontSize="11" FontWeight="Bold" Foreground="#9FDACF"/>
-                                <TextBlock Text="Slowly press once, hold, then release. Measures Windows joystick values, NOT sensor ADC."
+                                <TextBlock Text="Start fully released and wait briefly after clicking Sweep. Then press once slowly, hold briefly, release fully, and stay released until the 8-second check ends. Windows joystick values only; not sensor ADC."
                                            TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,6,0,12"/>
-                                <StackPanel Orientation="Horizontal">
+                                <WrapPanel Orientation="Horizontal">
                                     <Button x:Name="BrakeSweepButton" Content="Brake sweep" Click="BrakeSweep_Click" Margin="0,0,10,0"/>
                                     <Button x:Name="ThrottleSweepButton" Content="Throttle sweep" Click="ThrottleSweep_Click"/>
-                                </StackPanel>
-                                <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"/>
+                                     <Button x:Name="ClutchSweepButton" Content="Clutch sweep" Click="ClutchSweep_Click"
+                                             Visibility="Collapsed" Margin="10,0,0,0"/>
+                                </WrapPanel>
+                                <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"
+                                             AutomationProperties.Name="WinMM pedal sweep elapsed time"
+                                             AutomationProperties.HelpText="Read-only 8-second WinMM input sweep progress. This measures elapsed time, not pedal force or raw sensor ADC."
+                                             ToolTip="8-second WinMM sweep progress (elapsed time only, not physical pedal force)."/>
                                 <TextBlock x:Name="SweepStatusText" Text="Not measured" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
                                 <TextBlock x:Name="SweepAnalysisText" Text="Complete a sweep to review its signal shape." TextWrapping="Wrap"
                                            Foreground="{StaticResource DimBrush}" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Text="WINDOWS-REPORTED RESPONSE · Brake (red), Throttle (green)" FontSize="10" FontWeight="Bold"
+                                <TextBlock Text="WINDOWS-REPORTED RESPONSE · Brake (solid red), Throttle (dashed green), Clutch (dotted blue if installed)" TextWrapping="Wrap" FontSize="10" FontWeight="Bold"
                                            Foreground="{StaticResource DimBrush}" Margin="0,13,0,6"/>
                                 <Border Background="#142329" CornerRadius="6" Padding="8">
                                     <Canvas Width="460" Height="102" HorizontalAlignment="Left">
                                         <Polyline x:Name="BrakeSweepLine" Stroke="#EC776B" StrokeThickness="2" SnapsToDevicePixels="True"/>
-                                        <Polyline x:Name="ThrottleSweepLine" Stroke="#52D2AC" StrokeThickness="2" SnapsToDevicePixels="True"/>
+                                        <Polyline x:Name="ThrottleSweepLine" Stroke="#52D2AC" StrokeThickness="2" StrokeDashArray="5,3" SnapsToDevicePixels="True"/>
+                                         <Polyline x:Name="ClutchSweepLine" Stroke="#7BA4F2" StrokeThickness="2" StrokeDashArray="1,3" StrokeDashCap="Round"
+                                                   Visibility="Collapsed" SnapsToDevicePixels="True"/>
                                     </Canvas>
                                 </Border>
-                                <TextBlock Text="At-limit counts cannot prove early clipping or consistent physical force."
+                                <TextBlock Text="Graph axes: left to right = 0–8 seconds; vertical = WinMM axis value within its reported or assumed range. Pressing a pedal may move the line down." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource DimBrush}" Margin="0,7,0,0"/>
+                                <TextBlock Text="Near-limit counts cannot prove early clipping or consistent physical force."
                                            TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource DimBrush}" Margin="0,7,0,0"/>
                             </StackPanel>
                         </Border>
-                        <Button Content="Export preview report (JSON)" Click="Export_Click" Margin="0,14,0,0" HorizontalAlignment="Left"/>
+                        <Button Content="Export preview report (JSON)" Click="Export_Click" Margin="0,14,0,0" HorizontalAlignment="Left"
+                                ToolTip="Save read-only WinMM/HID preview data as JSON. Interrupted WinMM sessions cannot be exported; no Windows settings are changed."
+                                AutomationProperties.HelpText="Export the current read-only diagnostic preview. No controller calibration, firmware, or driver settings are modified."/>
                     </StackPanel>
 
                     <!-- Raw monitor -->
@@ -228,7 +278,7 @@
                         <TextBlock Text="Windows joystick axis names may differ from DIView labels."
                                    Foreground="{StaticResource DimBrush}" FontSize="14" TextWrapping="Wrap"/>
                         <Border Background="{StaticResource RaisedBrush}" Margin="0,25,0,0" Padding="23" CornerRadius="12">
-                            <TextBlock x:Name="AdvancedAxesText" FontFamily="Consolas" FontSize="17" LineHeight="38" Text="No input"/>
+                            <TextBlock x:Name="AdvancedAxesText" FontFamily="Consolas" FontSize="17" LineHeight="38" TextWrapping="Wrap" Text="No input"/>
                         </Border>
                         <TextBlock x:Name="WinmmIdsText" Text="WinMM capability IDs unavailable"
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,15,0,0"/>
@@ -245,6 +295,7 @@
                         </Border>
                         <Button x:Name="AdvancedExportButton" Content="Export read-only report (JSON)" Click="Export_Click"
                                 ToolTip="Save HID count metadata and any WinMM preview measurements. No controller settings are changed."
+                                AutomationProperties.HelpText="Save read-only HID inventory counts and any current WinMM measurements. A stale WinMM session blocks export."
                                 HorizontalAlignment="Left" Margin="0,16,0,0"/>
                         <TextBlock Text="These are WinMM-reported values, which may already include Windows calibration. No settings are written."
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,19,0,0"/>
@@ -256,11 +307,15 @@
         </Grid>
         <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="29,14">
             <Grid>
-                <StackPanel VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
                     <TextBlock x:Name="StepLabel" Text="STEP 1 OF 4" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                    <TextBlock x:Name="StepHint" Text="Select the correct controller" Foreground="{StaticResource DimBrush}" FontSize="12" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="StepHint" Text="Select the correct controller" TextWrapping="Wrap" Foreground="{StaticResource DimBrush}" FontSize="12" Margin="0,6,0,0"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button x:Name="BackButton" Content="Back" Click="Back_Click" Margin="0,0,9,0" MinWidth="105"/>
                     <Button x:Name="NextButton" Content="Begin  →" Click="Next_Click" Background="{StaticResource AccentBrush}" Foreground="#10251F" MinWidth="125"/>
                 </StackPanel>

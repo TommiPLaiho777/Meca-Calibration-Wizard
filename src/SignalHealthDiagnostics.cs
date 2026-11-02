@@ -11,7 +11,11 @@ internal sealed record SignalHealthStats(
 {
     // A reported WinMM change is not proof of an electrical fault.
     // This guidance is exported alongside Status and does not change device state.
-    public string Guidance => TimestampRegressionDetected
+    // When both the sample range and timestamps are invalid, explain both
+    // faults instead of hiding the impossible WinMM values behind timing advice.
+    public string Guidance => Status == "Invalid WinMM range" && TimestampRegressionDetected
+        ? "WinMM readings fell outside the available axis bounds (reported or assumed), and sample timestamps moved backwards. This idle check is invalid; refresh the controller and repeat without changing device settings."
+        : TimestampRegressionDetected
         ? "WinMM sample timestamps moved backwards. This check stopped early; repeat without changing device settings."
         : Status switch
     {
@@ -23,6 +27,12 @@ internal sealed record SignalHealthStats(
             "No WinMM samples received. Check the controller connection and repeat.",
         "Insufficient samples" =>
             "Too few or too widely spaced WinMM samples to assess rest stability. Keep pedals released and repeat.",
+        "Invalid WinMM sample" =>
+            "An incomplete or malformed six-axis WinMM sample interrupted this idle check. Discard the result and repeat; no device settings were changed.",
+        "Repeated WinMM timestamps" =>
+            "WinMM sample timestamps repeated. This idle check stopped early and cannot establish signal stability; repeat without changing device settings.",
+        "Invalid WinMM range" =>
+            "WinMM readings fell outside the available axis bounds (reported or assumed). This idle check is invalid; refresh the controller and repeat without changing device settings.",
         _ => "WinMM variation alone cannot identify electrical interference."
     };
 }
@@ -32,9 +42,10 @@ internal static class SignalHealthDiagnostics
     // Conservative minimum *average* polling rate for a useful at-rest assessment.
     // Not a claim about the USB HID report rate or native load-cell sampling.
     private const double MinimumUsefulAverageSamplingRateHz = 5.0;
-    // A one-second blind spot makes a 3s or 10s at-rest check inconclusive,
-    // even if the remaining samples yield a high average polling rate.
-    private const double MaximumUsefulSamplingGapSeconds = 1.0;
+    // A gap above 0.5s is inconclusive for a 3s or 10s idle check.
+    // This also prevents a +0.6s Windows wall-clock jump from producing a
+    // valid-looking flat trace: timestamps alone cannot prove continuous sampling.
+    private const double MaximumUsefulSamplingGapSeconds = 0.5;
 
     public static SignalHealthStats Evaluate(
         IReadOnlyList<uint> readings, uint axisMin, uint axisMax, double windowSeconds,
@@ -70,10 +81,15 @@ internal static class SignalHealthDiagnostics
         double averageRate = windowSeconds > 0 ? (readings.Count - 1) / windowSeconds : 0;
         // A flat trace sampled too sparsely must not be presented as a valid
         // zero-variation result. Preserve the numerical metrics for review.
-        string status = timestampRegressionDetected ||
-                        readings.Count < 8 || windowSeconds < .5 ||
-                        averageRate < MinimumUsefulAverageSamplingRateHz ||
-                        largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
+        // An out-of-range WinMM sample invalidates an idle assessment even
+        // when all readings are identical. A flat but impossible trace must
+        // never be reported as "No variation resolved".
+        bool outsideReportedRange = readings.Any(x => x < axisMin || x > axisMax);
+        string status = outsideReportedRange ? "Invalid WinMM range"
+            : timestampRegressionDetected ||
+              readings.Count < 8 || windowSeconds < .5 ||
+              averageRate < MinimumUsefulAverageSamplingRateHz ||
+              largestSamplingGapSeconds is > MaximumUsefulSamplingGapSeconds
             ? "Insufficient samples"
             : span > .02 * scale ? "Pedal motion likely"
             : span > .003 * scale ? "Variation observed"

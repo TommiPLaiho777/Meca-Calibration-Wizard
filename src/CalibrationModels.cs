@@ -21,12 +21,15 @@ internal sealed class NoiseRun
     private DateTime _lastUtc;
     private double _largestSamplingGapSeconds;
     private bool _timestampRegressionDetected;
+    private bool _repeatedTimestampDetected;
+    private bool _invalidSampleDetected;
     private readonly List<uint>[] _samples =
         Enumerable.Range(0, 6).Select(_ => new List<uint>()).ToArray();
     public bool HasSamples => _samples[0].Count > 0;
     // End an invalid capture immediately rather than waiting indefinitely for a
     // wall clock that may have been moved backwards during the measurement.
-    public bool Complete => _timestampRegressionDetected ||
+    public bool Complete => _timestampRegressionDetected || _repeatedTimestampDetected ||
+        _invalidSampleDetected ||
         (_lastUtc - StartedUtc).TotalSeconds >= RequestedDurationSeconds;
 
     public NoiseRun(DateTime? startedUtc = null, double durationSeconds = DurationSeconds)
@@ -37,9 +40,16 @@ internal sealed class NoiseRun
         StartedUtc = startedUtc ?? DateTime.UtcNow;
         _lastUtc = StartedUtc;
     }
-    public void Observe(uint[] values, DateTime? atUtc = null)
+    public void Observe(uint[]? values, DateTime? atUtc = null)
     {
-        if (values.Length != 6 || Complete) return;
+        if (Complete) return;
+        // Never silently skip a malformed six-axis WinMM sample and then
+        // report the remaining idle trace as a complete stability check.
+        if (values is null || values.Length != WinmmJoystick.AxisNames.Length)
+        {
+            _invalidSampleDetected = true;
+            return;
+        }
         var now = atUtc ?? DateTime.UtcNow;
         if (now < _lastUtc)
         {
@@ -47,6 +57,14 @@ internal sealed class NoiseRun
             // Do not mistake a clock rollback for a sampling gap or silently
             // accept a misleading stationary signal. Keep earlier readings.
             _timestampRegressionDetected = true;
+            return;
+        }
+        // The first sample may occur exactly at capture start, but two actual
+        // samples at the same timestamp cannot establish a valid polling rate.
+        // Stop rather than allowing duplicate timestamps to inflate sample count.
+        if (now == _lastUtc && HasSamples)
+        {
+            _repeatedTimestampDetected = true;
             return;
         }
         // Include the delay before the first sample; a high average rate
@@ -57,8 +75,14 @@ internal sealed class NoiseRun
         _lastUtc = now;
     }
     public uint Spread(int axis) => HasSamples ? _samples[axis].Max()-_samples[axis].Min() : 0;
-    public SignalHealthStats Analyze(int axis, uint min, uint max) =>
-        SignalHealthDiagnostics.Evaluate(_samples[axis], min, max,
+    public SignalHealthStats Analyze(int axis, uint min, uint max)
+    {
+        var stats = SignalHealthDiagnostics.Evaluate(_samples[axis], min, max,
             Math.Max(0, (_lastUtc - StartedUtc).TotalSeconds),
             _largestSamplingGapSeconds, _timestampRegressionDetected);
+        // Preserve numeric evidence but explicitly reject the interrupted check.
+        return _invalidSampleDetected ? stats with { Status = "Invalid WinMM sample" }
+            : _repeatedTimestampDetected ? stats with { Status = "Repeated WinMM timestamps" }
+            : stats;
+    }
 }

@@ -6,8 +6,23 @@ namespace MecaCalibrationWizard;
 // raw ADC access, or a pedal calibration when no WinMM controller was selected.
 internal static class ReadOnlyHidReport
 {
-    internal static bool CanExport(bool hasWinmmController, HidInventorySnapshot? inventory) =>
-        hasWinmmController || inventory is { Available: true };
+    // A failed WinMM read invalidates the selected capture session. HID metadata
+    // cannot make stale WinMM measurements eligible for export.
+    internal static bool CanExport(
+        bool hasWinmmController, HidInventorySnapshot? inventory,
+        bool winmmSessionInvalid = false, bool measurementInProgress = false) =>
+        !measurementInProgress &&
+        ((hasWinmmController && !winmmSessionInvalid) ||
+         (!hasWinmmController && inventory is { Available: true }));
+
+    // Controller-only exports remain permitted, but the user should explicitly
+    // acknowledge when no pedal measurement or successful HID scan is present.
+    // A failed scan can be reported as error metadata; it is not a completed inventory.
+    internal static bool IsControllerOnlyExport(
+        bool hasWinmmController, int pedalCount, bool hasNoiseCheck,
+        bool hasSignalHealth, int sweepCount, HidInventorySnapshot? inventory) =>
+        hasWinmmController && pedalCount == 0 && !hasNoiseCheck &&
+        !hasSignalHealth && sweepCount == 0 && inventory is not { Available: true };
 
     // Use this for both WinMM+HID and HID-only exports. A failed optional
     // scan can be reported with WinMM data, but never with a comparison.

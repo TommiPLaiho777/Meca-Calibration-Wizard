@@ -15,6 +15,7 @@
     <Compile Include="../src/SweepDiagnostics.cs" Link="SweepDiagnostics.cs" />
     <Compile Include="../src/SignalHealthDiagnostics.cs" Link="SignalHealthDiagnostics.cs" />
     <None Include="../src/MainWindow.xaml" Link="MainWindow.xaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../src/MainWindow.xaml.cs" Link="MainWindow.xaml.cs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

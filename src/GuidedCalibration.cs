@@ -14,24 +14,30 @@ internal sealed record PedalCalibrationResult(
 {
     // WinMM axis endpoints do not establish physical pedal-force repeatability.
     public string PeakSpreadSummary => AtAxisLimit
-        ? "Windows axis limit reached - physical-force repeatability unknown"
+        ? "WinMM near-limit band observed - physical-force repeatability unknown"
         : $"WinMM peak spread {RepeatabilitySpreadPercent:0.0}% - not a physical-force test";
 
-    public string RepeatabilityLabel => AtAxisLimit ? "Axis limit reached" :
+    // Labels are exported to JSON. WinMM peak similarity must never be
+    // presented as verified repeatability of physical pedal force.
+    public string RepeatabilityLabel => AtAxisLimit ? "WinMM limit (force unverified)" :
         RepeatabilitySpreadPercent switch
         {
-            <= 5.0 => "Consistent",
-            <= 12.0 => "Some variation",
-            _ => "Consider repeating"
+            <= 5.0 => "Similar WinMM peaks (force unverified)",
+            <= 12.0 => "WinMM peak variation (force unverified)",
+            _ => "Repeat WinMM capture (force unverified)"
         };
 }
 
 internal sealed class GuidedCalibration
 {
     private const int RequiredPresses = 3;
+    // Ignore a single low WinMM sample as a release; require a stable return to rest.
+    private const int RequiredReleaseSamples = 3;
+    private const double RequiredReleaseMilliseconds = 80;
     private readonly uint[] _range;
     private readonly uint[] _deviceMin;
     private readonly uint[] _deviceMax;
+    private readonly bool[] _assumedAxisRanges;
     private readonly HashSet<int> _reservedAxes;
     private readonly double[] _sum = new double[6];
     private readonly uint[] _restMin = Enumerable.Repeat(uint.MaxValue, 6).ToArray();
@@ -39,9 +45,18 @@ internal sealed class GuidedCalibration
     private readonly double[] _rest = new double[6];
     private readonly List<uint> _peaks = new();
     private readonly DateTime _startUtc;
+    private DateTime _lastSampleUtc;
     private DateTime _movementStartUtc;
     private double _currentPeak;
-    private int _strokeSamples;
+    // Second-largest high-band sample distinguishes a lone WinMM peak spike
+    // from a sustained pedal endpoint; it does not establish sensor accuracy.
+    private double _secondHighestPressDisplacement;
+    // Reject brief WinMM spikes as pedal presses; require sustained movement.
+    private int _pressAboveThresholdSamples;
+    private DateTime _firstPressAboveUtc;
+    private DateTime _lastPressAboveUtc;
+    private int _releaseBelowThresholdSamples;
+    private DateTime _firstReleaseBelowUtc;
     private int _direction;
     private int _restSamples;
     private int _axis = -1;
@@ -59,10 +74,13 @@ internal sealed class GuidedCalibration
     {
         Kind = kind;
         _startUtc = startUtc ?? DateTime.UtcNow;
+        _lastSampleUtc = _startUtc;
         _movementStartUtc = _startUtc;
         _reservedAxes = reservedAxes.ToHashSet();
         _deviceMin = (uint[])device.Min.Clone();
         _deviceMax = (uint[])device.Max.Clone();
+        _assumedAxisRanges = device.AssumedAxisRanges is { Length: 6 } assumed
+            ? (bool[])assumed.Clone() : new bool[6];
         _range = Enumerable.Range(0, 6)
             .Select(i => (uint)Math.Max(1.0, (double)device.Max[i] - device.Min[i]))
             .ToArray();
@@ -93,7 +111,41 @@ internal sealed class GuidedCalibration
 
     public void Observe(uint[] reading, DateTime utcNow)
     {
-        if (Phase is GuidePhase.Complete or GuidePhase.Failed || reading.Length != 6) return;
+        if (Phase is GuidePhase.Complete or GuidePhase.Failed) return;
+        // A malformed WinMM sample must invalidate guided capture, not be
+        // silently skipped and followed by an apparently complete pedal result.
+        if (reading is null || reading.Length != WinmmJoystick.AxisNames.Length)
+        {
+            Fail("WinMM guided sample has an invalid axis count. Release the pedal and retry capture.");
+            return;
+        }
+        // Wall-clock adjustments and long WinMM polling stalls must not make a
+        // short rest baseline or a pedal press appear to have elapsed normally.
+        // Fail conservatively; no calibration is written to Windows or the device.
+        double sampleGapSeconds = (utcNow - _lastSampleUtc).TotalSeconds;
+        // The first sample may be stamped at capture start, but subsequent
+        // equal timestamps cannot count as independent rest/press/release samples.
+        // RestSamples is nonzero after the first accepted sample in every phase.
+        if (sampleGapSeconds < 0 || sampleGapSeconds > 0.5 ||
+            (sampleGapSeconds == 0 && _restSamples > 0))
+        {
+            Fail("WinMM sample timing interrupted. Release the pedal and retry capture.");
+            return;
+        }
+        _lastSampleUtc = utcNow;
+        // A Windows joystick sample outside joyGetDevCaps' reported bounds
+        // cannot be used to identify a pedal axis or calculate its travel.
+        // Fail closed; this preview never changes Windows calibration.
+        for (int axis = 0; axis < 6; axis++)
+        {
+            if (reading[axis] < _deviceMin[axis] || reading[axis] > _deviceMax[axis])
+            {
+                Fail(_assumedAxisRanges[axis]
+                    ? "WinMM reading outside the assumed axis range (0–65535 fallback). Release the pedal and retry capture."
+                    : "WinMM reading outside the reported axis range. Release the pedal and retry capture.");
+                return;
+            }
+        }
         if (Phase == GuidePhase.MeasuringRest)
         {
             for (int i = 0; i < 6; i++)
@@ -156,22 +208,86 @@ internal sealed class GuidedCalibration
         if (Phase == GuidePhase.AwaitingPress && displacement >= pressThreshold)
         {
             _currentPeak = displacement;
-            _strokeSamples = 1;
+            _secondHighestPressDisplacement = 0;
+            _pressAboveThresholdSamples = 1;
+            _firstPressAboveUtc = utcNow;
+            _lastPressAboveUtc = utcNow;
             Phase = GuidePhase.AwaitingRelease;
         }
         else if (Phase == GuidePhase.AwaitingRelease)
         {
-            _strokeSamples++;
-            _currentPeak = Math.Max(_currentPeak, displacement);
-            if (displacement <= releaseThreshold)
+            // An isolated low sample can be a WinMM dropout, not a completed
+            // pedal release. If high readings resume, start a fresh hold streak
+            // instead of borrowing timing or a peak from before the dropout.
+            if (_releaseBelowThresholdSamples > 0 && displacement > releaseThreshold)
             {
-                if (_strokeSamples >= 2 && _currentPeak >= pressThreshold)
+                _releaseBelowThresholdSamples = 0;
+                _pressAboveThresholdSamples = 0;
+                _firstPressAboveUtc = default;
+                _lastPressAboveUtc = default;
+                _currentPeak = 0;
+                _secondHighestPressDisplacement = 0;
+            }
+            if (displacement >= pressThreshold)
+                _secondHighestPressDisplacement = Math.Max(
+                    _secondHighestPressDisplacement, Math.Min(_currentPeak, displacement));
+            _currentPeak = Math.Max(_currentPeak, displacement);
+            if (displacement >= pressThreshold)
+            {
+                if (_pressAboveThresholdSamples == 0)
+                    _firstPressAboveUtc = utcNow;
+                _pressAboveThresholdSamples++;
+                _lastPressAboveUtc = utcNow;
+            }
+            else if (displacement > releaseThreshold)
+            {
+                // A gradual, legitimate release crosses the band between the
+                // press and release thresholds. Keep an already verified hold
+                // through this band, but never let interrupted short high
+                // samples accumulate into a false press.
+                bool sustainedPress = _pressAboveThresholdSamples >= 3 &&
+                    (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100;
+                if (!sustainedPress)
                 {
+                    _pressAboveThresholdSamples = 0;
+                    _firstPressAboveUtc = default;
+                    _lastPressAboveUtc = default;
+                    _currentPeak = 0;
+                    _secondHighestPressDisplacement = 0;
+                }
+            }
+            else
+            {
+                if (_releaseBelowThresholdSamples == 0)
+                    _firstReleaseBelowUtc = utcNow;
+                _releaseBelowThresholdSamples++;
+                if (_releaseBelowThresholdSamples < RequiredReleaseSamples ||
+                    (utcNow - _firstReleaseBelowUtc).TotalMilliseconds < RequiredReleaseMilliseconds)
+                    return;
+
+                // Only a continuous high streak followed by a stable low
+                // streak counts. No sensor force or Windows settings inferred.
+                if (_pressAboveThresholdSamples >= 3 &&
+                    (_lastPressAboveUtc - _firstPressAboveUtc).TotalMilliseconds >= 100 &&
+                    _currentPeak >= pressThreshold)
+                {
+                    // A single extreme WinMM sample can otherwise become a
+                    // false pedal endpoint even after an ordinary sustained hold.
+                    // Reject this ambiguous capture rather than silently changing
+                    // its peak or claiming that a sensor was verified.
+                    if (_currentPeak > _secondHighestPressDisplacement * 2.0 &&
+                        _currentPeak - _secondHighestPressDisplacement > _range[_axis] * 0.25)
+                    {
+                        Fail("Isolated WinMM peak detected. Release the pedal and retry capture smoothly.");
+                        return;
+                    }
                     double absolutePeak = _rest[_axis] + _direction * _currentPeak;
                     _peaks.Add((uint)Math.Clamp(Math.Round(absolutePeak), 0d, (double)uint.MaxValue));
                 }
                 _currentPeak = 0;
-                _strokeSamples = 0;
+                _secondHighestPressDisplacement = 0;
+                _pressAboveThresholdSamples = 0;
+                _releaseBelowThresholdSamples = 0;
                 Phase = GuidePhase.AwaitingPress;
                 if (_peaks.Count == RequiredPresses) Finish();
             }

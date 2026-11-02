@@ -13,28 +13,119 @@ internal sealed record SweepAssessment(
 
 internal static class SweepDiagnostics
 {
-    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax)
+    public static SweepAssessment Evaluate(IReadOnlyList<SweepPoint> trace, uint axisMin, uint axisMax,
+        bool inverted = false, bool axisRangeAssumed = false)
     {
         if (axisMax <= axisMin) throw new ArgumentException("Invalid Windows-reported axis range.");
+        // A direct assessment may also receive cached/imported traces that
+        // did not pass the live InputSweepRun bounds check. Never clamp an
+        // impossible WinMM reading into a seemingly valid press/release.
+        if (trace.Any(point => point.WinmmValue < axisMin || point.WinmmValue > axisMax))
+            return new SweepAssessment(false, false,
+                trace.Select(point => point.WinmmValue).Distinct().Count(),
+                0, 0, "Invalid WinMM range",
+                "WinMM readings are outside the axis bounds used for this preview (reported or assumed). Discard this sweep and capture again.");
+
+        // Imported/cached WinMM traces must have an unambiguous sample order.
+        // Equal millisecond timestamps can otherwise describe an impossible
+        // instantaneous press and release. Live WinMM capture samples much
+        // farther apart than 1 ms; reject duplicates as well as rollbacks.
+        for (int i = 0; i < trace.Count; i++)
+        {
+            if (trace[i].TimeMs < 0 ||
+                (i > 0 && trace[i].TimeMs <= trace[i - 1].TimeMs))
+                return new SweepAssessment(false, false,
+                    trace.Select(point => point.WinmmValue).Distinct().Count(),
+                    0, 0, "Invalid sweep timing",
+                    "Sweep timestamps are negative, repeated, or move backwards. Discard this trace and capture again.");
+        }
+
+        // Even a short imported trace must disclose impossible axis values or
+        // ambiguous timestamps before falling back to insufficient data.
         if (trace.Count < 3)
             return new SweepAssessment(false, false, trace.Select(x => x.WinmmValue).Distinct().Count(),
                 0, 0, "Insufficient data", "Record an eight-second press, hold and release sweep.");
 
         double scale = (double)axisMax - axisMin;
-        double[] values = trace.Select(s => Math.Clamp((s.WinmmValue - (double)axisMin) / scale, 0, 1)).ToArray();
+        // Classify press/release in pedal direction, not raw WinMM axis direction.
+        // Inverted mappings rest near the high endpoint and press toward the low endpoint.
+        // Keep ReachesReportedMaximum tied to the raw Windows axis maximum below.
+        double[] values = trace.Select(s =>
+        {
+            double rawFraction = Math.Clamp((s.WinmmValue - (double)axisMin) / scale, 0, 1);
+            return inverted ? 1 - rawFraction : rawFraction;
+        }).ToArray();
         var distinct = trace.Select(s => s.WinmmValue).Distinct().Count();
         var min = values.Min();
         var max = values.Max();
-        bool full = max >= .98;
+        // Only an observed exact WinMM endpoint establishes that the reported axis maximum was reached.
+        // A 98–99.9% reading is near the limit, not proof of an endpoint sample.
+        // An assumed 0..65535 fallback is not a driver-reported maximum.
+        // Preserve the raw upper-bound observation only for clearly qualified wording.
+        bool observedUpper = trace.Any(point => point.WinmmValue == axisMax);
+        bool full = !axisRangeAssumed && observedUpper;
         double observedTravel = (max - min) * 100;
 
-        // Order matters: release -> large stroke -> release. An idle trace, or
-        // a trace that starts at full throttle, is not a complete guided sweep.
+        // A complete guided sweep must start released, reach the pressed end,
+        // and finish released. Searching for any early/late rest sample can
+        // misclassify a trace that started pressed or ended with a second press.
         int pressIndex = Array.FindIndex(values, x => x >= .80);
-        bool startedNearRest = values.Take(Math.Min(8, values.Length)).Any(x => x <= .03);
-        bool returnedToRest = pressIndex >= 0 && values.Skip(pressIndex + 1).Any(x => x <= .03);
-        bool complete = startedNearRest && pressIndex >= 0 && returnedToRest;
-
+        bool startedNearRest = values[0] <= .03;
+        bool endedNearRest = values[^1] <= .03;
+        // A single final low WinMM sample may be a transient drop rather than
+        // evidence of a completed release. Require a descending three-sample
+        // return toward rest, including two samples within the same 3% rest
+        // band used for the start/end checks, spanning >=80 ms.
+        // This checks Windows signal shape, not physical pedal force.
+        bool releaseTailConfirmed = values.Length >= 3 &&
+            values[^3] <= .20 && values[^2] <= .03 && endedNearRest &&
+            values[^3] >= values[^2] - .025 &&
+            values[^2] >= values[^1] - .025 &&
+            trace[^1].TimeMs - trace[^3].TimeMs >= 80 &&
+            // Two near-rest readings one millisecond apart are not an
+            // independently observed settled release, even if the prior
+            // approach toward rest took longer. Live polling is slower.
+            trace[^1].TimeMs - trace[^2].TimeMs >= 20;
+        bool strokeShapeComplete = startedNearRest && pressIndex > 0 &&
+            endedNearRest && releaseTailConfirmed;
+        // Imported/cached traces bypass the live eight-second capture gate.
+        // A few milliseconds of plausible-looking values, or a large missing
+        // interval, must not be reported as a complete physical pedal sweep.
+        // These are Windows sample-timing checks, not force measurements.
+        bool timingEvidenceSufficient = trace[^1].TimeMs - trace[0].TimeMs >= 2000 &&
+            !Enumerable.Range(1, trace.Count - 1)
+                .Any(i => trace[i].TimeMs - trace[i - 1].TimeMs > 500);
+        // A two-level or similarly quantized WinMM signal can mimic a full stroke
+        // without enough intermediate evidence to validate the capture.
+        bool resolutionSufficient = distinct >= 5;
+        // A brief spike or two high readings do not establish a held press.
+        // Require three consecutive high-direction samples spanning at least
+        // 100 ms. The existing 500 ms trace-gap check handles sparse captures;
+        // do not reject valid slow sweeps (e.g. 320 ms between readings).
+        // This is WinMM timing evidence, not physical pedal force.
+        int pressedRunStart = -1, pressedRunSamples = 0;
+        bool pressedHoldSufficient = false;
+        for (int i = 0; i < values.Length; i++)
+        {
+            if (values[i] < .80)
+            {
+                pressedRunStart = -1;
+                pressedRunSamples = 0;
+                continue;
+            }
+            if (pressedRunStart < 0)
+            {
+                pressedRunStart = i;
+                pressedRunSamples = 0;
+            }
+            pressedRunSamples++;
+            if (pressedRunSamples >= 3 &&
+                trace[i].TimeMs - trace[pressedRunStart].TimeMs >= 100)
+            {
+                pressedHoldSufficient = true;
+                break;
+            }
+        }
         // Count substantial directional reversals; suppress tiny quantization noise.
         const double changeThreshold = .025;
         int previousDirection = 0, reversals = 0;
@@ -48,13 +139,49 @@ internal static class SweepDiagnostics
             previousDirection = direction;
             anchor = current;
         }
+        // One guided sweep means one substantial press and one release.
+        // An otherwise plausible trace with a second press/release is not
+        // evidence of a single completed stroke.
+        bool complete = strokeShapeComplete && timingEvidenceSufficient &&
+            resolutionSufficient && pressedHoldSufficient && reversals == 1;
 
         string status;
         string explanation;
-        if (observedTravel < 20 || distinct < 5)
+        if (observedTravel < 20)
         {
             status = "Little movement";
             explanation = "The recorded axis did not move through a useful range. Repeat the sweep.";
+        }
+        else if (!resolutionSufficient)
+        {
+            status = "Insufficient signal steps";
+            explanation = "Too few distinct Windows WinMM values were observed to validate a press and release. Try a slower sweep; sensor resolution and pedal force remain unverified.";
+        }
+        // Timing failures take precedence even when the final release tail
+        // is too short to confirm; a millisecond-fast trace is not a valid sweep.
+        else if (startedNearRest && pressIndex > 0 && endedNearRest &&
+                 !timingEvidenceSufficient)
+        {
+            status = "Insufficient sweep timing";
+            explanation = "The WinMM trace is too short or contains a sampling gap over 0.5 seconds. Record a continuous eight-second sweep.";
+        }
+        else if (strokeShapeComplete && !pressedHoldSufficient)
+        {
+            status = "Pressed hold not confirmed";
+            explanation = "A brief WinMM peak does not confirm a held pedal press. Repeat the sweep, hold briefly, then release; physical pedal force remains unverified.";
+        }
+        else if (strokeShapeComplete && timingEvidenceSufficient &&
+                 resolutionSufficient && pressedHoldSufficient && reversals > 1)
+        {
+            status = "Multiple stroke reversals";
+            explanation = "More than one substantial WinMM direction reversal was observed. Record one slow press, hold, and release; this is not a physical-force assessment.";
+        }
+        else if (startedNearRest && pressIndex > 0 && endedNearRest &&
+                 timingEvidenceSufficient && resolutionSufficient &&
+                 pressedHoldSufficient && !releaseTailConfirmed)
+        {
+            status = "Release not confirmed";
+            explanation = "A single final low WinMM reading cannot confirm release. Return toward rest earlier and hold briefly before the timer ends; physical pedal force remains unverified.";
         }
         else if (!complete)
         {
@@ -69,9 +196,20 @@ internal static class SweepDiagnostics
         else
         {
             status = "Sweep captured";
-            explanation = full
-                ? "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
-                : "Press and release recorded. The Windows axis maximum was not reached in this sweep.";
+            // On inverted pedals the raw WinMM high endpoint is the released end,
+            // not the pressed end. Do not imply the pedal saturated under load.
+            explanation = axisRangeAssumed
+                ? "Press and release recorded. WinMM axis bounds are assumed (capabilities unavailable or invalid); " +
+                  (observedUpper ? "the assumed upper bound was observed" : "the assumed upper bound was not observed") +
+                  (inverted ? " at the released end of this inverted mapping" : "") +
+                  ". This is not a verified driver-reported maximum or sensor-force clipping."
+                : full
+                ? inverted
+                    ? "Press and release recorded. Windows axis high endpoint was observed at the released end of this inverted mapping; this does not establish pedal-force clipping."
+                    : "Press and release recorded. Windows axis reached its limit; actual sensor-force clipping is unknown."
+                : inverted
+                    ? "Press and release recorded. The Windows axis high endpoint was not observed (released end of this inverted mapping); this does not establish physical pedal force."
+                    : "Press and release recorded. The Windows axis maximum was not reached in this sweep.";
         }
         return new SweepAssessment(complete, full, distinct, Math.Round(observedTravel, 2),
             reversals, status, explanation);

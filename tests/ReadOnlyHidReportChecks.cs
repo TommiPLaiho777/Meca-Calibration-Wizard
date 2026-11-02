@@ -23,6 +23,26 @@ internal static class ReadOnlyHidReportChecks
             !ReadOnlyHidReport.CanExport(true, null))
             throw new Exception("FAILED: HID-only export eligibility");
 
+        // Safety gates: a failed WinMM session cannot export cached readings,
+        // and neither WinMM nor HID-only reports can export mid-measurement.
+        // A genuinely HID-only snapshot remains independent of WinMM state.
+        if (ReadOnlyHidReport.CanExport(true, inventory, winmmSessionInvalid: true) ||
+            ReadOnlyHidReport.CanExport(true, null, measurementInProgress: true) ||
+            ReadOnlyHidReport.CanExport(false, inventory, measurementInProgress: true) ||
+            !ReadOnlyHidReport.CanExport(false, inventory, winmmSessionInvalid: true))
+            throw new Exception("FAILED: stale or in-progress WinMM/HID export gate");
+
+        // Controller-only JSON is intentional but requires explicit UI consent.
+        // Any actual pedal, signal, sweep, or HID metadata must bypass that prompt.
+        if (!ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(false, 0, false, false, 0, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(true, 1, false, false, 0, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(true, 0, true, false, 0, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, true, 0, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 1, null) ||
+            ReadOnlyHidReport.IsControllerOnlyExport(true, 0, false, false, 0, inventory))
+            throw new Exception("FAILED: controller-only export consent classification");
+
         try
         {
             _ = ReadOnlyHidReport.Create(unavailable, null, DateTime.UnixEpoch);
@@ -123,6 +143,23 @@ internal static class ReadOnlyHidReportChecks
             json.Contains("DevicePath", StringComparison.Ordinal) ||
             json.Contains("CurrentGroupCounts", StringComparison.Ordinal))
             throw new Exception("FAILED: HID-only JSON must not claim WinMM identity or leak paths");
+
+        // The WinMM+HID WPF exporter is source-checked here; Windows CI
+        // separately compiles it. Legacy *Raw keys remain for compatibility,
+        // but explicitly named WinMM endpoints prevent an ADC interpretation.
+        var windowSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml.cs"));
+        int pedalStart = windowSource.IndexOf("Pedals = _mappings.ToDictionary(", StringComparison.Ordinal);
+        int pedalEnd = windowSource.IndexOf("NoiseCheckRawSpan = _lastNoise", pedalStart, StringComparison.Ordinal);
+        if (pedalStart < 0 || pedalEnd <= pedalStart)
+            throw new Exception("FAILED: WinMM pedal JSON export block missing");
+        string pedalExport = windowSource[pedalStart..pedalEnd];
+        if (!pedalExport.Contains("RestRaw = p.Value.Rest") ||
+            !pedalExport.Contains("FullRaw = p.Value.Full") ||
+            !pedalExport.Contains("RestWinmm = p.Value.Rest") ||
+            !pedalExport.Contains("FullWinmm = p.Value.Full") ||
+            !pedalExport.Contains("legacy key: Windows WinMM, not sensor ADC"))
+            throw new Exception("FAILED: WinMM endpoint provenance or legacy JSON compatibility");
+        Console.WriteLine("PASS: explicit WinMM pedal endpoint keys retain legacy export compatibility (WPF source contract)");
 
         Console.WriteLine("PASS: HID-only export eligibility, stale comparison rejection, JSON provenance and privacy");
     }
