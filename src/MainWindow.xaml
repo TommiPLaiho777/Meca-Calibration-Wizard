@@ -241,7 +241,10 @@
                                      <Button x:Name="ClutchSweepButton" Content="Clutch sweep" Click="ClutchSweep_Click"
                                              Visibility="Collapsed" Margin="10,0,0,0"/>
                                 </WrapPanel>
-                                <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"/>
+                                <ProgressBar x:Name="SweepProgress" Margin="0,12,0,0" Value="0"
+                                             AutomationProperties.Name="WinMM pedal sweep elapsed time"
+                                             AutomationProperties.HelpText="Read-only 8-second WinMM input sweep progress. This measures elapsed time, not pedal force or raw sensor ADC."
+                                             ToolTip="8-second WinMM sweep progress (elapsed time only, not physical pedal force)."/>
                                 <TextBlock x:Name="SweepStatusText" Text="Not measured" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
                                 <TextBlock x:Name="SweepAnalysisText" Text="Complete a sweep to review its signal shape." TextWrapping="Wrap"
                                            Foreground="{StaticResource DimBrush}" FontSize="12" Margin="0,8,0,0"/>
