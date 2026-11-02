@@ -254,7 +254,9 @@
                                            TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource DimBrush}" Margin="0,7,0,0"/>
                             </StackPanel>
                         </Border>
-                        <Button Content="Export preview report (JSON)" Click="Export_Click" Margin="0,14,0,0" HorizontalAlignment="Left"/>
+                        <Button Content="Export preview report (JSON)" Click="Export_Click" Margin="0,14,0,0" HorizontalAlignment="Left"
+                                ToolTip="Save read-only WinMM/HID preview data as JSON. Interrupted WinMM sessions cannot be exported; no Windows settings are changed."
+                                AutomationProperties.HelpText="Export the current read-only diagnostic preview. No controller calibration, firmware, or driver settings are modified."/>
                     </StackPanel>
 
                     <!-- Raw monitor -->
@@ -281,6 +283,7 @@
                         </Border>
                         <Button x:Name="AdvancedExportButton" Content="Export read-only report (JSON)" Click="Export_Click"
                                 ToolTip="Save HID count metadata and any WinMM preview measurements. No controller settings are changed."
+                                AutomationProperties.HelpText="Save read-only HID inventory counts and any current WinMM measurements. A stale WinMM session blocks export."
                                 HorizontalAlignment="Left" Margin="0,16,0,0"/>
                         <TextBlock Text="These are WinMM-reported values, which may already include Windows calibration. No settings are written."
                                    Foreground="{StaticResource DimBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,19,0,0"/>
