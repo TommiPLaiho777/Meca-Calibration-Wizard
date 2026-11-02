@@ -15,6 +15,33 @@ internal static class WinmmStaleGaugeChecks
         // Hardware-free source contract for the first approved analog dial.
         // WPF visual behavior still requires a separate Windows GUI test.
         var xaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+
+        // Hardware-free English GUI contract: all three white-faced dials
+        // identify the pedal for accessibility and disclose WinMM provenance.
+        // Actual tooltips and screen-reader output require a Windows WPF test.
+        foreach (var (canvasName, accessibleName, tooltipPhrase) in new[]
+        {
+            ("BrakeIcon", "Brake WinMM input gauge", "not measured force"),
+            ("ThrottleIcon", "Throttle WinMM input gauge", "not engine RPM"),
+            ("ClutchIcon", "Clutch WinMM input gauge", "pedal travel percentage")
+        })
+        {
+            string marker = "<Canvas x:Name=\\\"" + canvasName + "\\\"";
+            int openAt = xaml.IndexOf(marker, StringComparison.Ordinal);
+            int tagEnd = openAt < 0 ? -1 : xaml.IndexOf('>', openAt);
+            if (openAt < 0 || tagEnd < openAt)
+                throw new Exception("FAILED: accessible WinMM dial missing: " + canvasName);
+            string openTag = xaml[openAt..(tagEnd + 1)];
+            if (!openTag.Contains("AutomationProperties.Name=\\\"" + accessibleName + "\\\"", StringComparison.Ordinal) ||
+                !openTag.Contains("ToolTip=\\\"", StringComparison.Ordinal) ||
+                !openTag.Contains(tooltipPhrase, StringComparison.Ordinal))
+                throw new Exception("FAILED: accessible WinMM dial provenance missing: " + canvasName);
+        }
+        if (!xaml.Contains(
+                "Dials show Windows-reported input (0–100%), not pedal force or raw sensor ADC.",
+                StringComparison.Ordinal))
+            throw new Exception("FAILED: WinMM dial provenance note missing");
+        Console.WriteLine("PASS: analog dial labels and WinMM provenance note (WPF source contract)");
         int dialStart = xaml.IndexOf("<Canvas x:Name=\"ThrottleIcon\"", StringComparison.Ordinal);
         int dialEnd = xaml.IndexOf("<!-- White-faced analog clutch preview:", dialStart, StringComparison.Ordinal);
         if (dialStart < 0 || dialEnd <= dialStart)
