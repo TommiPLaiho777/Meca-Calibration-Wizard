@@ -1,0 +1,78 @@
+using System.Runtime.CompilerServices;
+
+namespace MecaCalibrationWizard;
+
+// Synthetic-only: no joystick, HID handle, Windows calibration or hardware access.
+internal static class WinmmOutOfRangeSweepChecks
+{
+    [ModuleInitializer]
+    internal static void Verify()
+    {
+        var start = new DateTime(2026, 10, 25, 4, 0, 0, DateTimeKind.Utc);
+
+        // A WinMM sample outside joyGetDevCaps' declared range must never
+        // become a valid sweep or an apparent axis-limit observation.
+        foreach (uint invalid in new[] { 99u, 1001u })
+        {
+            var run = new InputSweepRun(0, 100, 1000, start, axisRangeAssumed: false);
+            run.Observe(new uint[] { 100, 0, 0, 0, 0, 0 }, start);
+            run.Observe(new uint[] { invalid, 0, 0, 0, 0, 0 },
+                start.AddMilliseconds(40));
+            if (!run.Failed || run.Complete || run.Result is not null ||
+                !run.FailureReason.Contains("outside the reported axis range"))
+                throw new Exception("FAILED: out-of-range WinMM sweep was accepted");
+        }
+
+        // A failed sweep must identify assumed, reported and unverified bounds
+        // accurately. These are synthetic ranges; no WinMM device is queried.
+        var assumed = new InputSweepRun(0, 0, 65535, start, axisRangeAssumed: true);
+        assumed.Observe(new uint[] { 65536, 0, 0, 0, 0, 0 }, start);
+        if (!assumed.Failed || assumed.Result is not null ||
+            !assumed.FailureReason.Contains("assumed fallback axis range") ||
+            assumed.FailureReason.Contains("reported axis range"))
+            throw new Exception("FAILED: assumed WinMM sweep bounds mislabeled as reported");
+
+        var unknown = new InputSweepRun(0, 0, 65535, start);
+        unknown.Observe(new uint[] { 65536, 0, 0, 0, 0, 0 }, start);
+        if (!unknown.Failed || unknown.Result is not null ||
+            !unknown.FailureReason.Contains("unverified axis range") ||
+            unknown.FailureReason.Contains("reported axis range"))
+            throw new Exception("FAILED: unknown WinMM sweep bounds mislabeled as reported");
+        Console.WriteLine("PASS: sweep axis-range provenance preserved (synthetic C#)");
+
+        // Exact endpoints are valid. Sparse synthetic timing is permitted here
+        // only to keep this hardware-free test small; live capture is strict.
+        var valid = new InputSweepRun(0, 100, 1000, start,
+            requireContinuousSamples: false);
+        valid.Observe(new uint[] { 100, 0, 0, 0, 0, 0 }, start);
+        valid.Observe(new uint[] { 1000, 0, 0, 0, 0, 0 },
+            start.AddSeconds(8));
+        if (valid.Failed || !valid.Complete ||
+            valid.Result is not { AtLowLimitSamples: 1, AtHighLimitSamples: 1 })
+            throw new Exception("FAILED: valid WinMM sweep endpoints were rejected");
+
+        // Malformed joyGetPosEx samples must fail immediately, not disappear
+        // from the live trace and permit a later apparently complete sweep.
+        foreach (uint[]? malformed in new uint[]?[]
+        {
+            null,
+            Array.Empty<uint>(),
+            new uint[] { 100 },
+            new uint[] { 100, 0, 0, 0, 0, 0, 0 }
+        })
+        {
+            var partial = new InputSweepRun(0, 100, 1000, start);
+            partial.Observe(new uint[] { 100, 0, 0, 0, 0, 0 }, start);
+            partial.Observe(malformed, start.AddMilliseconds(40));
+            if (!partial.Failed || partial.Complete || partial.Result is not null ||
+                !partial.FailureReason.Contains("invalid axis count"))
+                throw new Exception("FAILED: malformed WinMM sweep sample was silently ignored");
+            partial.Observe(new uint[] { 1000, 0, 0, 0, 0, 0 }, start.AddSeconds(8));
+            if (!partial.Failed || partial.Result is not null)
+                throw new Exception("FAILED: invalid WinMM sweep recovered after malformed sample");
+        }
+        Console.WriteLine("PASS: null and malformed WinMM sweep samples fail closed (synthetic C#)");
+
+        Console.WriteLine("PASS: WinMM out-of-range sweep samples fail closed (synthetic C#)");
+    }
+}

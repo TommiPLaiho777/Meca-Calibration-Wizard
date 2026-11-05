@@ -6,11 +6,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../src/WindowsCalibration.cs;../src/CalibrationCommit.cs" />
+    <Compile Include="../src/PedalSettingsFile.cs" Link="PedalSettingsFile.cs" />
+    <Compile Remove="PedalSetupChecks.cs" />
     <Compile Include="../src/CalibrationModels.cs" Link="CalibrationModels.cs" />
     <Compile Include="../src/GuidedCalibration.cs" Link="GuidedCalibration.cs" />
     <Compile Include="../src/WinmmJoystick.cs" Link="WinmmJoystick.cs" />
-    <Compile Include="../src/InputSweep.cs" Link="InputSweep.cs" />
-    <Compile Include="../src/SweepDiagnostics.cs" Link="SweepDiagnostics.cs" />
-      <None Include="fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="../historical/diagnostics/HidInterfaceInventory.cs" Link="HidInterfaceInventory.cs" />
+    <Compile Include="../historical/diagnostics/ReadOnlyHidReport.cs" Link="ReadOnlyHidReport.cs" />
+    <Compile Include="../historical/diagnostics/InputSweep.cs" Link="InputSweep.cs" />
+    <Compile Include="../historical/diagnostics/SweepDiagnostics.cs" Link="SweepDiagnostics.cs" />
+    <Compile Include="../historical/diagnostics/SignalHealthDiagnostics.cs" Link="SignalHealthDiagnostics.cs" />
+    <None Include="../src/MainWindow.xaml" Link="MainWindow.xaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../src/MainWindow.xaml.cs" Link="MainWindow.xaml.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

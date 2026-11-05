@@ -1,0 +1,37 @@
+--- a/src/MainWindow.xaml.cs
++++ b/src/MainWindow.xaml.cs
+@@ -797,9 +797,9 @@
+                 ? $"WinMM reading: {sample[shownAxis]} · axis {WinmmJoystick.AxisNames[shownAxis]}" +
+                     (invalidWinmmReading ? " · OUTSIDE WINMM AXIS RANGE" : "")
+                 : "Awaiting pedal movement to identify WinMM axis";
+-            NeedleRotation.Angle = -5 + (percent * 1.1);
+-            ClutchNeedleRotation.Angle = -5 + (percent * 1.1);
+-            BrakeNeedleRotation.Angle = -5 + (percent * 1.1);
++            NeedleRotation.Angle = -5 + (percent * 2.7);
++            ClutchNeedleRotation.Angle = -5 + (percent * 2.7);
++            BrakeNeedleRotation.Angle = -5 + (percent * 2.7);
+         }
+         else if (_step == 4)
+         {
+--- a/tests/Program.cs
++++ b/tests/Program.cs
+@@ -1462,7 +1462,7 @@
+                 brakeDial.Descendants().Any(e => e.Name.LocalName == "RotateTransform" &&
+                     e.Attributes().Any(a => a.Name.LocalName == "Name" &&
+                         a.Value == "BrakeNeedleRotation")) &&
+-                guidedUiSource.Contains("BrakeNeedleRotation.Angle = -5 + (percent * 1.1);") &&
++                guidedUiSource.Contains("BrakeNeedleRotation.Angle = -5 + (percent * 2.7);") &&
+                 windowSource.Split("BrakeNeedleRotation.Angle = -5;").Length - 1 == 3 &&
+                 !windowSource.Contains("BrakeCaliper.Opacity = 1.0 - percent"),
+             "brake WinMM analog dial, needle update and stale-read reset must stay wired");
+--- a/tests/WinmmStaleGaugeChecks.cs
++++ b/tests/WinmmStaleGaugeChecks.cs
+@@ -81,7 +81,7 @@
+         })
+             if (!clutchDial.Contains(expected, StringComparison.Ordinal))
+                 throw new Exception($"FAILED: optional clutch analog dial contract: {expected}");
+-        if (!source.Contains("ClutchNeedleRotation.Angle = -5 + (percent * 1.1);", StringComparison.Ordinal))
++        if (!source.Contains("ClutchNeedleRotation.Angle = -5 + (percent * 2.7);", StringComparison.Ordinal))
+             throw new Exception("FAILED: optional clutch needle must follow WinMM percentage");
+         Console.WriteLine("PASS: optional clutch analog dial uses white face and live WinMM needle (XAML source contract)");
+ 

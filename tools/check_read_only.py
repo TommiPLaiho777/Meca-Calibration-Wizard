@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Conservative source-level regression alarm, NOT a security proof.
 
-Intentional write features require explicit review and removal/update of this guard.
+Windows DIPROP_CALIBRATION is an explicitly reviewed beta feature. This guard
+rejects the separate prohibited driver/firmware/registry/system call families;
+it does not assert that the program is read-only.
 Never interpret a passing guard as proving a binary safe.
 """
 from pathlib import Path
@@ -27,4 +29,4 @@ for file in files:
             errors.append(f'{file.relative_to(root)}: forbidden call matching {pattern}')
 if errors:
     raise SystemExit("Potential device/system write found:\n" + "\n".join(errors))
-print(f"PASS: read-only source guard scanned {len(files)} C# files (heuristic only)")
+print(f"PASS: prohibited device/system-call guard scanned {len(files)} C# files (heuristic only)")

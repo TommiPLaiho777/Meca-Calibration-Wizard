@@ -7,3 +7,6 @@ release/
 *.exe
 *.pdb
 *.zip
+
+.meca-checks/
+release-checks/

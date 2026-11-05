@@ -22,6 +22,9 @@ concurrency:
   group: meca-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MECA_TEST_SCRATCH: .meca-checks
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -31,10 +34,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Verify preview does not contain device/registry write calls
+      - name: Check prohibited device/system calls (Windows calibration is supported)
         run: python3 tools/check_read_only.py
-      - name: Run simulated and recorded-sweep checks
-        run: dotnet run --project tests/GuidedCalibrationChecks.csproj --configuration Release
+      - name: Run current setup, backup and transaction checks
+        run: dotnet run --project tests/PedalSetupChecks.csproj --configuration Release
 
   windows-build:
     needs: verify
@@ -46,22 +49,28 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Windows logic smoke checks
-        run: dotnet run --project tests/GuidedCalibrationChecks.csproj --configuration Release
+        run: dotnet run --project tests/PedalSetupChecks.csproj --configuration Release
+      - name: Restore verification WPF control checks (no hardware)
+        run: dotnet run --project tests/RestoreViewChecks/RestoreViewChecks.csproj --configuration Release
       - name: Build portable self-contained Windows executable
-        run: dotnet publish src/MecaCalibrationWizard.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release
+        run: dotnet publish src/MecaCalibrationWizard.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o release
       - name: Include printable field-test guide in Windows package
         shell: pwsh
         run: |
-          Copy-Item PEDAL_TEST_QUICKSTART.md release/
-          Copy-Item PEDAL_TEST_REPORT_TEMPLATE.md release/
-          Copy-Item tools/START_PEDAL_TEST.cmd release/
+          Copy-Item README.md release/README.md
+          Copy-Item docs/BETA_QUICKSTART.md release/READ-ME-FIRST.md
+          Copy-Item LICENSE release/
       - name: Zip artifact
         shell: pwsh
-        run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.2.2-win-x64.zip
+        run: Compress-Archive -Path release/* -DestinationPath MecaCalibrationWizard-v0.3.0-beta.1-win-x64.zip
+      # CI always verifies and builds; only an explicitly requested run
+      # uploads a package, preventing routine PR pushes from exhausting
+      # artifact storage. Existing artifacts are preserved.
       - name: Upload verified Windows build
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: MecaCalibrationWizard-v0.2.2-win-x64
-          path: MecaCalibrationWizard-v0.2.2-win-x64.zip
+          name: MecaCalibrationWizard-v0.3.0-beta.1-win-x64
+          path: MecaCalibrationWizard-v0.3.0-beta.1-win-x64.zip
           retention-days: 14
           if-no-files-found: error
