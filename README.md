@@ -1,4 +1,4 @@
-# MECA Calibration Wizard — 0.3.0-beta.1
+# MECA Calibration Wizard — 0.3.0-beta.2
 
 A compact Windows pedal-calibration application for **MECA CUP1**: identify your
 pedals, choose comfortable maximums, test them, then explicitly apply Windows

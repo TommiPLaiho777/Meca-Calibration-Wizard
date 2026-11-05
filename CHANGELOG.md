@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.0-beta.1 (2026-11-05)
+## v0.3.0-beta.2 (2026-11-05)
 
 - Lean all-pedals identification, separate one-press maximum selection and named final test; optional clutch retained.
 - Brake-only fixed5% heavier/lighter adjustment with bounds and stale-session guards.

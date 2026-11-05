@@ -22,7 +22,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo.
-echo Building MECA Calibration Wizard v0.3.0-beta.1...
+echo Building MECA Calibration Wizard v0.3.0-beta.2...
 dotnet publish .\src\MecaCalibrationWizard.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o .\release
 if errorlevel 1 (
     echo BUILD FAILED. Please copy the error messages.

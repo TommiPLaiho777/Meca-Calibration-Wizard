@@ -1,4 +1,4 @@
-# MECA 0.3.0-beta.1 — quickstart
+# MECA 0.3.0-beta.2 — quickstart
 
 Extract the complete Windows x64 ZIP into a new folder. Close older MECA copies
 and run MecaCalibrationWizard.exe. No installation or extra driver is included.

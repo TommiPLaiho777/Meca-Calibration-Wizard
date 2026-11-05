@@ -1,7 +1,7 @@
 <Window x:Class="MecaCalibrationWizard.MainWindow"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="MECA Calibration Wizard 0.3.0-beta.1 - Windows calibration" Width="1040" Height="800" MinWidth="880" MinHeight="740"
+ Title="MECA Calibration Wizard 0.3.0-beta.2 - Windows calibration" Width="1040" Height="800" MinWidth="880" MinHeight="740"
  WindowStartupLocation="CenterScreen" Background="{StaticResource BaseBrush}">
  <Window.Resources>
   <!-- #GAUGE_STYLE: one vector instrument for every role. The fixed 270-degree
