@@ -3,13 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="BaseBrush" Color="#111923"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#1A2633"/>
-        <SolidColorBrush x:Key="RaisedBrush" Color="#233243"/>
-        <SolidColorBrush x:Key="LabelBrush" Color="#EDF4FB"/>
-        <SolidColorBrush x:Key="DimBrush" Color="#A9BAC9"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#2FC6A4"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#405165"/>
+        <LinearGradientBrush x:Key="BaseBrush" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#1B1E22"/><GradientStop Color="#090B0D" Offset="1"/></LinearGradientBrush>
+        <LinearGradientBrush x:Key="CardBrush" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#24282D"/><GradientStop Color="#121518" Offset="1"/></LinearGradientBrush>
+        <LinearGradientBrush x:Key="RaisedBrush" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#3A4047"/><GradientStop Color="#24292F" Offset="1"/></LinearGradientBrush>
+        <SolidColorBrush x:Key="LabelBrush" Color="#F3F5F7"/>
+        <SolidColorBrush x:Key="DimBrush" Color="#A9AFB7"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#168BFF"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#41474F"/>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -18,20 +18,23 @@
             <Setter Property="Padding" Value="18,11"/>
             <Setter Property="Background" Value="{StaticResource RaisedBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Outer" Background="{TemplateBinding Background}" CornerRadius="9"
-                                Padding="{TemplateBinding Padding}">
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Outer" Property="Opacity" Value="0.85"/>
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Outer" Property="BorderBrush" Value="{StaticResource AccentBrush}"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Outer" Property="Opacity" Value="0.65"/></Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Outer" Property="Opacity" Value="0.35"/>
                             </Trigger>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
+ <ItemGroup>
+    <Compile Include="../src/WindowsCalibration.cs;../src/CalibrationCommit.cs;WindowsBackupFormatChecks.cs" />
+    <Compile Include="../src/PedalSettingsFile.cs" Link="PedalSettingsFile.cs" />
+  <Compile Include="../src/CalibrationModels.cs;../src/GuidedCalibration.cs;../src/WinmmJoystick.cs;PedalSetupChecks.cs;SettingsFileChecks.cs;WindowsCalibrationChecks.cs;GuidedWinmmRangeChecks.cs;GuidedDuplicateTimestampChecks.cs"/>
+ </ItemGroup>
+</Project>

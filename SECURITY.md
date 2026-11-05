@@ -1,12 +1,23 @@
 # Safety and contribution boundaries
 
-This is a Windows **read-only diagnostic preview**, not a Windows calibration or firmware editor.
+This beta intentionally supports explicit **Windows DirectInput calibration**
+for the identified MECA CUP1 interface family. It is not a firmware editor or
+an unrestricted device configuration tool.
 
-- Read WinMM joystick data, display previews and write JSON only where the user selects a report file.
-- Do not install new drivers, write registry calibration values, issue HID feature/output reports or modify device firmware.
-- Do not attempt to defeat protective earth, bypass safety wiring, or prescribe improvised mains grounding.
-- Never claim WinMM values represent uncalibrated sensor ADC values.
-- Real MECA hardware testing must be performed separately by a human.
-- Before enabling any future calibration writes, require specific device identification, documented storage protocol, backup and verified rollback.
+- Persistent native calibration writes belong only in the reviewed Apply/Restore
+  transaction: exact identity, current before-image, durable backup, explicit
+  user confirmation, notification, readback and attempted verified rollback.
+- The separate COOKED verification reader cannot Apply. RAW preview JSON must
+  never be reinterpreted as native calibration or a restorable Windows backup.
+- Do not install drivers, issue HID feature/output reports, guess/write registry
+  calibration branches, modify firmware, game files or other devices.
+- Preserve input/session/range/timing/identity protections; fail closed on stale
+  or ambiguous context. Never conceal an incomplete rollback.
+- Never claim DirectInput/WinMM signals prove ADC-level readings or pedal force.
+- Do not bypass electrical protective earth or prescribe mains-wiring changes.
+- Do not post native backup JSON publicly; it contains device instance/path.
+- Physical device/game tests must be recorded separately from synthetic checks.
 
+The source-call heuristic is a regression alarm, not a security certification
+or a statement that this Windows-calibration beta is entirely read-only.
 If you discover a security problem, do not post exploit details to public issues.

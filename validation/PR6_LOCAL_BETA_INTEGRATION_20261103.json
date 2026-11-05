@@ -1,0 +1,319 @@
+{
+  "upstream_head": "49e24a04098a4658ab3bc117f79f981761434eee",
+  "upstream_files": [
+    {
+      "path": ".gitattributes",
+      "git_blob": "daa942e47e0cd7f596ff63b66ecb31becbbbb45d",
+      "sha256_git_bytes": "af3dab7556362e602802b9a0ea6d3db8141ecd96651049c13e272f4d1543bcd2"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "git_blob": "3a626c3a7f273f265f605f38cea73e62608085e8",
+      "sha256_git_bytes": "e49b0bad89c4caf2a07bb3fa625ff431977115a81a39b455061e96534be291a0"
+    },
+    {
+      "path": ".github/workflows/build-windows.yml",
+      "git_blob": "a56bfb12dd3e0602ea305b98a4435e08332edab0",
+      "sha256_git_bytes": "ddb2d1eaab245785d612912ce13d994122915b9818a95cb63c914a7c0bb1108b"
+    },
+    {
+      "path": ".gitignore",
+      "git_blob": "45e5d9173d3e07ac5ff9e2698f7e63f9ec36f53f",
+      "sha256_git_bytes": "4e3ed389953e66be3a12176ba013b0c3f10bcd17f7a3a4ce63fc08b95a4fb08b"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "git_blob": "ca71c151ca77c91f47ff9d3db262c9b2700cda1c",
+      "sha256_git_bytes": "8f6f782dcecf6ab9a0c513edcb564fd40cffba289bcaceba6efde566afc4005e"
+    },
+    {
+      "path": "LICENSE",
+      "git_blob": "8c584146a8c3a087b983ed63cc960267fe817935",
+      "sha256_git_bytes": "58549471241f82ba301bd87cd9efcc941a9279f035ccef5977745f21de1d6af7"
+    },
+    {
+      "path": "PEDAL_TEST_QUICKSTART.md",
+      "git_blob": "2dec3cb6b48eb456a255d6a619cc51b79f9c8009",
+      "sha256_git_bytes": "4781d1cd4986cb86e0a9497b886520941cd2668c328b1792c94b8f6e83d0e491"
+    },
+    {
+      "path": "PEDAL_TEST_REPORT_TEMPLATE.md",
+      "git_blob": "6553e31e1126135006235063a8ff55fbcaf1fbde",
+      "sha256_git_bytes": "eb58039df819bcea03514a8a4a3562666cb2c4bbee6b7d3783817b108e3cb48c"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "59994c97a81c6265d1285501b964c247d15283ae",
+      "sha256_git_bytes": "eb4abe328f7c316b1156dabfa24a242f9629017cc7a5289bfb3b94aa58f6b1d4"
+    },
+    {
+      "path": "SECURITY.md",
+      "git_blob": "196ba00f0a6666dbec105e076f1ad007f0b20438",
+      "sha256_git_bytes": "c6cdee77498db80a30244032bf5cac4b74ee60838c94e50a04407fdf34a9cc46"
+    },
+    {
+      "path": "TEST_CHECKLIST.md",
+      "git_blob": "f46aec303fa75407b5f3251ffc5ce57fb712702a",
+      "sha256_git_bytes": "4d46b52283f7ce2144836084f2aefbde7373722d24eaeee999d2f03ae0560a78"
+    },
+    {
+      "path": "build.bat",
+      "git_blob": "5e7f184a973c8d0cc4db38d09b3d5f3ef036110e",
+      "sha256_git_bytes": "43c20865f2b58c3b9068983c74191a777bb1a5d71e1ee35ae402757f2d50a8dc"
+    },
+    {
+      "path": "src/App.xaml",
+      "git_blob": "1bd4df197ac4f472ca439dd73855dd6c7b4c7939",
+      "sha256_git_bytes": "a5b4fad25cb19d5f82114f4ac4aa96c9ebcb597d8161fd7c44fe831bee30f398"
+    },
+    {
+      "path": "src/App.xaml.cs",
+      "git_blob": "4031e4ba5b2f39f9251d17b9ca337018d7c2a13b",
+      "sha256_git_bytes": "7b7982dbb8eded30eba89c47b8f05ddc717e2819e568f2737c6e7fe0c996de1b"
+    },
+    {
+      "path": "src/CalibrationModels.cs",
+      "git_blob": "a0259a7a4e297b593f0803e2b04ace3d2443422e",
+      "sha256_git_bytes": "b658614136faf163f7991ed17923c59b55ff460365161cc250805f5f549358b0"
+    },
+    {
+      "path": "src/GuidedCalibration.cs",
+      "git_blob": "d2500548b17bf60313035a65aec4680b7044a520",
+      "sha256_git_bytes": "ee5c25d5ee10297d3eb9fe9d039a4a55ea2b8693b3e1ec1bbc4d5be829e657c2"
+    },
+    {
+      "path": "src/HidInterfaceInventory.cs",
+      "git_blob": "c8d18d240551855d3356d75bca5bb07b0a2f5cdb",
+      "sha256_git_bytes": "c37216d526dea860a2671c05547ec9d8283d2fd4107296b3041c4ccc8de46dd0"
+    },
+    {
+      "path": "src/InputSweep.cs",
+      "git_blob": "1ae5a4f109a0858ecd5759bedc6e2d91cbb248c5",
+      "sha256_git_bytes": "bd2af6aef76d2dd6dd914ff3f7e37d9c1f997ad4bfd551bc33ee0f3452fe7efb"
+    },
+    {
+      "path": "src/MainWindow.xaml",
+      "git_blob": "637d8261ab61d1fb60e59ffb190f47c752beb7f5",
+      "sha256_git_bytes": "070caed5a2866aa527ed7d1993aea430febd602147957343a48f377c371188a6"
+    },
+    {
+      "path": "src/MainWindow.xaml.cs",
+      "git_blob": "94aa9139c82e6bf785809c864db6797bd5492b55",
+      "sha256_git_bytes": "e805b651c16ed6e835ffb0693a55a8858e850374eb9f270b23d9659e19cb2e49"
+    },
+    {
+      "path": "src/MecaCalibrationWizard.csproj",
+      "git_blob": "10591f5fbf7d2ac85e03b19be2f35e7960779e1c",
+      "sha256_git_bytes": "d735a3c7dd2247cdb5baacde2bf6c26088547fb17f6fc1dba77618abb12f9dde"
+    },
+    {
+      "path": "src/ReadOnlyHidReport.cs",
+      "git_blob": "e786555ae1c56b4f8853b247d338831b06e0ee5e",
+      "sha256_git_bytes": "130272980d0520912901c35ba8f532ff5137d741face4c53395ee1d1defa4724"
+    },
+    {
+      "path": "src/SignalHealthDiagnostics.cs",
+      "git_blob": "babe88567fd341f0fb7c1ed786d2830e05bf6c9d",
+      "sha256_git_bytes": "d9bd4529d7f47fb42478bf68d05d9eb9b4af3de0487397a4bd628ffe444acc21"
+    },
+    {
+      "path": "src/SweepDiagnostics.cs",
+      "git_blob": "8e7d808ed63985a83d61388f88351547a9724685",
+      "sha256_git_bytes": "fe27583012a61a80656617f138d5b4eca203c3d5c17ab9c62a4b0eb2758f28b8"
+    },
+    {
+      "path": "src/WinmmJoystick.cs",
+      "git_blob": "bf3d41d80be078d4986536f305d1f0674b304837",
+      "sha256_git_bytes": "ef18073d0a50e959fa6edc335a85ecc9da8ba37beaa18c604942d35588840985"
+    },
+    {
+      "path": "tests/GuidedCalibrationChecks.csproj",
+      "git_blob": "aa28589a447fb4388f216011769946eea6cd1f4f",
+      "sha256_git_bytes": "9f5e0da9cafed97bef593386f0c679997d64f5883a78ea5693d2e3548d2cc1ed"
+    },
+    {
+      "path": "tests/GuidedDuplicateTimestampChecks.cs",
+      "git_blob": "0ead6f260ac4d85f7ab725067029b881e99db386",
+      "sha256_git_bytes": "58f367533f13bd4a4d8c80bd66c968e89657bd47cbceb774b2720ef5e58189f7"
+    },
+    {
+      "path": "tests/GuidedWinmmRangeChecks.cs",
+      "git_blob": "72e274f4f30762aa197a456f2f64a0bdd79af8ef",
+      "sha256_git_bytes": "64c2f5d3cf63670e0482ed07edf25753e2cfda1e28e4f480efb1a86928393887"
+    },
+    {
+      "path": "tests/HidComparisonInvariantChecks.cs",
+      "git_blob": "8e1acea670743c740fb48b1ff54bffa532e7567e",
+      "sha256_git_bytes": "1c7222f15165373378671b2dc4aac27285d91413939ce2a7d113986cbdf2c30a"
+    },
+    {
+      "path": "tests/HidInventoryBoundaryChecks.cs",
+      "git_blob": "dddc57a671403c7dc121ba5743e2a0686e9c7d03",
+      "sha256_git_bytes": "0d8bdb9038589b5f2df4cd14a3374415b26e9978498190465fca22c420785c6f"
+    },
+    {
+      "path": "tests/HidInventoryDisplayChecks.cs",
+      "git_blob": "5aec209337dc8c5c0a0b8c84223e612f6d916dc1",
+      "sha256_git_bytes": "97a165e376334860c2765f1969170c91c119fe9ae08a35aed0e4ecd9f57db073"
+    },
+    {
+      "path": "tests/HidInventoryFieldReportRegression.cs",
+      "git_blob": "3dbaeab9dfe60f6fda81ed1ec4c04132f0426cff",
+      "sha256_git_bytes": "3243deffdd87a8d5da460976556cf9e96ddc1b1bf5d4ebf1769af394f346a99c"
+    },
+    {
+      "path": "tests/HidInventoryProvenanceChecks.cs",
+      "git_blob": "5980083ef8ccd0bd67ef1dcd356da6437a4afc84",
+      "sha256_git_bytes": "a8d64a4e6bd6b5bdfbb71b98174d454f21c6cad24974a0ecea7d558adfb8847b"
+    },
+    {
+      "path": "tests/HidInventoryUnknownCountChecks.cs",
+      "git_blob": "1aeb59ef22526e95cb129b5f0daa0bef491655e1",
+      "sha256_git_bytes": "97c1a557ac5aa3fe8241343e52b0d878a4a7b0a145683bdb09c48478f18d56a7"
+    },
+    {
+      "path": "tests/HidScanRecoveryMessageChecks.cs",
+      "git_blob": "588969145a74d79dc37887e71bfc48b9b30f6490",
+      "sha256_git_bytes": "64dc9e8d25b5ebeee0ecebfcc50d085b39214a940acfbd8cfc6ded8ceb1e1095"
+    },
+    {
+      "path": "tests/LiveSweepDuplicateTimestampChecks.cs",
+      "git_blob": "d3f66737cae97a542d984bfb14d83eb1362df61a",
+      "sha256_git_bytes": "b3d591de01dbb492a179ffbd562a3c39585d18c6544c3922b5a84f544bb396bb"
+    },
+    {
+      "path": "tests/NonzeroWinmmAxisSweepChecks.cs",
+      "git_blob": "b219fef84bfdb9460abd140f4fd8748bc25fad0e",
+      "sha256_git_bytes": "3b481fe9dfbed986424dea602e598fbc8a61acb061e17b996943ea8b3421c373"
+    },
+    {
+      "path": "tests/Program.cs",
+      "git_blob": "25adc45ac21fab78286da1420141da939df4b45a",
+      "sha256_git_bytes": "bc293ed1ce66d8af9d08d5161dce97ad9be20ef1f545fbee0a701d957d70607f"
+    },
+    {
+      "path": "tests/ReadOnlyHidReportChecks.cs",
+      "git_blob": "1bbb595c08935acb0c3bcfbb8c048ae39adc2075",
+      "sha256_git_bytes": "d1ebf9819a44f011ae9db7e697bb719edd7e074a3d601625b813e3688308c5a5"
+    },
+    {
+      "path": "tests/SweepAssumedRangeChecks.cs",
+      "git_blob": "e5654d417e01282069fc853f512a46d35485bcfc",
+      "sha256_git_bytes": "ef4c55a3f6a0b5b4fe62f36f5cab240f3496e7d182f17fa2c4f6c537c361f60d"
+    },
+    {
+      "path": "tests/SweepTimestampChecks.cs",
+      "git_blob": "de3048301879f0d3ae74c9d68785544bba60c23d",
+      "sha256_git_bytes": "6ba7fd0131d5fe4d80d37d34d5e574a86453424547d02503946efc5a04f232ad"
+    },
+    {
+      "path": "tests/WinmmIdleScopeUiChecks.cs",
+      "git_blob": "1d21c52a890b566cfbd5d08c35bf3eb24423c2cc",
+      "sha256_git_bytes": "60295241367ec610ae8f165570f67ed943882b6b0b12203d4243e6605fe7133f"
+    },
+    {
+      "path": "tests/WinmmMalformedNoiseChecks.cs",
+      "git_blob": "10968e4bb2af6e1b2384b9f5178fce979a08b973",
+      "sha256_git_bytes": "21e6a9d23940f17a1d22aaf59008808ec63fb2198f42ed3395aefa3718060e72"
+    },
+    {
+      "path": "tests/WinmmMonotonicClockSourceChecks.cs",
+      "git_blob": "c3c7c057668fda4cbba6d40b4138d2c11857e67c",
+      "sha256_git_bytes": "a3f287b1d80d2714a19e563b9930afd56d6f12ba88764c25e5522ef7c3bcdd6e"
+    },
+    {
+      "path": "tests/WinmmOutOfRangeSweepChecks.cs",
+      "git_blob": "3692a6367e8efb160b75f5d9e2618a27c06070c1",
+      "sha256_git_bytes": "1fd9485a6bc3604eb4d1dd788a2650a1b06b3ab3764c550ade6480692242df43"
+    },
+    {
+      "path": "tests/WinmmSessionButtonGateChecks.cs",
+      "git_blob": "65211451ad71edf378050cca581b21c2bc36632f",
+      "sha256_git_bytes": "91ba2183dfe8774032f4f8a2a542f207d89b10a64f0d7a0f317d34bc8030c0ef"
+    },
+    {
+      "path": "tests/WinmmSignalRangeChecks.cs",
+      "git_blob": "dce911474632874e3de30f5b18ce05f3010754a4",
+      "sha256_git_bytes": "a5321050e4115025ac716b505aecb9bd00bd3a4ce77cf73ad07fcc42dbe9e17d"
+    },
+    {
+      "path": "tests/WinmmStaleGaugeChecks.cs",
+      "git_blob": "4408b155dfbff334aebdcc2810b2b24dfce41975",
+      "sha256_git_bytes": "1eb4581517579d206a862c8a3839cbefdb0683d63aa404c5c6ac034fe1d8ed58"
+    },
+    {
+      "path": "tests/fixtures/real-winmm-sweeps-20261014.json",
+      "git_blob": "02dbe9a3a34117641205e0704a15410dffc7fe22",
+      "sha256_git_bytes": "907208931fd9e5bd3b486138d64376b56b48a987ebb50b326a2ea067fb5f042c"
+    },
+    {
+      "path": "tools/START_PEDAL_TEST.cmd",
+      "git_blob": "81aaf2a32240662d887fd274e7306cc94e18fb8d",
+      "sha256_git_bytes": "606f88c22064480b7d9ca14e25775a1953fbca32979c5c3ce4c12849746e10b9"
+    },
+    {
+      "path": "tools/check_read_only.py",
+      "git_blob": "e7f23d0fe99d2c728f661706ffabf1373ca15400",
+      "sha256_git_bytes": "5950e336b1340d4429765e41f07afcf31c684fe8cea1c39858784ae8403dc07c"
+    }
+  ],
+  "local_changes": [
+    {
+      "path": "src/MainWindow.xaml.cs",
+      "replacements": 3,
+      "sha256": "c434ef1a3c241cd55967baae249fa3314a2fe4c903b63147150cf66c74e4fb80"
+    },
+    {
+      "path": "tests/Program.cs",
+      "replacements": 1,
+      "sha256": "84a7db0c06cdbff181fe85fdebcdf0d143f5f52dbe7eb6c4bae9f7573fa9c759"
+    },
+    {
+      "path": "tests/WinmmStaleGaugeChecks.cs",
+      "replacements": 1,
+      "sha256": "9d2bdd3a00ce55fde659b1f1a7e9e63e4e8c5a87cd129b9c32b1843b74c92a37"
+    }
+  ],
+  "checks": {
+    "exit_code": 0,
+    "pass_output_lines": 161,
+    "all_checks_passed": true,
+    "kind": "HARDWARE_FREE_AND_SOURCE_CONTRACTS",
+    "read_only_heuristic": "PASS_NOT_SECURITY_PROOF"
+  },
+  "publish": {
+    "exit_code": 0,
+    "runtime": "win-x64",
+    "self_contained": true,
+    "exe_sha256": "292668A3C40EA87F5DAA78F9481DCE6C466363D81AE30959EC4D2436CE79D084",
+    "nullable_warnings": [
+      "src/MainWindow.xaml.cs:276",
+      "tests/Program.cs:189",
+      "tests/Program.cs:336"
+    ]
+  },
+  "gui": {
+    "scope": "ACTUAL_STARTUP_OPTIONAL_CLUTCH_SIDEBAR_ONLY",
+    "no_controller_selected": true,
+    "begin_disabled": true,
+    "clutch_row_initially_absent": true,
+    "clutch_row_present_when_checked": true,
+    "clutch_row_absent_when_unchecked": true,
+    "physical_pedals_verified": false,
+    "dial_live_render_verified": false,
+    "calibration_restore_verified": false,
+    "owned_process": {
+      "Exe": "<private-workspace>/tmp\\meca-head-integration-20261103\\publish\\MecaCalibrationWizard.exe",
+      "SHA256": "292668A3C40EA87F5DAA78F9481DCE6C466363D81AE30959EC4D2436CE79D084",
+      "PID": 23984,
+      "CreationUtc": "2026-11-03T21:19:32.8311217Z",
+      "Scope": "OWNED_LOCAL_PREVIEW_NO_DEVICE_SELECTION"
+    },
+    "exit": {
+      "PID": 23984,
+      "ExitCode": 0,
+      "ExitUtc": "2026-11-03T21:20:13.2304093Z",
+      "SHA256": "292668A3C40EA87F5DAA78F9481DCE6C466363D81AE30959EC4D2436CE79D084"
+    }
+  }
+}
